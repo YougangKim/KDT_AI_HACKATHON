@@ -1,0 +1,368 @@
+[
+  {
+    "id": "work24-training:sample-training-01",
+    "domain": "training",
+    "title": "K-디지털 트레이닝(KDT) AI·SW 과정 모집",
+    "org": "고용노동부",
+    "region": [],
+    "summary": "AI·클라우드·데이터 등 최대 6개월 국비 무료 과정, 훈련장려금 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 15,
+        "rawText": "만 34세 이하 청년(그 외 연령 일부 과정 가능)",
+        "confidence": "low"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 34세 이하 청년(그 외 연령 일부 과정 가능)",
+        "confidence": "low"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자·졸업예정자",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-15",
+    "applyEnd": "2026-12-15",
+    "url": "https://www.work24.go.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-02",
+    "domain": "training",
+    "title": "국민내일배움카드 발급",
+    "org": "고용노동부",
+    "region": [],
+    "summary": "직업훈련비 5년간 300만~500만원 지원 카드.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 15,
+        "rawText": "만 15세 이상 75세 미만",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 75,
+        "rawText": "만 15세 이상 75세 미만",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker",
+          "employed",
+          "parttime"
+        ],
+        "rawText": "공무원·사학연금 대상자 등 제외",
+        "confidence": "high"
+      }
+    ],
+    "url": "https://www.work24.go.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-03",
+    "domain": "training",
+    "title": "삼성 청년 SW·AI 아카데미(SSAFY) 모집",
+    "org": "삼성전자",
+    "region": [],
+    "summary": "1년 SW·AI 교육, 월 100만원 교육지원금.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 29,
+        "rawText": "만 29세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자(4년제 졸업·졸업예정)",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-10",
+    "applyEnd": "2026-11-30",
+    "url": "https://www.ssafy.com/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-04",
+    "domain": "training",
+    "title": "청년취업사관학교(SeSAC) 겨울 과정",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "서울시 무료 SW·AI 실무 교육.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자 우선 선발",
+        "confidence": "low"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-20",
+    "applyEnd": "2026-12-10",
+    "url": "https://sesac.seoul.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-05",
+    "domain": "training",
+    "title": "네이버 부스트캠프 웹·모바일",
+    "org": "네이버 커넥트재단",
+    "region": [],
+    "summary": "KDT 연계 개발자 성장 과정.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-12-08",
+    "url": "https://boostcamp.connect.or.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-06",
+    "domain": "training",
+    "title": "소프트웨어 마에스트로 연수생 모집",
+    "org": "과학기술정보통신부",
+    "region": [],
+    "summary": "SW 인재 프로젝트 연수, 연수지원금 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년·대학(원)생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-01",
+    "applyEnd": "2026-12-22",
+    "url": "https://www.swmaestro.org/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-07",
+    "domain": "training",
+    "title": "이노베이션 아카데미 42서울 라 피신",
+    "org": "이노베이션 아카데미",
+    "region": [],
+    "summary": "동료학습 기반 무료 SW 교육, 지원금 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 18,
+        "rawText": "만 18세 이상",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-21",
+    "applyEnd": "2026-12-06",
+    "url": "https://www.42seoul.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-08",
+    "domain": "training",
+    "title": "한국폴리텍대학 하이테크과정 신입생",
+    "org": "한국폴리텍대학",
+    "region": [],
+    "summary": "대졸자 대상 1년 무료 기술훈련.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "jobseeker"
+        ],
+        "rawText": "전문대 이상 졸업(예정) 미취업자",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-02",
+    "applyEnd": "2026-12-18",
+    "url": "https://www.kopo.ac.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-training-09",
+    "domain": "training",
+    "title": "K-디지털 기초역량훈련(KDC)",
+    "org": "고용노동부",
+    "region": [],
+    "summary": "디지털 기초 온라인 과정, 내일배움카드로 수강.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "training",
+        "rawText": "분야: 국비 과정",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 15,
+        "rawText": "만 34세 이하 청년 우대",
+        "confidence": "low"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 34세 이하 청년 우대",
+        "confidence": "low"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://www.work24.go.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  }
+]

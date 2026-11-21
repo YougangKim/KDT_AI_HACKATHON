@@ -1,0 +1,645 @@
+[
+  {
+    "id": "lh-notice:sample-housing-01",
+    "domain": "housing",
+    "title": "LH 행복주택 청년 입주자 모집(수도권)",
+    "org": "한국토지주택공사",
+    "region": [
+      "서울",
+      "경기",
+      "인천"
+    ],
+    "summary": "대학생·청년·신혼부부 대상 시세 60~80% 공공임대. 청년은 최대 6년 거주.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울",
+          "경기",
+          "인천"
+        ],
+        "rawText": "서울·경기·인천 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하 미혼 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하 미혼 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "해당 세대 월평균소득 100% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-17",
+    "applyEnd": "2026-12-05",
+    "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
+    "source": "lh-notice",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "lh-notice:sample-housing-02",
+    "domain": "housing",
+    "title": "LH 청년 매입임대주택 입주자 모집",
+    "org": "한국토지주택공사",
+    "region": [],
+    "summary": "도심 다가구·오피스텔을 시세 40~50%로 임대. 최장 10년.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택 미혼 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "livingAlone",
+        "op": "eq",
+        "value": true,
+        "rawText": "미혼 청년(1인 가구)",
+        "confidence": "low"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "본인·부모 월평균소득 100% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-12-12",
+    "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
+    "source": "lh-notice",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "lh-notice:sample-housing-03",
+    "domain": "housing",
+    "title": "LH 청년 전세임대주택 입주자 수시모집",
+    "org": "한국토지주택공사",
+    "region": [],
+    "summary": "청년이 고른 전셋집을 LH가 계약 후 저렴하게 재임대. 보증금 최대 1억 2천만원(수도권).",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "월평균소득 100% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-03",
+    "applyEnd": "2026-12-19",
+    "url": "https://apply.lh.or.kr/lhapply/apply/wt/wrtanc/selectWrtancList.do?mi=1026",
+    "source": "lh-notice",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "myhome:sample-housing-04",
+    "domain": "housing",
+    "title": "청년안심주택(역세권) 공공지원 특별공급",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "역세권 신축 청년안심주택, 주변 시세 75~85% 임대.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 120,
+        "rawText": "도시근로자 월평균소득 120% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-20",
+    "applyEnd": "2026-11-27",
+    "url": "https://soco.seoul.go.kr/youth/main/main.do",
+    "source": "myhome",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "myhome:sample-housing-05",
+    "domain": "housing",
+    "title": "SH 행복주택 청년 입주자 모집",
+    "org": "서울주택도시공사",
+    "region": [
+      "서울"
+    ],
+    "summary": "서울 시내 행복주택 청년 계층 공급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "월평균소득 100% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-25",
+    "applyEnd": "2026-12-09",
+    "url": "https://www.i-sh.co.kr/",
+    "source": "myhome",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "myhome:sample-housing-06",
+    "domain": "housing",
+    "title": "GH 경기 행복주택 청년 입주자 모집",
+    "org": "경기주택도시공사",
+    "region": [
+      "경기"
+    ],
+    "summary": "경기도 내 행복주택 청년 공급분.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "경기"
+        ],
+        "rawText": "경기 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "월평균소득 100% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-01",
+    "applyEnd": "2026-12-15",
+    "url": "https://www.gh.or.kr/",
+    "source": "myhome",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-housing-07",
+    "domain": "housing",
+    "title": "청년월세 지원(월 최대 20만원, 최장 24개월)",
+    "org": "국토교통부",
+    "region": [],
+    "summary": "부모와 따로 사는 무주택 청년에게 월세를 지원.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "livingAlone",
+        "op": "eq",
+        "value": true,
+        "rawText": "부모와 별도 거주하는 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 60,
+        "rawText": "청년가구 기준중위소득 60% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://www.bokjiro.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-housing-08",
+    "domain": "housing",
+    "title": "버팀목 청년전용 전세자금대출",
+    "org": "주택도시기금",
+    "region": [],
+    "summary": "청년 전세보증금을 연 2%대 금리로 대출. 상시 접수.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택 세대주(예정자 포함)",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "연소득 5천만원 이하(기준중위소득과 다름)",
+        "confidence": "low"
+      }
+    ],
+    "url": "https://nhuf.molit.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-housing-09",
+    "domain": "housing",
+    "title": "청년 주거급여 분리지급",
+    "org": "보건복지부·국토교통부",
+    "region": [],
+    "summary": "주거급여 수급가구의 미혼 자녀가 따로 살면 임차료를 별도 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 30세 미만",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 29,
+        "rawText": "만 19세 이상 30세 미만",
+        "confidence": "high"
+      },
+      {
+        "attr": "livingAlone",
+        "op": "eq",
+        "value": true,
+        "rawText": "부모와 별도 거주하는 미혼 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 48,
+        "rawText": "부모 가구 기준중위소득 48% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://www.bokjiro.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "youthcenter:sample-housing-10",
+    "domain": "housing",
+    "title": "서울시 청년 부동산 중개보수·이사비 지원",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "서울로 이사한 무주택 청년에게 중개보수·이사비 최대 40만원 지원.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 150,
+        "rawText": "기준중위소득 150% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-10",
+    "applyEnd": "2026-12-10",
+    "url": "https://youth.seoul.go.kr/",
+    "source": "youthcenter",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "youthcenter:sample-housing-11",
+    "domain": "housing",
+    "title": "부산 청년 임차보증금 이자 지원",
+    "org": "부산광역시",
+    "region": [
+      "부산"
+    ],
+    "summary": "부산 청년 전세·월세 보증금 대출이자를 연 최대 2%까지 지원.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "housing",
+        "rawText": "분야: 주거",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "부산"
+        ],
+        "rawText": "부산 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "homeless",
+        "op": "eq",
+        "value": true,
+        "rawText": "무주택자",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "본인 연소득 5천만원 이하",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-15",
+    "applyEnd": "2026-12-20",
+    "url": "https://www.busan.go.kr/",
+    "source": "youthcenter",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  }
+]

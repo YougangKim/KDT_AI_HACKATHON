@@ -1,0 +1,23 @@
+
+# 비밀값
+config/api_keys.csv
+.env
+.env.local
+
+# 개발용 크롤링 도구(Scrapling) 가상환경
+.venv-tools/
+
+# 에이전트 런타임·대화 상태(개인 기록, 업로드 제외)
+.ai-sync/tasks/
+.ai-sync/queue/
+.ai-sync/state/
+.agents/
+.claude/skills/
+.claude/settings.local.json
+
+# 대회 배포 자료(원본 재배포 안 함)
+해커톤 지침/
+
+# Next.js 산출물(루트 기준 안전장치)
+web/node_modules/
+web/.next/

@@ -1,0 +1,363 @@
+[
+  {
+    "id": "sample-parttime:sample-parttime-01",
+    "domain": "parttime",
+    "title": "국가근로장학금(교내·교외 근로) 2027-1학기",
+    "org": "한국장학재단",
+    "region": [],
+    "summary": "대학생이 교내외 기관에서 근로하고 시급을 장학금으로 받음.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "국내 대학 재학생",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 200,
+        "rawText": "학자금 지원구간 9구간 이하",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-12-26",
+    "url": "https://www.kosaf.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-02",
+    "domain": "parttime",
+    "title": "서울시 대학생 동계 아르바이트",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "시청·구청 행정체험 아르바이트 4주.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "대학 재학생·휴학생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-23",
+    "applyEnd": "2026-12-02",
+    "url": "https://job.seoul.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-03",
+    "domain": "parttime",
+    "title": "경기도 대학생 행정체험 아르바이트(겨울방학)",
+    "org": "경기도",
+    "region": [
+      "경기"
+    ],
+    "summary": "도청·시군 행정체험 아르바이트.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "경기"
+        ],
+        "rawText": "경기 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "대학 재학생·휴학생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-25",
+    "applyEnd": "2026-12-05",
+    "url": "https://www.gg.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-04",
+    "domain": "parttime",
+    "title": "부산시 대학생 행정체험 아르바이트",
+    "org": "부산광역시",
+    "region": [
+      "부산"
+    ],
+    "summary": "부산시·구군 행정 아르바이트.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "부산"
+        ],
+        "rawText": "부산 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "대학 재학생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-30",
+    "applyEnd": "2026-12-09",
+    "url": "https://www.busan.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-05",
+    "domain": "parttime",
+    "title": "인천시 대학생 겨울방학 아르바이트",
+    "org": "인천광역시",
+    "region": [
+      "인천"
+    ],
+    "summary": "인천시·군구 행정 아르바이트.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "인천"
+        ],
+        "rawText": "인천 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "대학 재학생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-01",
+    "applyEnd": "2026-12-10",
+    "url": "https://www.incheon.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-06",
+    "domain": "parttime",
+    "title": "대구시 대학생 아르바이트",
+    "org": "대구광역시",
+    "region": [
+      "대구"
+    ],
+    "summary": "대구시 행정 아르바이트.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "대구"
+        ],
+        "rawText": "대구 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "대학 재학생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-28",
+    "applyEnd": "2026-12-08",
+    "url": "https://www.daegu.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-07",
+    "domain": "parttime",
+    "title": "대학생 청소년교육지원(멘토링) 장학",
+    "org": "한국장학재단",
+    "region": [],
+    "summary": "초중고생 학습 멘토링 활동 후 장학금 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "대학 재학생",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-20",
+    "applyEnd": "2026-12-18",
+    "url": "https://www.kosaf.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-08",
+    "domain": "parttime",
+    "title": "[예시 공고] 카페 주말 바리스타 아르바이트",
+    "org": "예시 사업장",
+    "region": [],
+    "summary": "민간 알바 공고 예시(합법 API가 없어 시연용). 실제 공고는 고용24에서 확인.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker",
+          "parttime"
+        ],
+        "rawText": "누구나",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-20",
+    "applyEnd": "2026-11-30",
+    "url": "https://www.work24.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-parttime:sample-parttime-09",
+    "domain": "parttime",
+    "title": "[예시 공고] 물류센터 단기 상하차 아르바이트",
+    "org": "예시 사업장",
+    "region": [],
+    "summary": "연말 단기 알바 공고 예시(시연용). 실제 공고는 고용24에서 확인.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "parttime",
+        "rawText": "분야: 알바",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 18,
+        "rawText": "만 18세 이상",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker",
+          "parttime"
+        ],
+        "rawText": "누구나",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-21",
+    "applyEnd": "2026-12-24",
+    "url": "https://www.work24.go.kr/",
+    "source": "sample-parttime",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  }
+]

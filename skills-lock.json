@@ -1,0 +1,77 @@
+{
+  "version": 2,
+  "skills": {
+    "government-support-survey": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "government-support-survey/SKILL.md",
+      "computedHash": "7943789449b31b932ee34c2dcd638d5d811a5940dd241e400030f875ad4bf302",
+      "installMode": "copy"
+    },
+    "housing-subscription-reference": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "housing-subscription-reference/SKILL.md",
+      "computedHash": "6cc613afaa53bae3f7fbd24c5b194fdaa849a7fd9139c55acf0d97c9cfce9246",
+      "installMode": "copy"
+    },
+    "k-skill-setup": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "k-skill-setup/SKILL.md",
+      "computedHash": "d694d0408c74685ea52ef6a8c2e3928ec8b8899cc42a6465bac26525915c2394",
+      "installMode": "copy"
+    },
+    "korean-law-search": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "korean-law-search/SKILL.md",
+      "computedHash": "8258430fbe147bd7d896f295fc3357aaee0e2c6c2579e000db5a83f34aa3617b",
+      "installMode": "copy"
+    },
+    "korean-scholarship-search": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "korean-scholarship-search/SKILL.md",
+      "computedHash": "ed080b1b8fe543b75f0f0e971a5d2ffa5180ccf327e8c5848e2cbed5e9fcf537",
+      "installMode": "copy"
+    },
+    "kosis-stats": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "kosis-stats/SKILL.md",
+      "computedHash": "5557d5af29dc442805655b09d9912e97681c5f0ac308bd5bbdbca75650539b8d",
+      "installMode": "copy"
+    },
+    "kstartup-search": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "kstartup-search/SKILL.md",
+      "computedHash": "4b0e309cead41ed3b0a82f66dd78400fc1fcb74a6b14072fa44e1f089e1cb9e8",
+      "installMode": "copy"
+    },
+    "lh-notice-search": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "lh-notice-search/SKILL.md",
+      "computedHash": "1df30d51af6a4b801ab9fe40e473094ffc0d468aec902806fb779119353ae0ab",
+      "installMode": "copy"
+    },
+    "sh-notice-search": {
+      "source": "NomaDamas/k-skill",
+      "commit": "c41a11703b0ea25b8c5c3c62bd0f06f31997f7f8",
+      "sourceType": "github",
+      "skillPath": "sh-notice-search/SKILL.md",
+      "computedHash": "dba822cc9035f54d7120d5c365b7ec4ff315f64f77bfbc0897cc869de3ef25df",
+      "installMode": "copy"
+    }
+  }
+}

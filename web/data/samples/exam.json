@@ -1,0 +1,233 @@
+[
+  {
+    "id": "qnet:sample-exam-01",
+    "domain": "exam",
+    "title": "정보처리기사 필기 원서접수",
+    "org": "한국산업인력공단",
+    "region": [],
+    "summary": "개발 직무 필수 자격. 필기 CBT.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker",
+          "employed",
+          "parttime"
+        ],
+        "rawText": "4년제 졸업(예정)자 등 응시자격 필요",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-11-27",
+    "url": "https://www.q-net.or.kr/",
+    "source": "qnet",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "qnet:sample-exam-02",
+    "domain": "exam",
+    "title": "정보처리기능사 상시 원서접수",
+    "org": "한국산업인력공단",
+    "region": [],
+    "summary": "응시자격 제한 없는 입문 자격.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-30",
+    "applyEnd": "2026-12-03",
+    "url": "https://www.q-net.or.kr/",
+    "source": "qnet",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "qnet:sample-exam-03",
+    "domain": "exam",
+    "title": "전기기사 필기 원서접수",
+    "org": "한국산업인력공단",
+    "region": [],
+    "summary": "공기업·건설 수요 높은 기사 자격.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker",
+          "employed",
+          "parttime"
+        ],
+        "rawText": "관련학과 졸업(예정)자 등 응시자격 필요",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-11-27",
+    "url": "https://www.q-net.or.kr/",
+    "source": "qnet",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "qnet:sample-exam-04",
+    "domain": "exam",
+    "title": "지게차운전기능사 상시 원서접수",
+    "org": "한국산업인력공단",
+    "region": [],
+    "summary": "물류·제조 취업용 단기 자격.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-07",
+    "applyEnd": "2026-12-10",
+    "url": "https://www.q-net.or.kr/",
+    "source": "qnet",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-exam:sample-exam-05",
+    "domain": "exam",
+    "title": "컴퓨터활용능력 1급 상시검정 접수",
+    "org": "대한상공회의소",
+    "region": [],
+    "summary": "사무직 기본 자격. 상시검정.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-23",
+    "applyEnd": "2026-12-18",
+    "url": "https://license.korcham.net/",
+    "source": "sample-exam",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-exam:sample-exam-06",
+    "domain": "exam",
+    "title": "SQL 개발자(SQLD) 원서접수",
+    "org": "한국데이터산업진흥원",
+    "region": [],
+    "summary": "데이터 직무 입문 자격.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-30",
+    "applyEnd": "2026-12-04",
+    "url": "https://www.dataq.or.kr/",
+    "source": "sample-exam",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-exam:sample-exam-07",
+    "domain": "exam",
+    "title": "데이터분석 준전문가(ADsP) 원서접수",
+    "org": "한국데이터산업진흥원",
+    "region": [],
+    "summary": "데이터 분석 입문 자격.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-07",
+    "applyEnd": "2026-12-11",
+    "url": "https://www.dataq.or.kr/",
+    "source": "sample-exam",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-exam:sample-exam-08",
+    "domain": "exam",
+    "title": "한국사능력검정시험 원서접수",
+    "org": "국사편찬위원회",
+    "region": [],
+    "summary": "공공기관·공무원 가산점 자격.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-14",
+    "applyEnd": "2026-12-21",
+    "url": "https://www.historyexam.go.kr/",
+    "source": "sample-exam",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "sample-exam:sample-exam-09",
+    "domain": "exam",
+    "title": "TOEIC 정기시험 접수",
+    "org": "한국TOEIC위원회",
+    "region": [],
+    "summary": "취업 어학 점수. 정기 접수 마감 전 신청.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "exam",
+        "rawText": "분야: 자격증 일정",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-20",
+    "applyEnd": "2026-12-02",
+    "url": "https://exam.toeic.co.kr/",
+    "source": "sample-exam",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  }
+]

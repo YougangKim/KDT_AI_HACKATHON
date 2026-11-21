@@ -1,0 +1,475 @@
+[
+  {
+    "id": "gov24:sample-benefit-01",
+    "domain": "benefit",
+    "title": "청년도약계좌",
+    "org": "금융위원회·서민금융진흥원",
+    "region": [],
+    "summary": "5년 만기, 매월 최대 70만원 납입 시 정부기여금과 비과세 혜택.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 250,
+        "rawText": "가구 기준중위소득 250% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-01",
+    "applyEnd": "2026-12-12",
+    "url": "https://ylaccount.kinfa.or.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-benefit-02",
+    "domain": "benefit",
+    "title": "청년내일저축계좌",
+    "org": "보건복지부",
+    "region": [],
+    "summary": "일하는 저소득 청년이 월 10만원 저축 시 정부가 월 10만~30만원 추가 적립.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "employed",
+          "parttime"
+        ],
+        "rawText": "근로·사업소득이 있는 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 100,
+        "rawText": "가구 기준중위소득 100% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-02",
+    "applyEnd": "2026-11-30",
+    "url": "https://www.bokjiro.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "youthcenter:sample-benefit-03",
+    "domain": "benefit",
+    "title": "서울 청년수당",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "미취업 청년에게 월 50만원×6개월 활동지원금.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "jobseeker"
+        ],
+        "rawText": "미취업 또는 단기근로 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 150,
+        "rawText": "가구 기준중위소득 150% 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-23",
+    "applyEnd": "2026-12-04",
+    "url": "https://youth.seoul.go.kr/",
+    "source": "youthcenter",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "youthcenter:sample-benefit-04",
+    "domain": "benefit",
+    "title": "경기도 청년기본소득",
+    "org": "경기도",
+    "region": [
+      "경기"
+    ],
+    "summary": "경기도 거주 만 24세 청년에게 분기별 지역화폐 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "경기"
+        ],
+        "rawText": "경기 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 24,
+        "rawText": "만 24세",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 24,
+        "rawText": "만 24세",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-11-30",
+    "url": "https://www.gg.go.kr/",
+    "source": "youthcenter",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-benefit-05",
+    "domain": "benefit",
+    "title": "K-패스 청년 대중교통비 환급",
+    "org": "국토교통부",
+    "region": [],
+    "summary": "월 15회 이상 대중교통 이용 시 교통비 30% 환급(청년).",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://korea-pass.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-benefit-06",
+    "domain": "benefit",
+    "title": "기후동행카드 청년 할인",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "서울 대중교통 무제한 정기권 청년 7천원 할인.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://www.seoul.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-benefit-07",
+    "domain": "benefit",
+    "title": "청년문화예술패스",
+    "org": "문화체육관광부",
+    "region": [],
+    "summary": "공연·전시 관람비 최대 15만원 지원.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19~20세(연도별 상이)",
+        "confidence": "low"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 20,
+        "rawText": "만 19~20세(연도별 상이)",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-10",
+    "applyEnd": "2026-12-15",
+    "url": "https://www.culture.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-benefit-08",
+    "domain": "benefit",
+    "title": "국가장학금 2027-1학기 신청",
+    "org": "한국장학재단",
+    "region": [],
+    "summary": "소득구간별 등록금 지원 장학금.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student"
+        ],
+        "rawText": "국내 대학 재학생·신입생",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 200,
+        "rawText": "학자금 지원구간 9구간 이하",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-12-29",
+    "url": "https://www.kosaf.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-benefit-09",
+    "domain": "benefit",
+    "title": "청년 마음건강 지원사업",
+    "org": "보건복지부",
+    "region": [],
+    "summary": "전문 심리상담 바우처 10회 지원.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 19세 이상 34세 이하",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-20",
+    "url": "https://www.bokjiro.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "youthcenter:sample-benefit-10",
+    "domain": "benefit",
+    "title": "서울 희망두배 청년통장",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "근로 청년 저축액만큼 서울시가 1:1 매칭 적립.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "benefit",
+        "rawText": "분야: 지원금·혜택",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 18,
+        "rawText": "만 18세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 18세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "employed",
+          "parttime"
+        ],
+        "rawText": "근로 중인 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 140,
+        "rawText": "본인 월소득 255만원 이하·부모 기준중위소득 100% 이하",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-30",
+    "applyEnd": "2026-12-11",
+    "url": "https://youth.seoul.go.kr/",
+    "source": "youthcenter",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  }
+]

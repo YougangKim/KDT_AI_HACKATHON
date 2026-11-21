@@ -1,0 +1,39 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node D:/KDT_AI_HACKATHON/.ai-sync/bridge.mjs codex",
+            "timeout": 10,
+            "additionalContextLimit": 5000
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node D:/KDT_AI_HACKATHON/.ai-sync/bridge.mjs codex",
+            "timeout": 10,
+            "additionalContextLimit": 5000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node D:/KDT_AI_HACKATHON/.ai-sync/bridge.mjs codex",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

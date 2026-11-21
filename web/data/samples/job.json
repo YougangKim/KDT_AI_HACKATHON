@@ -1,0 +1,420 @@
+[
+  {
+    "id": "jobalio:sample-job-01",
+    "domain": "job",
+    "title": "한국전력공사 체험형 청년인턴 모집",
+    "org": "한국전력공사",
+    "region": [],
+    "summary": "공공기관 체험형 인턴 4개월. 서류·면접 전형.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자(졸업예정자 포함)",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-18",
+    "applyEnd": "2026-12-01",
+    "url": "https://job.alio.go.kr/recruit.do",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "jobalio:sample-job-02",
+    "domain": "job",
+    "title": "국민건강보험공단 체험형 인턴",
+    "org": "국민건강보험공단",
+    "region": [],
+    "summary": "전국 지사 행정 체험형 인턴.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-20",
+    "applyEnd": "2026-12-03",
+    "url": "https://job.alio.go.kr/recruit.do",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "jobalio:sample-job-03",
+    "domain": "job",
+    "title": "한국철도공사(코레일) 체험형 인턴",
+    "org": "한국철도공사",
+    "region": [],
+    "summary": "역무·사무 체험형 인턴 5개월.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 18,
+        "rawText": "만 34세 이하 청년",
+        "confidence": "low"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 34세 이하 청년",
+        "confidence": "low"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-24",
+    "applyEnd": "2026-12-08",
+    "url": "https://job.alio.go.kr/recruit.do",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "jobalio:sample-job-04",
+    "domain": "job",
+    "title": "한국토지주택공사 신입직원(5급) 공개채용",
+    "org": "한국토지주택공사",
+    "region": [],
+    "summary": "사무·기술직 정규직 신입 공채. NCS 필기.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker",
+          "employed",
+          "parttime"
+        ],
+        "rawText": "제한 없음(졸업예정자 지원 가능)",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-23",
+    "applyEnd": "2026-12-04",
+    "url": "https://job.alio.go.kr/recruit.do",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "jobalio:sample-job-05",
+    "domain": "job",
+    "title": "한국수자원공사 청년인턴(체험형)",
+    "org": "한국수자원공사",
+    "region": [],
+    "summary": "본사·지사 체험형 인턴.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-27",
+    "applyEnd": "2026-12-11",
+    "url": "https://job.alio.go.kr/recruit.do",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "jobalio:sample-job-06",
+    "domain": "job",
+    "title": "인천국제공항공사 체험형 인턴",
+    "org": "인천국제공항공사",
+    "region": [],
+    "summary": "공항 운영 부서 체험형 인턴.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업자",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-12-01",
+    "applyEnd": "2026-12-14",
+    "url": "https://job.alio.go.kr/recruit.do",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "work24-training:sample-job-07",
+    "domain": "job",
+    "title": "청년 일경험 지원사업(인턴형·프로젝트형)",
+    "org": "고용노동부",
+    "region": [],
+    "summary": "기업 인턴·프로젝트 참여 시 참여수당 지급.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 15,
+        "rawText": "만 15세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 15세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://www.work24.go.kr/",
+    "source": "work24-training",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "youthcenter:sample-job-08",
+    "domain": "job",
+    "title": "서울시 청년인턴 직무캠프",
+    "org": "서울특별시",
+    "region": [
+      "서울"
+    ],
+    "summary": "서울 청년을 민간기업 인턴으로 연결, 3개월 근무.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "region",
+        "op": "in",
+        "value": [
+          "서울"
+        ],
+        "rawText": "서울 거주자",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 19,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 39,
+        "rawText": "만 19세 이상 39세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-21",
+    "applyEnd": "2026-12-05",
+    "url": "https://youth.seoul.go.kr/",
+    "source": "youthcenter",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "gov24:sample-job-09",
+    "domain": "job",
+    "title": "국민취업지원제도(청년 특례)",
+    "org": "고용노동부",
+    "region": [],
+    "summary": "구직촉진수당 월 50만원×6개월과 취업지원서비스.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 18,
+        "rawText": "만 18세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 18세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "jobseeker"
+        ],
+        "rawText": "구직 중인 청년",
+        "confidence": "high"
+      },
+      {
+        "attr": "incomePct",
+        "op": "lte",
+        "value": 120,
+        "rawText": "가구 기준중위소득 120% 이하(청년은 소득 무관 2유형 가능)",
+        "confidence": "low"
+      }
+    ],
+    "applyStart": "2026-11-01",
+    "applyEnd": "2026-12-31",
+    "url": "https://www.kua.go.kr/",
+    "source": "gov24",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  },
+  {
+    "id": "jobalio:sample-job-10",
+    "domain": "job",
+    "title": "행정안전부 청년인턴(나라일터)",
+    "org": "행정안전부",
+    "region": [],
+    "summary": "중앙부처 행정 청년인턴 6개월.",
+    "conditions": [
+      {
+        "attr": "interest",
+        "op": "eq",
+        "value": "job",
+        "rawText": "분야: 채용·인턴",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "gte",
+        "value": 18,
+        "rawText": "만 18세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "age",
+        "op": "lte",
+        "value": 34,
+        "rawText": "만 18세 이상 34세 이하",
+        "confidence": "high"
+      },
+      {
+        "attr": "employment",
+        "op": "in",
+        "value": [
+          "student",
+          "jobseeker"
+        ],
+        "rawText": "미취업 청년",
+        "confidence": "high"
+      }
+    ],
+    "applyStart": "2026-11-26",
+    "applyEnd": "2026-12-10",
+    "url": "https://www.gojobs.go.kr/",
+    "source": "jobalio",
+    "isSample": true,
+    "fetchedAt": "2026-11-21T00:00:00+09:00"
+  }
+]
