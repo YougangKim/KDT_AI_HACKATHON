@@ -121,13 +121,13 @@ export default function SettingsPage() {
         <Link href="/play" className="text-sm text-indigo-700 underline">질문 다시 하기</Link>
       </header>
 
-      <section className="space-y-3 rounded-2xl bg-indigo-50 p-4">
+      <section className="app-card space-y-3 border-indigo-100 bg-indigo-50 p-4">
         <h2 className="font-semibold">내 조건</h2>
         <p className="text-sm font-medium leading-relaxed">{summarizeConditions(watch.answers)}</p>
         <ConditionEditor answers={watch.answers} onChange={updateAnswer} />
       </section>
 
-      <section className="space-y-2 rounded-2xl bg-white p-4 shadow-sm">
+      <section className="app-card space-y-2 p-4">
         <h2 className="font-semibold">관심 분야</h2>
         <div className="grid grid-cols-2 gap-2">
           {DOMAINS.map((domain) => {
@@ -150,7 +150,7 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
+      <section className="app-card p-4">
         <LocationStep
           settings
           initial={watch.location}
@@ -166,7 +166,7 @@ export default function SettingsPage() {
         />
       </section>
 
-      <section className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+      <section className="app-card space-y-3 p-4">
         <h2 className="font-semibold">알림 일정</h2>
         <div className="grid grid-cols-3 gap-2">
           {[

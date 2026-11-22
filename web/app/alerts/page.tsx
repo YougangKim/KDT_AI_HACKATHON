@@ -88,14 +88,14 @@ export default function AlertsPage() {
         <Link href="/" className="text-sm text-slate-500">
           ← 처음으로
         </Link>
-        <h1 className="text-lg font-bold">🔔 내 알림</h1>
+        <h1 className="text-lg font-bold">내 알림</h1>
         <Link href="/settings" className="text-sm text-indigo-700">
           ⚙️ 설정
         </Link>
       </header>
 
       {watch && (
-        <section className="space-y-2 rounded-2xl bg-indigo-50 p-4 text-sm text-slate-900">
+        <section className="app-card space-y-2 border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-900">
           <h2 className="font-semibold">🔎 반복 리서치 현황</h2>
           <dl className="grid grid-cols-[6.5rem_1fr] gap-y-1">
             <dt className="text-slate-500">조사 주기</dt>
@@ -144,7 +144,7 @@ export default function AlertsPage() {
         </section>
       )}
 
-      <section className="space-y-2 rounded-2xl bg-white p-4 text-slate-900 shadow-sm">
+      <section className="app-card space-y-2 p-4 text-slate-900">
         <h2 className="font-semibold">저장한 조건</h2>
         {!watch ? (
           <p className="text-sm text-slate-500">

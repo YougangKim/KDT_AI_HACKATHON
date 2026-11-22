@@ -37,7 +37,7 @@ export function MatchCard({
       data-highlighted={highlighted ? "true" : undefined}
       data-summary-ms={summaryMs === undefined ? undefined : Math.round(summaryMs)}
       style={{ borderLeftColor: meta.color }}
-      className={`space-y-3 rounded-2xl border-l-4 bg-white p-4 text-slate-900 shadow-sm transition ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
+      className={`app-card space-y-4 border-l-4 p-4 text-slate-900 ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
     >
       <header className="flex items-start gap-3">
         <span className="text-3xl" aria-hidden>
@@ -55,7 +55,7 @@ export function MatchCard({
               <span className="rounded bg-orange-100 px-1.5 py-0.5 text-orange-800">확인 필요</span>
             )}
           </div>
-          <h2 className="font-semibold leading-snug">{o.title}</h2>
+          <h2 className="text-base font-bold leading-snug">{o.title}</h2>
           <p className="text-xs text-slate-500">{o.org}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-bold ${ddayClass(o.applyEnd)}`}>
@@ -64,7 +64,7 @@ export function MatchCard({
       </header>
 
       {(aiSummary?.summary || o.summary) && (
-        <section className="text-sm text-slate-700">
+        <section className="rounded-xl bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">
           <h3 className="font-semibold text-slate-800">📝 요약</h3>
           <p>
             {aiSummary && <span className="mr-1 rounded bg-violet-100 px-1 text-[10px] text-violet-700">AI 요약</span>}
@@ -107,7 +107,7 @@ export function MatchCard({
         href={o.apply?.url || o.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block rounded-xl border border-slate-200 py-2 text-center text-sm font-medium text-indigo-700"
+        className="block min-h-11 content-center rounded-xl bg-indigo-600 px-4 py-2 text-center text-sm font-bold text-white"
       >
         신청 페이지 열기 ↗
       </a>

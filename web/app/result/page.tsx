@@ -260,7 +260,7 @@ export default function ResultPage() {
       </header>
 
       <div>
-        <h1 className="text-2xl font-bold">📰 딱 맞는 공고예요</h1>
+        <h1 className="text-2xl font-bold">딱 맞는 공고를 찾았어요</h1>
         <p className="text-sm text-slate-500">
           전체 {selectedMatches.length}개 · 바로 신청 {eligible}개
         </p>

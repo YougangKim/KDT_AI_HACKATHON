@@ -12,6 +12,7 @@ import { readLastResult } from "@/components/result/lastResult";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { nearestRegion } from "@/lib/geo/regions";
 import type { Answer, AnswerRecord, Domain, Opportunity, Question } from "@/lib/types";
+import { LogoSymbol } from "@/components/brand/Logo";
 
 const DOMAIN_NAME: Record<string, string> = { housing: "청년 주택", benefit: "지원금·혜택", job: "채용·인턴", parttime: "알바·단기직", training: "국비 과정", exam: "자격증 일정" };
 type LocationStage = "location" | "questions";
@@ -365,7 +366,10 @@ export default function PlayPage() {
   if (!state || !view) {
     return (
       <main className="flex flex-1 items-center justify-center text-slate-500">
-        <span className={styles.orb}>📰</span>&nbsp;공고를 모으는 중…
+        <span className={styles.loader}>
+          <span className="signal-loader"><LogoSymbol className="h-5 w-5 text-indigo-600" /></span>
+          공고를 모으는 중…
+        </span>
       </main>
     );
   }
@@ -419,13 +423,14 @@ export default function PlayPage() {
         </section>
       ) : view.done ? (
         <section className={`${styles.cardIn} flex flex-1 items-center justify-center text-sm text-slate-500`}>
-          <span className={styles.orb}>📰</span>&nbsp;결과를 정리하는 중…
+          <span className={styles.loader}>
+            <span className="signal-loader"><LogoSymbol className="h-5 w-5 text-indigo-600" /></span>
+            결과를 정리하는 중…
+          </span>
         </section>
       ) : skippedPicker ? (
         <section className={`${styles.cardIn} flex flex-1 flex-col items-center justify-center gap-3 text-center`}>
-          <p className="text-5xl">
-            <span className={styles.orb}>📰</span>
-          </p>
+          <span className="signal-loader"><LogoSymbol className="h-5 w-5 text-indigo-600" /></span>
           <p className="text-xl font-bold">
             {view.left > 0 ? `${view.left}개로 좁혔어요!` : "딱 맞는 공고를 못 찾았어요"}
           </p>
@@ -433,12 +438,15 @@ export default function PlayPage() {
         </section>
       ) : view.waiting ? (
         <section className="flex flex-1 items-center justify-center text-sm text-slate-500">
-          <span className={styles.orb}>📰</span>&nbsp;다음 질문을 고르는 중…
+          <span className={styles.loader}>
+            <span className="signal-loader"><LogoSymbol className="h-5 w-5 text-indigo-600" /></span>
+            다음 질문을 고르는 중…
+          </span>
         </section>
       ) : (
         view.q && (
           <section key={view.q.id} className={`${styles.cardIn} flex flex-1 flex-col justify-center gap-8`}>
-            <div className="space-y-3 rounded-3xl bg-white p-6 text-center text-slate-900 shadow-sm">
+            <div className="app-card space-y-4 p-6 text-center text-slate-900">
               <p className="text-sm font-medium text-indigo-500">
                 질문 {view.asked + 1} / 약 {limit}
               </p>
@@ -464,7 +472,7 @@ export default function PlayPage() {
                         disabled={finishing}
                         aria-pressed={view.choice!.multi ? on : undefined}
                         onClick={() => (view.choice!.multi ? setSelected(on ? selected.filter((x) => x !== o.label) : [...selected, o.label]) : pick(o.picks))}
-                        className={`rounded-xl px-1 py-3 text-base font-semibold shadow-sm ring-1 active:scale-95 break-keep ${on ? "bg-indigo-600 text-white ring-indigo-600" : "bg-white text-slate-900 ring-slate-200"}`}
+                        className={`min-h-12 rounded-xl px-2 py-3 text-base font-semibold shadow-sm ring-1 active:scale-[0.98] break-keep ${on ? "bg-indigo-600 text-white ring-indigo-600" : "bg-white text-slate-900 ring-slate-200"}`}
                       >
                         {o.label}
                       </button>

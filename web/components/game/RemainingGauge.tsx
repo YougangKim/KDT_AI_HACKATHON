@@ -26,7 +26,7 @@ export default function RemainingGauge({ remaining, total }: { remaining: number
   }, [remaining]);
 
   const pct = total > 0 ? Math.max(4, (remaining / total) * 100) : 0;
-  const color = remaining <= 5 ? "bg-emerald-500" : remaining <= total / 2 ? "bg-indigo-500" : "bg-indigo-300";
+  const bars = Math.max(1, Math.ceil((pct / 100) * 5));
 
   return (
     <div className="space-y-2" aria-live="polite">
@@ -42,8 +42,14 @@ export default function RemainingGauge({ remaining, total }: { remaining: number
           )}
         </span>
       </div>
-      <div className="h-3 overflow-hidden rounded-full bg-slate-200">
-        <div className={`${styles.bar} h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+      <div className="flex h-3 items-end gap-1" aria-hidden>
+        {[1, 2, 3, 4, 5].map((bar) => (
+          <span
+            key={bar}
+            className={`${styles.signalBar} flex-1 rounded-full ${bar <= bars ? "bg-indigo-600" : "bg-slate-200"}`}
+            style={{ height: `${35 + bar * 13}%` }}
+          />
+        ))}
       </div>
     </div>
   );

@@ -48,7 +48,7 @@ export function pushSummary(fresh: Opportunity[], changes: Pick<Changes, "change
 
 export function digestSummary(total: number, deadlineSoon: number) {
   return {
-    title: "마이뉴스 정기 요약",
+    title: "My News 정기 요약",
     body: `오늘 조건에 맞는 공고 ${total}개, 마감 임박 ${deadlineSoon}개`,
   };
 }

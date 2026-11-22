@@ -1,7 +1,7 @@
 @keyframes cardIn {
   from {
     opacity: 0;
-    transform: translateY(16px) scale(0.97);
+    transform: translateX(12px);
   }
   to {
     opacity: 1;
@@ -9,7 +9,7 @@
   }
 }
 .cardIn {
-  animation: cardIn 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: cardIn var(--motion-normal) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 @keyframes dropPop {
@@ -30,31 +30,21 @@
   animation: dropPop 1100ms ease-out forwards;
 }
 
-@keyframes orb {
-  0%,
-  100% {
-    transform: translateY(0) rotate(-4deg);
-  }
-  50% {
-    transform: translateY(-6px) rotate(4deg);
-  }
+.loader {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
 }
-.orb {
-  display: inline-block;
-  animation: orb 2.4s ease-in-out infinite;
-}
-
-.bar {
-  transition: width 600ms cubic-bezier(0.2, 0.8, 0.2, 1), background-color 600ms;
+.signalBar {
+  transition: background-color var(--motion-normal), height var(--motion-normal);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cardIn,
-  .dropPop,
-  .orb {
+  .dropPop {
     animation: none;
   }
-  .bar {
+  .signalBar {
     transition: none;
   }
 }

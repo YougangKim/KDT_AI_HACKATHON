@@ -51,7 +51,7 @@ describe("scanOne digest", () => {
 
     expect(sendNotification).toHaveBeenCalledOnce();
     expect(JSON.parse(sendNotification.mock.calls[0][1])).toMatchObject({
-      title: "마이뉴스 정기 요약",
+      title: "My News 정기 요약",
       body: "오늘 조건에 맞는 공고 1개, 마감 임박 1개",
     });
   });

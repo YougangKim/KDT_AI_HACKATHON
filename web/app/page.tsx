@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { Domain } from "@/lib/types";
+import { Logo } from "@/components/brand/Logo";
+import { Splash } from "@/components/brand/Splash";
 
 const DOMAINS: { id: Domain; emoji: string; label: string }[] = [
   { id: "housing", emoji: "🏠", label: "청년 주택" },
@@ -35,13 +37,12 @@ export default function Home() {
 
   return (
     <main className="flex flex-1 flex-col justify-center gap-7 py-10">
-      <div className="space-y-3 text-center">
-        <p className="text-5xl" aria-hidden>
-          📰
-        </p>
-        <h1 className="text-3xl font-bold">마이뉴스</h1>
-        <p className="text-sm font-semibold text-indigo-600">나에게 맞는 청년 공고만 모아 보는 뉴스</p>
-        <p className="text-lg font-semibold leading-snug text-slate-700 break-keep">
+      <Splash />
+      <div className="space-y-4 text-center">
+        <h1>
+          <Logo className="justify-center" symbolClassName="h-11 w-11" />
+        </h1>
+        <p className="text-lg font-semibold leading-relaxed text-slate-700 break-keep">
           질문 몇 개로 조건을 저장하면,
           <br />
           연결된 출처를 매일 다시 조회해서
@@ -50,7 +51,7 @@ export default function Home() {
         </p>
       </div>
 
-      <section className="space-y-2">
+      <section className="app-card space-y-3 p-4">
         <p className="text-center text-sm font-semibold text-slate-600">무엇을 찾고 있나요? (여러 개 선택)</p>
         <ul className="grid grid-cols-3 gap-2 text-center text-sm">
           {DOMAINS.map((d) => {
@@ -64,8 +65,8 @@ export default function Home() {
                   aria-pressed={on}
                   disabled={empty}
                   onClick={() => toggle(d.id)}
-                  className={`w-full rounded-xl p-3 shadow-sm transition ${
-                    on ? "bg-indigo-600 text-white ring-2 ring-indigo-300" : "bg-white text-slate-800"
+                  className={`min-h-24 w-full rounded-xl p-3 font-semibold shadow-sm ${
+                    on ? "bg-indigo-600 text-white ring-2 ring-indigo-300" : "bg-slate-50 text-slate-800 ring-1 ring-slate-200"
                   } disabled:opacity-40`}
                 >
                   <span className="block text-2xl" aria-hidden>
@@ -85,7 +86,7 @@ export default function Home() {
         <button
           type="button"
           onClick={start}
-          className="block w-full rounded-2xl bg-indigo-600 py-4 text-center text-lg font-semibold text-white shadow active:scale-95"
+          className="block min-h-14 w-full rounded-2xl bg-indigo-600 py-4 text-center text-lg font-bold text-white shadow-lg shadow-indigo-200 active:scale-[0.98]"
         >
           {picked.length ? `${picked.length}개 분야로 시작하기` : "30초 만에 시작하기"}
         </button>

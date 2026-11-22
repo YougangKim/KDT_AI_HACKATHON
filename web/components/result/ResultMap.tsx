@@ -132,14 +132,14 @@ export const ResultMap = forwardRef<ResultMapHandle, {
   }, [matches, location, onSelect]);
 
   return (
-    <section aria-label="결과 지도" className="space-y-2">
-      <div ref={element} data-testid="result-map" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />
+    <section aria-label="결과 지도" className="app-card space-y-3 overflow-hidden p-3">
+      <div ref={element} data-testid="result-map" className="h-[280px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />
       <p className="text-xs text-slate-500">
         진한 핀은 정확한 위치, 연한 핀은 근사 위치예요. 시·도 단위 공고는 묶어서 표시해요.
       </p>
-      <ul aria-label="지도 분야 범례" className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+      <ul aria-label="지도 분야 범례" className="flex flex-wrap gap-2 text-xs text-slate-600">
         {Object.entries(DOMAIN_META).filter(([domain]) => matches.some((match) => match.opportunity.domain === domain)).map(([domain, meta]) => (
-          <li key={domain} className="flex items-center gap-1">
+          <li key={domain} className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1">
             <span aria-hidden style={{ color: meta.color }}>●</span>{meta.emoji} {meta.label}
           </li>
         ))}

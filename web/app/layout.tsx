@@ -4,8 +4,8 @@ import { AlertBell } from "@/components/result/AlertBell";
 import { AlertPolling } from "@/components/AlertPolling";
 
 export const metadata: Metadata = {
-  title: "마이뉴스 | 나에게 맞는 청년 공고 소식",
-  description: "예·아니오만 답하면 지금 받을 수 있는 청년 주택·지원금·일자리를 맞혀 주고, 새 공고가 뜨면 알려 드려요.",
+  title: "My News | 나만의 소식통",
+  description: "질문에 답하면 나에게 맞는 주택·지원금·일자리 공고를 찾고, 새로운 소식을 알려 드려요.",
   manifest: "/manifest.json",
 };
 
@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
-        <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
+        <div className="app-shell mx-auto flex min-h-dvh max-w-md flex-col px-4">
           <AlertPolling />
           <header className="flex justify-end pt-2">
             <AlertBell />
