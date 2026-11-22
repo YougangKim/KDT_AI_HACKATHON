@@ -15,7 +15,7 @@ type GeocodeRequest = { endpoint: "address" | "keyword"; query: string; precisio
 const cache = new Map<string, Geo | null>();
 const MAX_NEW_LOOKUPS = 150;
 const CONCURRENCY = 4;
-const GEOCODE_VERSION = "kakao-v1";
+const GEOCODE_VERSION = "kakao-v2";
 
 export function _clearGeocodeCache() {
   cache.clear();
@@ -32,6 +32,17 @@ export function housingKeyword(title: string): string {
     .replace(/(?:입주자|예비입주자)?\s*모집(?:공고)?[\s\S]*$/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+/** 단지명 검색어 후보: 전체 → 첫 단지(쉼표 앞) → 앞 두 단어 → 첫 단어+단지/주택 유형. 긴 제목은 카카오가 못 찾는다 */
+export function housingQueries(title: string): string[] {
+  const full = housingKeyword(title).replace(/^['’]?\d{2}년\s*\d{1,2}월\s*/, "").replace(/(입주자격\s*완화|자격\s*완화|동호지정|선착순|정정공고|예비)\s*/g, "").trim();
+  if (!full) return [];
+  const first = full.split(/[,·]/)[0].trim();
+  const words = first.split(/\s+/);
+  const kind = full.match(/(행복주택|국민임대|영구임대|매입임대|전세임대|공공임대|창업지원주택|신혼희망타운)/)?.[1];
+  const out = [full, first, words.slice(0, 2).join(" "), kind && words[0] !== kind ? `${words[0]} ${kind}` : ""];
+  return [...new Set(out.filter((q) => q && q.length >= 3))].slice(0, 4);
 }
 
 export function branchKeyword(title: string): string | null {
@@ -65,8 +76,7 @@ function requestsFor(opportunity: Opportunity): GeocodeRequest[] {
     return query ? [{ endpoint: "address", query, precision: "exact" }] : [];
   }
   if (opportunity.source === "lh-notice" || opportunity.source === "myhome") {
-    const query = housingKeyword(opportunity.title);
-    return query ? [{ endpoint: "keyword", query, precision: "approx" }] : [];
+    return housingQueries(opportunity.title).map((query) => ({ endpoint: "keyword" as const, query, precision: "approx" as const }));
   }
   if (opportunity.source === "jobalio") {
     const branch = branchKeyword(opportunity.title);
@@ -158,17 +168,19 @@ async function geocodeOne(opportunity: Opportunity, key: string): Promise<Geo | 
   return fallback(opportunity);
 }
 
-/** 한 번의 수집 호출에서 신규 Kakao 조회를 150건까지만, 동시에 4건씩 수행한다. */
-export async function attachGeo(items: Opportunity[]): Promise<Opportunity[]> {
+/** 한 번의 수집 호출에서 신규 Kakao 조회를 maxLookups건(기본 150)까지만, 동시에 4건씩 수행한다. 주택·채용을 먼저. */
+export async function attachGeo(items: Opportunity[], maxLookups = MAX_NEW_LOOKUPS): Promise<Opportunity[]> {
   const key = process.env.KAKAO_REST_API_KEY;
   if (!key) return items.map((item) => ({ ...item, geo: item.geo ?? fallback(item) }));
 
-  let budget = MAX_NEW_LOOKUPS;
-  let next = 0;
+  let budget = maxLookups;
+  // 주택·채용처럼 위치가 중요한 공고부터 조회하고, 수가 많은 정부24(지자체 단위)는 마지막에
+  const order = items.map((_, i) => i).sort((a, b) => Number(items[a].source === "gov24") - Number(items[b].source === "gov24"));
+  let cursor = 0;
   const output = [...items];
   const worker = async () => {
-    while (next < items.length) {
-      const index = next++;
+    while (cursor < order.length) {
+      const index = order[cursor++];
       const item = items[index];
       const requests = requestsFor(item);
       const request = requests[0];

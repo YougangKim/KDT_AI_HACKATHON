@@ -194,7 +194,8 @@ export async function collectLiveOpportunities(
     out.push(o);
   }
   const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
-  return attachGeo(attachPlaces(deduped));
+  // 일괄 수집은 시간 여유가 있으니 카카오 좌표 조회를 넉넉히(무료 한도 일 10만 회 안쪽)
+  return attachGeo(attachPlaces(deduped), opts.full ? 3000 : undefined);
 }
 
 /** 분야별 공고를 모은다. fixture는 기존 경로, 운영 요청은 저장된 공고 풀을 우선한다. */
