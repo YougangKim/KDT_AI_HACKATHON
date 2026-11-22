@@ -19,6 +19,8 @@ export function LocationStep({
   const markerRef = useRef<import("leaflet").Marker | null>(null);
   const circleRef = useRef<import("leaflet").Circle | null>(null);
   const [point, setPoint] = useState<{ lat: number; lng: number } | null>(initial ?? null);
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
   const [radiusKm, setRadiusKm] = useState<number | null | undefined>(initial?.radiusKm);
   const [error, setError] = useState("");
 
@@ -64,6 +66,22 @@ export function LocationStep({
     });
   }, [point, radiusKm]);
 
+  // 주소 검색: 서버 /api/geocode(카카오 키가 있으면 카카오, 없으면 오픈스트리트맵 Nominatim)
+  async function searchAddress() {
+    setSearching(true);
+    setError("");
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query.trim())}`);
+      const d = (await res.json()) as { lat?: number; lng?: number; label?: string };
+      if (typeof d.lat === "number" && typeof d.lng === "number") setPoint({ lat: d.lat, lng: d.lng });
+      else setError("주소를 찾지 못했어요. 시·구·동까지 넣거나 지도에서 직접 찍어 주세요.");
+    } catch {
+      setError("주소 검색에 실패했어요. 지도에서 직접 찍어 주세요.");
+    } finally {
+      setSearching(false);
+    }
+  }
+
   function useGps() {
     if (!navigator.geolocation) {
       setError("이 브라우저에서는 현재 위치를 사용할 수 없어요. 지도에서 직접 찍어 주세요.");
@@ -88,6 +106,25 @@ export function LocationStep({
       <button type="button" onClick={useGps} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white">
         📍 현재 위치 사용
       </button>
+
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void searchAddress();
+        }}
+      >
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="주소나 장소 검색 (예: 서울시청, 강남구 역삼동)"
+          aria-label="주소 검색"
+          className="min-h-11 flex-1 rounded-xl px-3 text-sm ring-1 ring-slate-300"
+        />
+        <button type="submit" disabled={searching || !query.trim()} className="min-h-11 rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white disabled:opacity-40">
+          {searching ? "찾는 중" : "검색"}
+        </button>
+      </form>
 
       <div ref={mapElement} data-testid="location-map" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />
       <p className="text-center text-sm text-slate-600">또는 지도에서 원하는 위치를 직접 눌러 주세요.</p>

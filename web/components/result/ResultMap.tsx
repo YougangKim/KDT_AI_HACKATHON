@@ -45,7 +45,7 @@ export const ResultMap = forwardRef<ResultMapHandle, {
         L.marker([location.lat, location.lng], {
           icon: L.divIcon({ className: "", html: '<span class="map-pin">나</span>', iconSize: [26, 26] }),
         }).addTo(map).bindPopup("내 위치");
-        if (location.radiusKm !== null) {
+        if (typeof location.radiusKm === "number") {
           L.circle([location.lat, location.lng], {
             radius: location.radiusKm * 1000,
             color: "#4f46e5",
