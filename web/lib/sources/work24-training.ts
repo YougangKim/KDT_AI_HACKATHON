@@ -44,10 +44,20 @@ export const work24Training: SourceAdapter = {
   id: "work24-training",
   domains: ["training"],
   envKey: "WORK24_TRAINING_KEY",
-  async fetch(now) {
+  async fetch(now, options = {}) {
     const key = process.env.WORK24_TRAINING_KEY!;
-    const end = new Date(now.getTime() + 60 * 86400_000);
-    const url = `${ENDPOINT}?authKey=${encodeURIComponent(key)}&returnType=JSON&outType=1&pageNum=1&pageSize=50&srchTraStDt=${ymd(now)}&srchTraEndDt=${ymd(end)}&sort=ASC&sortCol=TRNG_BGDE`;
-    return mapWork24Training(await fetchJson(url), now);
+    // 모집 마감을 개강 전날로 보므로 이틀 뒤부터 개강하는 과정만. 하루 3천여 건이라 날짜별로 100건씩 고르게 담는다
+    // (일괄 수집: 2~11일 뒤 10일치 = 최대 1,000건, 화면 폴백: 2일 뒤 50건)
+    const days = options.full ? 10 : 1;
+    const size = options.full ? 100 : 50;
+    const urls = Array.from({ length: days }, (_, i) => {
+      const day = ymd(new Date(now.getTime() + (i + 2) * 86400_000));
+      return `${ENDPOINT}?authKey=${encodeURIComponent(key)}&returnType=JSON&outType=1&pageNum=1&pageSize=${size}&srchTraStDt=${day}&srchTraEndDt=${day}&sort=ASC&sortCol=TRNG_BGDE`;
+    });
+    const lists = await Promise.all(urls.map((u) => {
+      options.onRequest?.();
+      return fetchJson(u, 15000).then((raw) => mapWork24Training(raw, now)).catch(() => [] as Opportunity[]);
+    }));
+    return lists.flat();
   },
 };
