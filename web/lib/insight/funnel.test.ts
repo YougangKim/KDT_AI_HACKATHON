@@ -437,4 +437,20 @@ describe("summarizeConditions", () => {
       "조건을 아직 정하지 않은 청년",
     );
   });
+
+  it("청약·신혼·복지·경력·학력·직무·지원·주거 형태를 요약한다", () => {
+    const answers = [
+      answer(question("subscription", "eq", true, "청약통장이 있나요?"), "yes"),
+      answer(question("married", "eq", true, "신혼부부인가요?"), "no"),
+      answer(question("welfare", "eq", true, "수급자인가요?"), "yes"),
+      answer(question("experienced", "eq", true, "경력이 있나요?"), "no"),
+      answer(question("education", "eq", 3, "최종 학력은?"), "yes"),
+      answer(question("field", "in", ["사무", "IT"], "관심 직무는?"), "yes"),
+      answer(question("need", "in", ["주거·자립"], "필요한 지원은?"), "yes"),
+      answer(question("housingKind", "eq", "rent", "어떤 집을 찾나요?"), "yes"),
+    ];
+    expect(summarizeConditions(answers)).toContain("청약통장 가입");
+    expect(summarizeConditions(answers)).toContain("직무: 사무·IT");
+    expect(summarizeConditions(answers)).toContain("주거 형태: 임대");
+  });
 });

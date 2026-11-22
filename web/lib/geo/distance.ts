@@ -25,14 +25,28 @@ export function opportunityDistance(location: UserLocation, opportunity: Opportu
   return geo && geo.precision !== "region" ? distanceKm(location, geo) : null;
 }
 
+/** 결과 화면과 알림 서버가 공유하는 반경 판정 규칙 */
+export function opportunityWithinRadius(opportunity: Opportunity, location?: UserLocation): boolean {
+  if (!location || location.radiusKm === null) return true;
+  const distance = opportunityDistance(location, opportunity);
+  return distance === null || distance <= location.radiusKm;
+}
+
+/** 서버 저장 전 약 1km 단위로 좌표를 최소화한다. */
+export function approximateLocation(location?: UserLocation): UserLocation | undefined {
+  if (!location) return undefined;
+  return {
+    ...location,
+    lat: Math.round(location.lat * 100) / 100,
+    lng: Math.round(location.lng * 100) / 100,
+  };
+}
+
 export function filterMatchesByRadius(matches: Match[], location?: UserLocation): {
   matches: Match[];
   excluded: number;
 } {
   if (!location || location.radiusKm === null) return { matches, excluded: 0 };
-  const filtered = matches.filter((match) => {
-    const distance = opportunityDistance(location, match.opportunity);
-    return distance === null || distance <= location.radiusKm!;
-  });
+  const filtered = matches.filter((match) => opportunityWithinRadius(match.opportunity, location));
   return { matches: filtered, excluded: matches.length - filtered.length };
 }

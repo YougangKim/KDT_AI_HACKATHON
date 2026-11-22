@@ -92,6 +92,9 @@ export default function Home() {
         <Link href="/alerts" className="block py-3 text-center text-sm text-slate-500 underline">
           이미 조건이 있어요 → 알림함
         </Link>
+        <Link href="/settings" className="block text-center text-sm text-slate-500 underline">
+          ⚙️ 알림 설정
+        </Link>
       </div>
 
       <p className="text-center text-xs text-slate-400">

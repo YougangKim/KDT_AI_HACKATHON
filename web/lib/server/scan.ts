@@ -1,11 +1,12 @@
 // 반복 리서치: 저장된 조건으로 여러 출처를 다시 조회 → 새 공고만 골라 푸시 → 본 것으로 기록
 import * as webpush from "web-push";
-import { findNew } from "@/lib/alerts/core";
+import { findDeadlineSoon, findNew, watched } from "@/lib/alerts/core";
 import { getMatches } from "@/lib/engine";
 import type { Domain } from "@/lib/types";
 import { loadOpportunities } from "@/lib/sources";
 import { allIds, deleteRecord, getRecord, putRecord, type WatchRecord } from "./store";
-import { detectChanges, pushSummary } from "./changes";
+import { detectChanges, digestSummary, pushSummary } from "./changes";
+import { isDue } from "./schedule";
 
 function vapidReady(): boolean {
   const pub = process.env.VAPID_PUBLIC_KEY;
@@ -20,8 +21,11 @@ export async function scanOne(rec: WatchRecord, now = new Date()): Promise<Watch
   const fresh = findNew(rec.watch, pool, now);
   const byDomainNew: Partial<Record<Domain, number>> = {};
   for (const o of fresh) byDomainNew[o.domain] = (byDomainNew[o.domain] ?? 0) + 1;
-  const matched = getMatches({ pool, answers: rec.watch.answers }).map((m) => m.opportunity);
+  const matched = getMatches({ pool, answers: rec.watch.answers })
+    .map((m) => m.opportunity)
+    .filter((o) => watched(rec.watch, o));
   const changes = detectChanges(matched, rec.known, now);
+  const soon = findDeadlineSoon(rec.watch, pool, now);
   const snapshot = {
     at: now.toISOString(),
     total: pool.length,
@@ -43,11 +47,16 @@ export async function scanOne(rec: WatchRecord, now = new Date()): Promise<Watch
     known: changes.known,
   };
   const hasNews = fresh.length > 0 || changes.changed.length > 0 || changes.soon.length > 0;
-  if (hasNews && rec.subscription && vapidReady()) {
+  const shouldPush = rec.watch.mode === "digest" || hasNews;
+  if (shouldPush && rec.subscription && vapidReady()) {
     try {
+      const payload =
+        rec.watch.mode === "digest"
+          ? digestSummary(matched.length, soon.length)
+          : pushSummary(fresh, changes);
       await webpush.sendNotification(
         rec.subscription,
-        JSON.stringify({ ...pushSummary(fresh, changes), url: "/alerts" }),
+        JSON.stringify({ ...payload, url: "/alerts" }),
       );
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;
@@ -58,7 +67,8 @@ export async function scanOne(rec: WatchRecord, now = new Date()): Promise<Watch
   return next;
 }
 
-export async function scanAll(now = new Date()): Promise<{ scanned: number; newTotal: number }> {
+export async function scanAll(now = new Date()): Promise<{ due: number; scanned: number; newTotal: number }> {
+  let due = 0;
   let scanned = 0;
   let newTotal = 0;
   for (const id of await allIds()) {
@@ -67,10 +77,12 @@ export async function scanAll(now = new Date()): Promise<{ scanned: number; newT
       await deleteRecord(id); // 만료된 레코드의 인덱스 정리
       continue;
     }
+    if (!isDue(rec, now)) continue;
+    due++;
     const before = rec.totalNew;
     const after = await scanOne(rec, now);
     scanned++;
     newTotal += after.totalNew - before;
   }
-  return { scanned, newTotal };
+  return { due, scanned, newTotal };
 }

@@ -25,6 +25,8 @@ const URL_ = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
 const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 const memory = new Map<string, WatchRecord>();
 const INDEX = "watch:index";
+const LAST_CRON = "watch:last-cron";
+let memoryLastCron: string | null = null;
 
 async function redis(cmd: (string | number)[]): Promise<unknown> {
   const res = await fetch(URL_!, {
@@ -66,4 +68,17 @@ export async function deleteRecord(id: string): Promise<void> {
 export async function allIds(): Promise<string[]> {
   if (!persistent()) return [...memory.keys()];
   return ((await redis(["SMEMBERS", INDEX])) as string[]) ?? [];
+}
+
+export async function setLastCronAt(value: string): Promise<void> {
+  if (!persistent()) {
+    memoryLastCron = value;
+    return;
+  }
+  await redis(["SET", LAST_CRON, value]);
+}
+
+export async function getLastCronAt(): Promise<string | null> {
+  if (!persistent()) return memoryLastCron;
+  return (await redis(["GET", LAST_CRON])) as string | null;
 }

@@ -1,6 +1,7 @@
 // 브라우저 API에 의존하지 않는 순수 함수(테스트 대상)
 import type { AnswerRecord, Domain, Match, Opportunity, Watch } from "@/lib/types";
 import { getMatches } from "../engine";
+import { opportunityWithinRadius } from "../geo/distance";
 
 const DAY = 86_400_000;
 
@@ -30,9 +31,10 @@ export function contradicts(opp: Opportunity, answers: AnswerRecord[]): boolean 
   return getMatches({ pool: [opp], answers }).length === 0;
 }
 
-function watched(w: Watch, opp: Opportunity): boolean {
+export function watched(w: Watch, opp: Opportunity): boolean {
   if (w.domains.length > 0 && !w.domains.includes(opp.domain)) return false;
-  return !contradicts(opp, w.answers);
+  if (contradicts(opp, w.answers)) return false;
+  return opportunityWithinRadius(opp, w.location);
 }
 
 function notExpired(opp: Opportunity, now: Date): boolean {
@@ -72,6 +74,8 @@ export function buildWatch(answers: AnswerRecord[], matches: Match[], now: Date 
     answers,
     domains,
     seenIds: matches.map((m) => m.opportunity.id),
+    schedule: { kind: "daily", times: ["09:00"], quiet: null },
+    mode: "new-only",
   };
 }
 

@@ -1,5 +1,6 @@
 // Vercel Cron이 매일 호출: 저장된 모든 조건으로 반복 리서치 → 새 공고 푸시
 import { scanAll } from "@/lib/server/scan";
+import { setLastCronAt } from "@/lib/server/store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,8 @@ export async function GET(req: Request) {
   if (secret && req.headers.get("authorization") !== `Bearer ${secret}`) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
-  const result = await scanAll();
-  return Response.json({ ok: true, at: new Date().toISOString(), ...result });
+  const now = new Date();
+  await setLastCronAt(now.toISOString());
+  const result = await scanAll(now);
+  return Response.json({ ok: true, at: now.toISOString(), ...result });
 }

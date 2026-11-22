@@ -1,4 +1,5 @@
 // 브라우저 전용: 서비스워커·알림 권한·인앱 알림 확인·Web Push
+import { useEffect } from "react";
 import type { Domain, Opportunity } from "@/lib/types";
 import { addAlerts, collectAlerts, loadAlertLog, loadWatch, markSeen, type AlertItem } from "./index";
 
@@ -120,6 +121,7 @@ export interface ResearchStatus {
   totalNew?: number;
   schedule?: string;
   history?: import("@/lib/insight/types").ScanSnapshot[];
+  lastCronAt?: string | null;
   error?: string;
 }
 
@@ -189,4 +191,30 @@ export async function deleteServerWatch(): Promise<void> {
   try {
     await fetch(`/api/watch?id=${watchId()}`, { method: "DELETE", headers: authHeaders() });
   } catch {}
+}
+
+/** 열린 탭에서는 저장한 간격에 맞춰 새 공고를 확인한다. 숨긴 탭에서는 중지한다. */
+export function useAlertPolling(): void {
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const start = () => {
+      if (timer) clearInterval(timer);
+      timer = undefined;
+      const watch = loadWatch();
+      if (document.hidden || !watch) return;
+      const minutes =
+        watch.schedule?.kind === "interval"
+          ? Math.max(15, watch.schedule.intervalMin ?? 15)
+          : 15;
+      timer = setInterval(() => void checkAlerts(), minutes * 60_000);
+    };
+    start();
+    document.addEventListener("visibilitychange", start);
+    window.addEventListener("storage", start);
+    return () => {
+      if (timer) clearInterval(timer);
+      document.removeEventListener("visibilitychange", start);
+      window.removeEventListener("storage", start);
+    };
+  }, []);
 }

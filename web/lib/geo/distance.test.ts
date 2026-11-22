@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Match } from "../types";
-import { distanceKm, filterMatchesByRadius } from "./distance";
+import { approximateLocation, distanceKm, filterMatchesByRadius } from "./distance";
 
 const location = { lat: 37.5665, lng: 126.978, radiusKm: 5 };
 const match = (id: string, lat?: number, precision: "exact" | "approx" | "region" = "exact"): Match => ({
@@ -44,5 +44,15 @@ describe("filterMatchesByRadius", () => {
 
     expect(result.matches.map((item) => item.opportunity.id)).toEqual(["near", "region", "none"]);
     expect(result.excluded).toBe(1);
+  });
+});
+
+describe("approximateLocation", () => {
+  test("서버 저장용 좌표를 소수 둘째 자리로 반올림한다", () => {
+    expect(approximateLocation({ lat: 37.56651, lng: 126.97804, radiusKm: 2 })).toEqual({
+      lat: 37.57,
+      lng: 126.98,
+      radiusKm: 2,
+    });
   });
 });

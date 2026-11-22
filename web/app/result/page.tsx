@@ -94,7 +94,10 @@ export default function ResultPage() {
 
   async function onSave() {
     if (!result) return;
-    saveWatch(buildWatch(result.answers, result.matches));
+    saveWatch({
+      ...buildWatch(result.answers, result.matches),
+      location: result.location,
+    });
     await registerSW();
     const p = await requestPermission();
     const r = await syncWatch(); // 서버에 조건 저장 → 앱을 닫아도 매일 반복 조사
@@ -165,6 +168,9 @@ export default function ResultPage() {
           새 공고 확인
         </button>
       )}
+      {saved && <Link href="/settings" className="block text-center text-xs text-indigo-700 underline">
+        알림 시간·위치 바꾸기
+      </Link>}
       {note && <p className="text-center text-xs text-slate-600" role="status">{note}</p>}
     </div>
   ) : null;
@@ -214,9 +220,12 @@ export default function ResultPage() {
           ← 처음으로
         </Link>
         {result.pool?.length ? (
-          <Link href="/result/analysis" className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
-            📊 분석 보기
-          </Link>
+          <span className="flex items-center gap-2">
+            <Link href="/settings" className="text-sm text-indigo-700">⚙️ 설정</Link>
+            <Link href="/result/analysis" className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
+              📊 분석 보기
+            </Link>
+          </span>
         ) : null}
       </header>
 

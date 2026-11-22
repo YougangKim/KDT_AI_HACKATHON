@@ -6,16 +6,20 @@ import type { UserLocation } from "@/lib/geo/distance";
 export function LocationStep({
   onComplete,
   onSkip,
+  initial,
+  settings = false,
 }: {
   onComplete: (location: UserLocation) => void;
   onSkip: () => void;
+  initial?: UserLocation;
+  settings?: boolean;
 }) {
   const mapElement = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markerRef = useRef<import("leaflet").Marker | null>(null);
   const circleRef = useRef<import("leaflet").Circle | null>(null);
-  const [point, setPoint] = useState<{ lat: number; lng: number } | null>(null);
-  const [radiusKm, setRadiusKm] = useState<number | null | undefined>(undefined);
+  const [point, setPoint] = useState<{ lat: number; lng: number } | null>(initial ?? null);
+  const [radiusKm, setRadiusKm] = useState<number | null | undefined>(initial?.radiusKm);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -76,9 +80,9 @@ export function LocationStep({
   return (
     <section className="flex flex-1 flex-col gap-4" aria-labelledby="location-title">
       <div className="space-y-2 text-center">
-        <p className="text-sm font-medium text-indigo-500">시작하기 전에</p>
-        <h1 id="location-title" className="text-2xl font-bold">내 위치와 원하는 거리를 알려 주세요</h1>
-        <p className="text-xs text-slate-500">위치는 이 기기에만 저장되며 서버나 알림 조건으로 보내지지 않아요.</p>
+        <p className="text-sm font-medium text-indigo-500">{settings ? "알림 위치" : "시작하기 전에"}</p>
+        <h1 id="location-title" className={settings ? "text-lg font-bold" : "text-2xl font-bold"}>내 위치와 원하는 거리를 알려 주세요</h1>
+        <p className="text-xs text-slate-500">{settings ? "알림용으로 대략적인 위치(약 1km 단위)가 서버에 저장돼요." : "결과 탐색 위치는 이 기기에 저장돼요."}</p>
       </div>
 
       <button type="button" onClick={useGps} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white">
@@ -110,13 +114,13 @@ export function LocationStep({
           </div>
           {radiusKm !== undefined && (
             <button type="button" onClick={() => onComplete({ ...point, radiusKm })} className="min-h-11 w-full rounded-xl bg-slate-900 font-semibold text-white">
-              이 위치로 계속하기
+              {settings ? "이 위치 사용하기" : "이 위치로 계속하기"}
             </button>
           )}
         </div>
       )}
 
-      <button type="button" onClick={onSkip} className="min-h-11 text-sm font-medium text-slate-500 underline">건너뛰기</button>
+      <button type="button" onClick={onSkip} className="min-h-11 text-sm font-medium text-slate-500 underline">{settings ? "위치 지우기" : "건너뛰기"}</button>
     </section>
   );
 }

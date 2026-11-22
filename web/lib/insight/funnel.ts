@@ -241,6 +241,21 @@ export function summarizeConditions(answers: AnswerRecord[]): string {
         break;
       }
 
+      case "subscription":
+      case "married":
+      case "welfare":
+      case "experienced": {
+        const value = effectiveBoolean(question, answer);
+        const label = {
+          subscription: "청약통장 가입",
+          married: "신혼·예비 신혼",
+          welfare: "수급자·차상위",
+          experienced: "관련 경력 있음",
+        }[question.attr];
+        if (value !== null) descriptors.push(value ? label : `${label} 아님`);
+        break;
+      }
+
       case "livingAlone": {
         const value = effectiveBoolean(question, answer);
         if (value !== null) {
@@ -271,6 +286,24 @@ export function summarizeConditions(answers: AnswerRecord[]): string {
         );
         break;
       }
+
+      case "education":
+        descriptors.push(`${labels.join("·")} 학력`);
+        break;
+
+      case "field":
+        clauses.push(`직무: ${labels.join("·")}`);
+        break;
+
+      case "need":
+        clauses.push(`필요 지원: ${labels.join("·")}`);
+        break;
+
+      case "housingKind":
+        clauses.push(
+          `주거 형태: ${labels.map((value) => value === "rent" ? "임대" : value === "sale" ? "분양" : value).join("·")}`,
+        );
+        break;
     }
   }
 

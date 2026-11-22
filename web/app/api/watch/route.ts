@@ -1,9 +1,11 @@
 // 조건·푸시 구독을 서버에 저장(POST)하고, 반복 리서치 상태를 돌려준다(GET). POST ?scan=1 은 지금 바로 1회 조사. DELETE는 삭제.
 // 인증: 처음 저장할 때 클라이언트가 만든 비밀 토큰의 해시를 저장하고, 이후 모든 요청은 같은 토큰(Bearer)이 있어야 한다.
 import type { Watch } from "@/lib/types";
-import { deleteRecord, getRecord, persistent, putRecord, type WatchRecord } from "@/lib/server/store";
+import { deleteRecord, getLastCronAt, getRecord, persistent, putRecord, type WatchRecord } from "@/lib/server/store";
 import { scanOne } from "@/lib/server/scan";
 import { bearer, hashToken, tokenMatches, validSubscription } from "@/lib/server/security";
+import { approximateLocation } from "@/lib/geo/distance";
+import { normalizeSchedule } from "@/lib/server/schedule";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,7 +13,7 @@ export const dynamic = "force-dynamic";
 const ID_RE = /^[a-zA-Z0-9-]{8,64}$/;
 const lastManual = new Map<string, number>();
 
-function status(rec: WatchRecord | null) {
+async function status(rec: WatchRecord | null) {
   if (!rec) return { saved: false };
   const p = persistent();
   return {
@@ -22,8 +24,9 @@ function status(rec: WatchRecord | null) {
     lastSources: rec.lastSources ?? [],
     lastNewTitles: rec.lastNewTitles ?? [],
     totalNew: rec.totalNew,
-    schedule: p ? "매일 오전 9시(KST) 자동 조사" : "데모 모드: 서버가 재시작되면 저장한 조건이 사라져요",
+    schedule: p ? "저장한 일정에 따라 자동 조사" : "데모 모드: 서버가 재시작되면 저장한 조건이 사라져요",
     history: rec.history ?? [],
+    lastCronAt: await getLastCronAt(),
   };
 }
 
@@ -34,7 +37,16 @@ function validWatch(w: Watch | undefined): w is Watch {
       Array.isArray(w.domains) &&
       Array.isArray(w.seenIds) &&
       w.answers.length <= 40 &&
-      w.seenIds.length <= 2000,
+      w.seenIds.length <= 2000 &&
+      (!w.location ||
+        (Number.isFinite(w.location.lat) &&
+          Number.isFinite(w.location.lng) &&
+          w.location.lat >= -90 &&
+          w.location.lat <= 90 &&
+          w.location.lng >= -180 &&
+          w.location.lng <= 180 &&
+          (w.location.radiusKm === null || [1, 2, 5, 10].includes(w.location.radiusKm)))) &&
+      (!w.mode || w.mode === "new-only" || w.mode === "digest"),
   );
 }
 
@@ -48,7 +60,7 @@ export async function GET(req: Request) {
   if (!ID_RE.test(id)) return Response.json({ error: "잘못된 id" }, { status: 400 });
   const { rec, ok } = await authorized(req, id);
   if (!ok) return Response.json({ error: "unauthorized" }, { status: 401 });
-  return Response.json(status(rec));
+  return Response.json(await status(rec));
 }
 
 export async function DELETE(req: Request) {
@@ -82,7 +94,17 @@ export async function POST(req: Request) {
     const w = body.watch;
     // 서버가 이미 본 공고는 유지(오래된 클라이언트 값으로 덮어써 같은 공고를 다시 알리지 않도록)
     const seen = [...new Set([...(rec?.watch.seenIds ?? []), ...w.seenIds])].slice(-1000);
-    rec = { ...(rec ?? { totalNew: 0, tokenHash: hashToken(token) }), id, watch: { ...w, seenIds: seen } } as WatchRecord;
+    rec = {
+      ...(rec ?? { totalNew: 0, tokenHash: hashToken(token) }),
+      id,
+      watch: {
+        ...w,
+        seenIds: seen,
+        location: approximateLocation(w.location),
+        schedule: normalizeSchedule(w.schedule),
+        mode: w.mode ?? "new-only",
+      },
+    } as WatchRecord;
   }
   if (!rec) return Response.json({ error: "저장된 조건이 없어요" }, { status: 404 });
   if (body.subscription !== undefined) {
@@ -99,5 +121,5 @@ export async function POST(req: Request) {
     lastManual.set(id, now);
     rec = await scanOne(rec);
   }
-  return Response.json(status(rec));
+  return Response.json(await status(rec));
 }

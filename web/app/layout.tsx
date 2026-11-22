@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AlertBell } from "@/components/result/AlertBell";
+import { AlertPolling } from "@/components/AlertPolling";
 
 export const metadata: Metadata = {
   title: "마이뉴스 | 나에게 맞는 청년 공고 소식",
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
         <div className="mx-auto flex min-h-dvh max-w-md flex-col px-4">
+          <AlertPolling />
           <header className="flex justify-end pt-2">
             <AlertBell />
           </header>

@@ -295,6 +295,37 @@ for (const [name, pool] of DATASETS) {
       await page.context().close();
     });
 
+    if (pool === FIXTURE) test("e) 알림 설정 화면에서 조건·일정·모드를 바꾸고 저장이 유지된다", async () => {
+      const page = await newPage();
+      await start(page, [/청년 주택/, /지원금/]);
+      await playAs(page, { ...seoulJobseeker });
+      await page.getByRole("button", { name: /알림 받기/ }).click();
+      await page.getByText(/저장했어요/).waitFor({ timeout: 15000 });
+
+      await page.goto(`${BASE}/settings`);
+      await page.getByRole("heading", { name: /알림 설정/ }).waitFor();
+      const body0 = await page.locator("body").textContent();
+      assert.match(body0, /청년/, "내 조건이 문장으로 보여야 한다");
+
+      // 조건 하나 바꾸기(첫 조건을 모름으로)
+      const groups = page.getByRole("list", { name: "내 조건" }).getByRole("group");
+      await groups.first().getByRole("button", { name: "모름", exact: true }).click();
+      // 일정: 간격 30분, 모드: 정해진 시간마다
+      await page.getByRole("button", { name: "간격", exact: true }).click();
+      await page.getByRole("group", { name: "알림 간격" }).getByRole("button", { name: "30분", exact: true }).click();
+      await page.getByRole("button", { name: "정해진 시간마다 요약 받기" }).click();
+      await page.getByRole("button", { name: "설정 저장" }).click();
+      await page.getByText(/저장했어요|동기화에 실패/).waitFor({ timeout: 15000 });
+
+      await page.reload();
+      await page.getByRole("heading", { name: /알림 설정/ }).waitFor();
+      assert.equal(await page.getByRole("button", { name: "정해진 시간마다 요약 받기" }).getAttribute("aria-pressed"), "true", "모드가 유지돼야 한다");
+      assert.equal(await page.getByRole("group", { name: "알림 간격" }).getByRole("button", { name: "30분", exact: true }).getAttribute("aria-pressed"), "true", "간격이 유지돼야 한다");
+      assert.equal(await page.getByRole("list", { name: "내 조건" }).getByRole("group").first().locator('[aria-pressed="true"]').textContent(), "모름", "바꾼 조건이 유지돼야 한다");
+      await page.screenshot({ path: ART + "e_settings.png", fullPage: true });
+      await page.context().close();
+    });
+
     test("c) 공고가 너무 적을 때 완화할 조건을 설명", async () => {
       const page = await newPage();
       // 고정: 부산·소득 200%·지원금만(소득 기준에 막힘) / 실데이터: 공고가 가장 적은 지역·주거만

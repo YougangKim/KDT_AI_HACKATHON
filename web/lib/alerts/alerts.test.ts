@@ -86,6 +86,21 @@ describe("findNew", () => {
   it("분야가 비어 있으면 전체 분야", () => {
     expect(findNew(watch({ domains: [] }), [opp("a", { domain: "exam" })], NOW)).toHaveLength(1);
   });
+
+  it("exact/approx 좌표가 반경 밖이면 제외하고 region 정밀도는 유지", () => {
+    const w = watch({ location: { lat: 37.57, lng: 126.98, radiusKm: 2 } });
+    const pool = [
+      opp("near", { geo: { lat: 37.57, lng: 126.98, precision: "exact" } }),
+      opp("far", { geo: { lat: 37.7, lng: 127.1, precision: "approx" } }),
+      opp("region", { geo: { lat: 35.1, lng: 129.0, precision: "region" } }),
+    ];
+    expect(findNew(w, pool, NOW).map((o) => o.id)).toEqual(["near", "region"]);
+    expect(findDeadlineSoon(
+      w,
+      pool.map((o) => ({ ...o, applyEnd: "2026-11-22" })),
+      NOW,
+    ).map((o) => o.id)).toEqual(["near", "region"]);
+  });
 });
 
 describe("마감 임박", () => {

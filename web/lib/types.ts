@@ -83,10 +83,24 @@ export interface Match {
   unknowns: Condition[]; // 확인 필요 조건
 }
 
+export interface WatchSchedule {
+  kind: "daily" | "times" | "interval";
+  times?: string[]; // "HH:MM" KST
+  intervalMin?: number;
+  quiet?: { start: string; end: string } | null;
+}
+
 /** 알림 구독용 저장 프로필(브라우저 localStorage 키: "watch") */
 export interface Watch {
   createdAt: string;
   answers: AnswerRecord[];
   domains: Domain[];
   seenIds: string[]; // 이미 본 공고 id. 새 공고 판정 기준
+  location?: {
+    lat: number;
+    lng: number;
+    radiusKm: number | null;
+  };
+  schedule?: WatchSchedule;
+  mode?: "new-only" | "digest";
 }

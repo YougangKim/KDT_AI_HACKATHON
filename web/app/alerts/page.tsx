@@ -89,7 +89,9 @@ export default function AlertsPage() {
           ← 처음으로
         </Link>
         <h1 className="text-lg font-bold">🔔 내 알림</h1>
-        <span className="w-12" />
+        <Link href="/settings" className="text-sm text-indigo-700">
+          ⚙️ 설정
+        </Link>
       </header>
 
       {watch && (
