@@ -1,4 +1,5 @@
 import { FAST_MODEL, ask, aiEnabled } from "../ai";
+import { getCached, setCached } from "../ai/cache";
 import type { Opportunity } from "../types";
 import { getEligibility } from "../sources/util";
 
@@ -13,6 +14,7 @@ const MAX_AI_EXTRACTIONS = 30;
 const CONCURRENCY = 2;
 const ADDRESS_RE =
   /[가-힣]+(?:특별시|광역시|특별자치시|특별자치도|도)\s+[가-힣0-9]+(?:시|군|구)(?:\s+[가-힣0-9]+구)?(?:\s+[가-힣0-9·.-]+(?:읍|면|동|가|로|길)(?:\s+\d+(?:-\d+)?)?)?/;
+const EXTRACT_PROMPT_VERSION = "place-v2";
 
 export function _clearExtractCache() {
   cache.clear();
@@ -47,11 +49,25 @@ export function extractPlaceRules(opportunity: Opportunity): ExtractedPlace | nu
   return null;
 }
 
+function cacheInput(opportunity: Opportunity): string {
+  return `${EXTRACT_PROMPT_VERSION}\n${JSON.stringify({
+    제목: opportunity.title,
+    기관: opportunity.org,
+    요약: opportunity.summary,
+    자격요건: getEligibility(opportunity) ?? "",
+  })}`;
+}
+
 export async function extractPlace(opportunity: Opportunity): Promise<ExtractedPlace> {
   const ruled = extractPlaceRules(opportunity);
   if (ruled) return ruled;
   const hit = cache.get(opportunity.id);
   if (hit) return hit;
+  const persisted = await getCached<ExtractedPlace>("place", cacheInput(opportunity));
+  if (persisted) {
+    cache.set(opportunity.id, persisted);
+    return persisted;
+  }
   if (!aiEnabled()) return { address: null, place: null };
 
   const text = await ask(
@@ -67,6 +83,7 @@ export async function extractPlace(opportunity: Opportunity): Promise<ExtractedP
   );
   const result = (text && parsePlaceJson(text)) || { address: null, place: null };
   cache.set(opportunity.id, result); // 실패도 캐시해 무료 한도를 반복 소모하지 않는다
+  await setCached("place", cacheInput(opportunity), result, text ? 365 : 1);
   return result;
 }
 
@@ -83,8 +100,16 @@ export function attachPlaces(items: Opportunity[]): Opportunity[] {
   });
 
   if (!aiEnabled()) return output;
-  const todo = items
+  const candidates = items
     .filter((item) => !item.place && !extractPlaceRules(item) && !cache.has(item.id) && !pending.has(item.id))
+  void (async () => {
+    for (const item of candidates) {
+      const hit = await getCached<ExtractedPlace>("place", cacheInput(item));
+      if (hit) cache.set(item.id, hit);
+    }
+  })();
+  const todo = candidates
+    .filter((item) => !cache.has(item.id))
     .slice(0, MAX_AI_EXTRACTIONS);
   todo.forEach((item) => pending.add(item.id));
   if (!todo.length) return output;

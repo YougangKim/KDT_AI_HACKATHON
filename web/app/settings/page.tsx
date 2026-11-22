@@ -12,6 +12,8 @@ import { DOMAIN_META } from "@/components/result/domain";
 
 const DOMAINS: Domain[] = ["housing", "job", "parttime", "benefit", "training", "exam"];
 const INTERVALS = [
+  [1, "1분"],
+  [5, "5분"],
   [15, "15분"],
   [30, "30분"],
   [60, "1시간"],
@@ -176,7 +178,7 @@ export default function SettingsPage() {
               key={kind}
               type="button"
               aria-pressed={schedule.kind === kind}
-              onClick={() => updateSchedule({ kind: kind as WatchSchedule["kind"], times: ["09:00"], intervalMin: 30 })}
+              onClick={() => updateSchedule({ kind: kind as WatchSchedule["kind"], times: ["09:00"], intervalMin: 5 })}
               className={`rounded-xl p-2 text-sm font-semibold ${schedule.kind === kind ? "bg-indigo-600 text-white" : "bg-slate-100"}`}
             >
               {label}
@@ -217,9 +219,9 @@ export default function SettingsPage() {
             <input aria-label="방해 금지 종료" type="time" value={schedule.quiet.end} onChange={(event) => updateSchedule({ quiet: { ...schedule.quiet!, end: event.target.value } })} className="rounded-lg p-2 ring-1 ring-slate-200" />
           </div>
         )}
-        <p className="text-xs text-slate-500">15분보다 짧은 간격은 지원하지 않아요.</p>
+        <p className="text-xs text-slate-500">간격 알림은 외부 스케줄러(cron-job.org, 1분마다 호출)가 켜져 있어야 동작해요.</p>
         <p className={`text-xs ${cronHealthy ? "text-emerald-700" : "text-amber-700"}`}>
-          외부 스케줄러가 켜져 있어야 간격 알림이 동작해요. 현재 상태: {cronHealthy ? "최근 30분 안에 호출됨" : "최근 호출을 확인하지 못함"}
+          현재 상태: {cronHealthy ? "최근 30분 안에 호출됨" : "최근 호출을 확인하지 못함"}
         </p>
       </section>
 

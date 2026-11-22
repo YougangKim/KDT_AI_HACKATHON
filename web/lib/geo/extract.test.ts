@@ -2,6 +2,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Opportunity } from "../types";
 import { _resetClient } from "../ai";
 import { _clearExtractCache, extractPlace, extractPlaceRules } from "./extract";
+import { _clearAiCacheMemory } from "../ai/cache";
+import { _resetProviders } from "../ai/providers";
 
 const opportunity = (extra: Partial<Opportunity> = {}): Opportunity => ({
   id: "test:1",
@@ -20,6 +22,8 @@ const opportunity = (extra: Partial<Opportunity> = {}): Opportunity => ({
 
 beforeEach(() => {
   _clearExtractCache();
+  _clearAiCacheMemory();
+  _resetProviders();
   _resetClient();
   delete process.env.ANTHROPIC_API_KEY;
   delete process.env.GEMINI_API_KEY;

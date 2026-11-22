@@ -1,8 +1,9 @@
-// AI 모듈: ANTHROPIC_API_KEY가 있으면 Claude, 없고 GEMINI_API_KEY가 있으면 Gemini, 둘 다 없거나 실패하면 규칙 기반.
+// AI 모듈: 무료 공급자 체인을 순서대로 사용하고 모두 실패하면 규칙 기반으로 폴백한다.
 // 개인정보 보호: 외부로 보내는 것은 공고 원문·질문 범주값·매칭 근거 문구뿐이다(사용자 자유입력 없음).
-import Anthropic from "@anthropic-ai/sdk";
 import { defaultQuestionText } from "../engine/phrase";
 import type { AttrKey, Condition, Match, Question } from "../types";
+import { getCached, setCached } from "./cache";
+import { askGemini, chat, _resetProviders } from "./providers";
 import { explainMatchRules, structureConditionsRules } from "./rules";
 
 export { explainMatchRules, phraseQuestionRules, structureConditionsRules, normalizeRegion } from "./rules";
@@ -12,63 +13,17 @@ export const FAST_MODEL = process.env.ANTHROPIC_FAST_MODEL || "claude-haiku-5-5"
 const ATTRS: AttrKey[] = ["age", "region", "homeless", "livingAlone", "incomePct", "employment", "interest", "subscription", "married", "welfare", "experienced", "education"];
 const OPS = ["eq", "lte", "gte", "in"] as const;
 
-let client: Anthropic | null | undefined;
-function getClient(): Anthropic | null {
-  if (client !== undefined) return client;
-  client = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 15_000, maxRetries: 1 }) : null;
-  return client;
-}
-
-/** 테스트용: 클라이언트 캐시 초기화 */
+/** 테스트용: 공급자 상태 초기화 */
 export function _resetClient() {
-  client = undefined;
-  geminiBlockedUntil = 0;
-}
-
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-
-/** 무료 등급 한도(429)에 걸리면 10분간 호출을 멈춘다(실패할 요청 수백 건이 한도를 계속 갉아먹는 것 방지) */
-let geminiBlockedUntil = 0;
-const GEMINI_COOLDOWN_MS = 10 * 60_000;
-
-/** Gemini generateContent(REST). 실패하면 null */
-export async function askGemini(system: string, user: string, maxTokens: number): Promise<string | null> {
-  if (Date.now() < geminiBlockedUntil) return null;
-  try {
-    const res = await fetch(`${GEMINI_URL}/${GEMINI_MODEL}:generateContent`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: user }] }],
-        generationConfig: { maxOutputTokens: maxTokens, temperature: 0.2 },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    if (res.status === 429) geminiBlockedUntil = Date.now() + GEMINI_COOLDOWN_MS;
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-    const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
-    return text || null;
-  } catch (e) {
-    console.warn("[ai] Gemini 호출 실패, 규칙 기반으로 폴백:", (e as Error).message);
-    return null;
-  }
+  _resetProviders();
 }
 
 export async function ask(model: string, system: string, user: string, maxTokens: number): Promise<string | null> {
-  const c = getClient();
-  if (!c) return process.env.GEMINI_API_KEY ? askGemini(system, user, maxTokens) : null;
-  try {
-    const res = await c.messages.create({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] });
-    const text = res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
-    return text || null;
-  } catch (e) {
-    console.warn("[ai] Claude 호출 실패, 규칙 기반으로 폴백:", (e as Error).message);
-    return null;
-  }
+  void model;
+  return chat(system, user, maxTokens);
 }
+
+export { askGemini };
 
 const STRUCTURE_SYSTEM = `너는 한국 청년 정책·공고의 자격요건 문장을 구조화한다.
 JSON 배열만 출력한다. 각 원소: {"attr","op","value","rawText","confidence"}.
@@ -80,6 +35,8 @@ JSON 배열만 출력한다. 각 원소: {"attr","op","value","rawText","confide
 - op: eq, lte, gte, in. 나이 범위는 gte와 lte 두 개로 나눈다. region·employment는 in.
 - rawText: 근거가 된 원문 구절 그대로.
 - confidence: 원문에 명시돼 있으면 "high", 해석·환산이 필요하면(예: 연소득 금액→중위소득 %) "low".`;
+
+export const STRUCTURE_PROMPT_VERSION = "conditions-v2";
 
 function isCondition(x: unknown): x is Condition {
   if (!x || typeof x !== "object") return false;
@@ -109,12 +66,39 @@ export function parseConditionsJson(text: string): Condition[] | null {
   }
 }
 
+export function structureCacheInput(rawText: string): string {
+  return `${STRUCTURE_PROMPT_VERSION}\n${rawText}`;
+}
+
+export async function cachedStructuredConditions(
+  rawText: string,
+): Promise<Condition[] | null> {
+  return getCached<Condition[]>("conditions", structureCacheInput(rawText));
+}
+
 /** 자격요건 원문 → 조건 목록 */
 export async function structureConditions(rawText: string): Promise<Condition[]> {
   if (!rawText.trim()) return [];
+  const rules = structureConditionsRules(rawText);
+  const ruleAttrs = new Set(rules.map((condition) => condition.attr));
+  if (
+    rules.length >= 3 ||
+    (ruleAttrs.has("age") && ruleAttrs.size >= 2)
+  ) {
+    return rules;
+  }
+  const cached = await cachedStructuredConditions(rawText);
+  if (cached) return cached;
   const text = await ask(MODEL, STRUCTURE_SYSTEM, rawText.slice(0, 4000), 1024);
   const parsed = text ? parseConditionsJson(text) : null;
-  return parsed ?? structureConditionsRules(rawText);
+  const result = parsed ?? rules;
+  await setCached(
+    "conditions",
+    structureCacheInput(rawText),
+    result,
+    parsed ? 365 : 1,
+  );
+  return result;
 }
 
 /** 질문 → 게임 말투 문장 */
@@ -171,7 +155,13 @@ export async function pickNextQuestion(candidates: QuestionCandidate[], answered
   return id && candidates.some((c) => c.id === id) ? id : null;
 }
 
-/** 서버에서 AI(Claude 또는 Gemini)가 켜져 있는지(화면의 "AI 생성" 표시 판단용) */
+/** 서버에서 폴백 체인 중 하나라도 사용할 수 있는지 판단한다. */
 export function aiEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY);
+  return Boolean(
+    process.env.GROQ_API_KEY ||
+    process.env.OPENROUTER_API_KEY ||
+    (process.env.CF_ACCOUNT_ID && process.env.CF_API_TOKEN) ||
+    process.env.GEMINI_API_KEY ||
+    process.env.ANTHROPIC_API_KEY,
+  );
 }

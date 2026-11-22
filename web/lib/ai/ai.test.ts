@@ -1,7 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Match, Opportunity } from "../types";
 import { explainMatch, parseConditionsJson, phraseQuestion, structureConditions } from "./index";
+import { _clearAiCacheMemory, setCached } from "./cache";
 import { normalizeRegion, structureConditionsRules } from "./rules";
+
+afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); _clearAiCacheMemory(); });
 
 describe("structureConditionsRules", () => {
   it("나이 범위·소득·무주택·독립", () => {
@@ -57,6 +60,26 @@ describe("키 없이 규칙 기반 폴백", () => {
     expect(s).toContain("청년월세 지원");
     expect(s).toContain("2026-12-31");
     expect(s).toContain("기준중위소득 60% 이하");
+  });
+});
+
+describe("조건 영구 캐시", () => {
+  it("캐시 적중이면 AI를 호출하지 않는다", async () => {
+    vi.stubEnv("AI_CACHE_DISABLE_FILE", "1");
+    vi.stubEnv("GROQ_API_KEY", "test");
+    const raw = "별도 공고문에서 자격 확인";
+    await setCached("conditions", `conditions-v2\n${raw}`, [{
+      attr: "homeless",
+      op: "eq",
+      value: true,
+      rawText: "무주택",
+      confidence: "high",
+    }], 1);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await structureConditions(raw)).toContainEqual(expect.objectContaining({ attr: "homeless" }));
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });
 

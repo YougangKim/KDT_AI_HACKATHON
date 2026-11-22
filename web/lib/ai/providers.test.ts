@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _resetClient, aiEnabled, structureConditions } from "./index";
 import { judgeYes } from "./jev";
+import { chat } from "./providers";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); _resetClient(); });
 
@@ -23,6 +24,64 @@ describe("Gemini 경로", () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("quota", { status: 429 })));
     vi.spyOn(console, "warn").mockImplementation(() => {});
     expect(await structureConditions("만 34세 이하 무주택")).toContainEqual(expect.objectContaining({ attr: "homeless" }));
+  });
+});
+
+describe("무료 LLM 폴백 체인", () => {
+  it("첫 공급자가 429면 다음 공급자로 넘어간다", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq");
+    vi.stubEnv("OPENROUTER_API_KEY", "openrouter");
+    vi.stubEnv("GEMINI_API_KEY", "");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("limited", {
+        status: 429,
+        headers: { "Retry-After": "60" },
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        choices: [{ message: { content: "ok" } }],
+      })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await chat("system", "user", 100)).toBe("ok");
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("groq.com");
+    expect(String(fetchMock.mock.calls[1][0])).toContain("openrouter.ai");
+  });
+
+  it("쿨다운 중인 공급자를 건너뛴다", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq");
+    vi.stubEnv("OPENROUTER_API_KEY", "openrouter");
+    vi.stubEnv("GEMINI_API_KEY", "");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response("limited", { status: 429 }))
+      .mockImplementation(async () => new Response(JSON.stringify({
+        choices: [{ message: { content: "fallback" } }],
+      })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await chat("system", "first", 100);
+    fetchMock.mockClear();
+    expect(await chat("system", "second", 100)).toBe("fallback");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("openrouter.ai");
+  });
+
+  it("키가 없는 공급자는 호출하지 않는다", async () => {
+    vi.stubEnv("GROQ_API_KEY", "");
+    vi.stubEnv("OPENROUTER_API_KEY", "openrouter");
+    vi.stubEnv("CF_ACCOUNT_ID", "");
+    vi.stubEnv("CF_API_TOKEN", "");
+    vi.stubEnv("GEMINI_API_KEY", "");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({
+      choices: [{ message: { content: "ok" } }],
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+
+    expect(await chat("system", "user", 100)).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain("openrouter.ai");
   });
 });
 

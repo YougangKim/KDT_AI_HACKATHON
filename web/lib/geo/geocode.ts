@@ -1,3 +1,4 @@
+import { getCached, setCached } from "../ai/cache";
 import type { Opportunity } from "../types";
 import { regionCenter } from "./regions";
 
@@ -12,6 +13,7 @@ type KakaoDocument = {
 const cache = new Map<string, Geo | null>();
 const MAX_NEW_LOOKUPS = 150;
 const CONCURRENCY = 4;
+const GEOCODE_VERSION = "kakao-v1";
 
 export function _clearGeocodeCache() {
   cache.clear();
@@ -111,11 +113,22 @@ async function geocodeOne(opportunity: Opportunity, key: string): Promise<Geo | 
   const cacheKey = `${request.endpoint}:${request.query}`;
   if (cache.has(cacheKey)) return cache.get(cacheKey) ?? fallback(opportunity);
 
+  const persisted = await getCached<Geo | false>(
+    "geocode",
+    `${GEOCODE_VERSION}:${cacheKey}`,
+  );
+  if (persisted !== null) {
+    const hit = persisted || null;
+    cache.set(cacheKey, hit);
+    return hit ?? fallback(opportunity);
+  }
+
   const document = await kakao(request.endpoint, request.query, key);
   const geo = document && sameRegion(opportunity, document)
     ? { lat: Number(document.y), lng: Number(document.x), precision: request.precision } satisfies Geo
     : null;
   cache.set(cacheKey, geo);
+  await setCached("geocode", `${GEOCODE_VERSION}:${cacheKey}`, geo ?? false, geo ? 90 : 1);
   return geo ?? fallback(opportunity);
 }
 
@@ -133,7 +146,11 @@ export async function attachGeo(items: Opportunity[]): Promise<Opportunity[]> {
       const item = items[index];
       const request = requestFor(item);
       const cacheKey = request ? `${request.endpoint}:${request.query}` : "";
-      const needsLookup = !!request && !cache.has(cacheKey);
+      if (request && !cache.has(cacheKey)) {
+        const hit = await getCached<Geo | false>("geocode", `${GEOCODE_VERSION}:${cacheKey}`);
+        if (hit !== null) cache.set(cacheKey, hit || null);
+      }
+      const needsLookup = Boolean(request && !cache.has(cacheKey));
       if (needsLookup && budget-- <= 0) {
         output[index] = { ...item, geo: item.geo ?? fallback(item) };
         continue;

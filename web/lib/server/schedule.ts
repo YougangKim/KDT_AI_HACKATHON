@@ -33,10 +33,10 @@ function inQuiet(schedule: WatchSchedule, now: Date): boolean {
 export function normalizeSchedule(schedule?: WatchSchedule): WatchSchedule {
   if (!schedule) return DEFAULT_SCHEDULE;
   if (schedule.kind === "interval") {
-    const allowed = [15, 30, 60, 180, 360];
+    const allowed = [1, 5, 15, 30, 60, 180, 360];
     return {
       kind: "interval",
-      intervalMin: allowed.includes(schedule.intervalMin ?? 0) ? schedule.intervalMin : 15,
+      intervalMin: allowed.includes(schedule.intervalMin ?? 0) ? schedule.intervalMin : 1,
       quiet: schedule.quiet ?? null,
     };
   }

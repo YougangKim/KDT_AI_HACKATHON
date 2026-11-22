@@ -1,6 +1,6 @@
 // 공고 수집 진입점. 실제 출처만 사용하며 키 없음·실패·0건은 빈 결과로 처리한다.
 import type { Condition, Domain, Opportunity } from "../types";
-import { aiEnabled, structureConditions } from "../ai";
+import { aiEnabled, cachedStructuredConditions, structureConditions } from "../ai";
 import { regionsIn } from "../ai/rules";
 import { attachGeo } from "../geo/geocode";
 import { attachPlaces, _clearExtractCache } from "../geo/extract";
@@ -99,6 +99,11 @@ async function enrichWithAi(items: Opportunity[], wait: boolean): Promise<Opport
     if (!raw) return o;
     let conds = aiConditionCache.get(o.id);
     if (!conds) {
+      conds = await cachedStructuredConditions(raw) ?? undefined;
+      if (conds) aiConditionCache.set(o.id, conds);
+    }
+    if (!conds) {
+      // 영구 캐시 적중은 위에서 처리하므로 신규 AI 요청만 상한을 차감한다.
       if (budget-- <= 0) return o;
       conds = await structureConditions(raw);
       aiConditionCache.set(o.id, conds);
