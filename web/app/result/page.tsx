@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { Answer } from "@/lib/types";
 import { analyzeFunnel } from "@/lib/insight/funnel";
+import { rankQuestions } from "@/lib/engine";
 import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
 import { buildWatch, saveWatch } from "@/lib/alerts";
 import { registerSW, requestPermission, checkAlerts, syncWatch } from "@/lib/alerts/client";
@@ -33,6 +34,8 @@ export default function ResultPage() {
   // 결과가 적으면 어떤 조건을 풀면 늘어나는지 바로 보여 준다
   const report = useMemo(() => (result?.pool?.length ? analyzeFunnel(result.pool, result.answers, hard) : null), [result, hard]);
   const relax = report?.scarce ? report.relaxOptions : [];
+  // 더 물어볼 질문이 남아 있을 때만 "질문 더 해서 좁히기"를 연다(누르면 바로 "없어요"가 되는 버튼 방지)
+  const canNarrow = useMemo(() => !!result?.pool?.length && rankQuestions({ pool: result.pool, answers: result.answers }, 1).length > 0, [result]);
 
   function onRelax(questionId: string) {
     if (!result) return;
@@ -171,10 +174,14 @@ export default function ResultPage() {
             더보기 +{rest}
           </button>
         )}
-        {/* 더보기를 눌러도 사라지지 않게 항상 둔다 */}
-        <Link href="/play?continue=1" className="rounded-2xl bg-indigo-50 py-3 text-center text-sm font-semibold text-indigo-700">
-          🎯 질문 더 해서 좁히기
-        </Link>
+        {/* 더보기를 눌러도 사라지지 않게 항상 둔다. 더 물을 질문이 없으면 이유를 보여 준다 */}
+        {canNarrow ? (
+          <Link href="/play?continue=1" className="rounded-2xl bg-indigo-50 py-3 text-center text-sm font-semibold text-indigo-700">
+            🎯 질문 더 해서 좁히기
+          </Link>
+        ) : (
+          <p className="rounded-2xl bg-slate-100 py-3 text-center text-xs text-slate-500 break-keep">더 물어볼 질문이 없어요 · 아래 조건 고치기로 바꿔 보세요</p>
+        )}
       </div>
 
       {editor}

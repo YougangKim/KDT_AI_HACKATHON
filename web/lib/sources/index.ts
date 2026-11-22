@@ -68,6 +68,12 @@ export function plausibleAiCondition(c: Condition): boolean {
   if (c.attr === "homeless" && !/무주택/.test(c.rawText)) return false;
   // "근로·사업소득이 있는 자"처럼 소득 문구를 취업 상태로 오해하는 경우 방지
   if (c.attr === "employment" && !/취업|재직|구직|실업|재학|휴학|학생|근로자|직장|졸업/.test(c.rawText)) return false;
+  // 새 조건은 원문에 근거 단어가 있어야 한다(AI가 지어낸 대상 조건으로 잘못 탈락시키지 않게)
+  if (c.attr === "subscription" && !/청약/.test(c.rawText)) return false;
+  if (c.attr === "married" && !/신혼|혼인|결혼/.test(c.rawText)) return false;
+  if (c.attr === "welfare" && !/수급|차상위/.test(c.rawText)) return false;
+  if (c.attr === "experienced" && !/경력/.test(c.rawText)) return false;
+  if (c.attr === "education" && !/졸|학력|학사|석사|박사/.test(c.rawText)) return false;
   return true;
 }
 

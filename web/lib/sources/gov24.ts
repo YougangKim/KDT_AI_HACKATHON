@@ -1,7 +1,7 @@
 // 행정안전부 대한민국 공공서비스(혜택) 정보 (data.go.kr 15113968, api.odcloud.kr)
 import type { Opportunity } from "../types";
 import type { SourceAdapter } from "./types";
-import { buildConditions, withEligibility, fetchJson, fetchPages, pickArray, str, toIsoDate, toRegions } from "./util";
+import { buildConditions, withEligibility, fetchJson, fetchAllPages, pickArray, str, toIsoDate, toRegions } from "./util";
 
 const ENDPOINT = "https://api.odcloud.kr/api/gov24/v3/serviceList";
 
@@ -45,8 +45,8 @@ export const gov24: SourceAdapter = {
   envKey: "DATA_GO_KR_KEY",
   async fetch(now) {
     const key = process.env.DATA_GO_KR_KEY!;
-    // 서비스명에 "청년"이 들어간 지원 전체(약 390건)를 100건씩 받는다
+    // 서비스명에 "청년"이 들어간 지원 전체를 전체 건수(matchCount)만큼 100건씩 받는다
     const url = (page: number) => `${ENDPOINT}?page=${page}&perPage=100&returnType=JSON&serviceKey=${encodeURIComponent(key)}&${encodeURIComponent("cond[서비스명::LIKE]")}=${encodeURIComponent("청년")}`;
-    return fetchPages(4, async (p) => mapGov24(await fetchJson(url(p)), now));
+    return fetchAllPages("gov24", 100, 20, (p) => fetchJson(url(p)), (raw) => mapGov24(raw, now));
   },
 };

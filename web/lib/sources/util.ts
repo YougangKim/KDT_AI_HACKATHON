@@ -63,12 +63,37 @@ export function todayKst(now = new Date()): string {
 }
 
 /**
- * 여러 쪽을 동시에 받아 합친다(공고 전체를 가져오기 위함). 첫 쪽이 실패하면 throw, 뒤쪽 실패는 건너뛴다.
+ * 첫 쪽의 전체 건수(totalCount 등)를 보고 필요한 쪽 수만큼 동시에 받아 합친다(공고 전체 조회).
+ * 첫 쪽이 실패하면 throw. 뒤쪽 실패는 경고 로그로 남기고(몇 쪽이 빠졌는지) 받은 것만 쓴다.
  */
-export async function fetchPages<T>(pages: number, load: (page: number) => Promise<T[]>): Promise<T[]> {
-  const first = await load(1);
-  const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => load(i + 2).catch(() => [] as T[])));
-  return [first, ...rest].flat();
+export async function fetchAllPages<T>(
+  label: string,
+  perPage: number,
+  maxPages: number,
+  loadRaw: (page: number) => Promise<unknown>,
+  map: (raw: unknown) => T[],
+): Promise<T[]> {
+  const first = await loadRaw(1);
+  const total = totalCountOf(first);
+  const pages = Math.min(maxPages, Math.max(1, Math.ceil(total / perPage)));
+  let failed = 0;
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, i) =>
+      loadRaw(i + 2).then(map).catch(() => {
+        failed++;
+        return [] as T[];
+      }),
+    ),
+  );
+  if (failed) console.warn(`[sources] ${label}: ${pages}쪽 중 ${failed}쪽 조회 실패(받은 쪽만 사용)`);
+  if (total > perPage * maxPages) console.warn(`[sources] ${label}: 전체 ${total}건 중 ${perPage * maxPages}건까지만 조회`);
+  return [map(first), ...rest].flat();
+}
+
+/** 응답의 전체 건수(totalCount·matchCount·ALL_CNT). 못 찾으면 0 */
+export function totalCountOf(raw: unknown): number {
+  const m = JSON.stringify(raw ?? {}).match(/"(?:totalCount|matchCount|ALL_CNT)"\s*:\s*"?(\d+)/);
+  return m ? Number(m[1]) : 0;
 }
 
 /** 타임아웃이 있는 JSON fetch. 실패하면 throw */

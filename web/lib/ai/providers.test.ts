@@ -56,3 +56,30 @@ describe("AI 조건 안전장치", () => {
     expect(plausibleAiCondition(c("region", "in", ["서울"], "서울시 거주"))).toBe(true);
   });
 });
+
+describe("Gemini 다음 질문 선택", () => {
+  const cands = [
+    { id: "region:eq:서울", text: "지금 어디에 살고 있나요?", yes: 40, no: 300, resolve: 0 },
+    { id: "homeless:eq:true", text: "본인 명의 집이 없나요?", yes: 200, no: 150, resolve: 30 },
+  ];
+  it("후보 중 Gemini가 고른 id를 돌려주고, 요청에 후보·답한 내용만 보낸다", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    _resetClient();
+    const f = vi.fn(async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"id":"homeless:eq:true","why":"균형"}' }] } }] })));
+    vi.stubGlobal("fetch", f);
+    const { pickNextQuestion } = await import("./index");
+    expect(await pickNextQuestion(cands, [{ text: "청년 주택 정보가 필요한가요?", answer: "yes" }], 340)).toBe("homeless:eq:true");
+    const body = String(((f.mock.calls[0] as unknown[])[1] as { body: string }).body);
+    expect(body).toContain("homeless:eq:true");
+    expect(String((f.mock.calls[0] as unknown[])[0])).toContain("generateContent");
+  });
+  it("후보에 없는 id나 오류면 null(화면은 규칙 1순위)", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    _resetClient();
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"id":"made-up"}' }] } }] }))));
+    const { pickNextQuestion } = await import("./index");
+    expect(await pickNextQuestion(cands, [], 340)).toBeNull();
+  });
+});

@@ -198,7 +198,7 @@ for (const [name, pool] of DATASETS) {
       const asked = await playAs(page, { ...seoulJobseeker, region: "경기", employment: "직장인" });
       console.log(`[${name}] a2 질문 ${asked.length}개: ${asked.join(" / ")}`);
       assert.equal(new Set(asked).size, asked.length, "같은 질문 반복 없음");
-      if (pool !== FIXTURE) assert.ok(asked.length >= 8, `전체 분야에서는 8개 이상 물어야 한다(${asked.length})`);
+      if (pool !== FIXTURE) assert.ok(asked.length >= 10, `전체 분야에서는 10개 이상 물어야 한다(${asked.length})`);
       await page.getByRole("heading", { name: /딱 맞는 공고|공고가 없어요/ }).first().waitFor();
       await page.context().close();
     });

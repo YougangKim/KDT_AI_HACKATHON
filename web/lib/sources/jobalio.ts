@@ -1,7 +1,7 @@
 // 잡알리오 공공기관 채용정보 (재정경제부, data.go.kr 15125273)
 import type { Condition, Opportunity } from "../types";
 import type { SourceAdapter } from "./types";
-import { buildConditions, withEligibility, fetchJson, fetchPages, pickArray, str, toIsoDate, toRegions } from "./util";
+import { buildConditions, withEligibility, fetchJson, fetchAllPages, pickArray, str, toIsoDate, toRegions } from "./util";
 
 const ENDPOINT = "https://apis.data.go.kr/1051000/recruitment/list";
 
@@ -64,8 +64,8 @@ export const jobalio: SourceAdapter = {
   envKey: "DATA_GO_KR_KEY",
   async fetch(now) {
     const key = process.env.DATA_GO_KR_KEY!;
-    // 진행 중 공고 전체(약 500건)를 100건씩 받는다
+    // 진행 중 공고 전체를 전체 건수(totalCount)만큼 100건씩 받는다(최대 2,000건)
     const url = (page: number) => `${ENDPOINT}?serviceKey=${encodeURIComponent(key)}&numOfRows=100&pageNo=${page}&resultType=json&ongoingYn=Y`;
-    return fetchPages(6, async (p) => mapJobalio(await fetchJson(url(p)), now));
+    return fetchAllPages("jobalio", 100, 20, (p) => fetchJson(url(p)), (raw) => mapJobalio(raw, now));
   },
 };

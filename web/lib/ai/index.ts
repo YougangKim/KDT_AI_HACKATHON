@@ -9,7 +9,7 @@ export { explainMatchRules, phraseQuestionRules, structureConditionsRules, norma
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 const FAST_MODEL = process.env.ANTHROPIC_FAST_MODEL || "claude-haiku-5-5";
-const ATTRS: AttrKey[] = ["age", "region", "homeless", "livingAlone", "incomePct", "employment", "interest"];
+const ATTRS: AttrKey[] = ["age", "region", "homeless", "livingAlone", "incomePct", "employment", "interest", "subscription", "married", "welfare", "experienced", "education"];
 const OPS = ["eq", "lte", "gte", "in"] as const;
 
 let client: Anthropic | null | undefined;
@@ -65,9 +65,11 @@ async function ask(model: string, system: string, user: string, maxTokens: numbe
 
 const STRUCTURE_SYSTEM = `너는 한국 청년 정책·공고의 자격요건 문장을 구조화한다.
 JSON 배열만 출력한다. 각 원소: {"attr","op","value","rawText","confidence"}.
-- attr: ${ATTRS.join(", ")} 중 하나만. 그 외 조건(학력, 자격증, 거주기간 등)은 출력하지 않는다.
+- attr: ${ATTRS.join(", ")} 중 하나만. 그 외 조건(자격증, 거주기간 등)은 출력하지 않는다.
   age=만 나이(number), region=시도 약칭 배열(서울, 부산, 대구, 인천, 광주, 대전, 울산, 세종, 경기, 강원, 충북, 충남, 전북, 전남, 경북, 경남, 제주),
   homeless/livingAlone=boolean, incomePct=기준중위소득 대비 %(number), employment=["student","jobseeker","employed","parttime"]의 부분집합.
+  subscription(청약통장 가입 필요)/married(신혼부부 대상)/welfare(기초생활수급·차상위 대상)/experienced(경력자만)=boolean eq true,
+  education=최소 학력 단계(number, gte): 1 고졸, 2 전문대졸, 3 대졸(4년제), 4 석사, 5 박사.
 - op: eq, lte, gte, in. 나이 범위는 gte와 lte 두 개로 나눈다. region·employment는 in.
 - rawText: 근거가 된 원문 구절 그대로.
 - confidence: 원문에 명시돼 있으면 "high", 해석·환산이 필요하면(예: 연소득 금액→중위소득 %) "low".`;
