@@ -66,10 +66,19 @@ export const jobalio: SourceAdapter = {
   id: "jobalio",
   domains: ["job", "parttime"],
   envKey: "DATA_GO_KR_KEY",
-  async fetch(now) {
+  async fetch(now, options = {}) {
     const key = process.env.DATA_GO_KR_KEY!;
-    // 진행 중 공고 전체를 전체 건수(totalCount)만큼 100건씩 받는다(최대 2,000건)
+    // 라이브 응답은 최대 2,000건, 일괄 수집은 최대 5,000건
     const url = (page: number) => `${ENDPOINT}?serviceKey=${encodeURIComponent(key)}&numOfRows=100&pageNo=${page}&resultType=json&ongoingYn=Y`;
-    return fetchAllPages("jobalio", 100, 20, (p) => fetchJson(url(p)), (raw) => mapJobalio(raw, now));
+    return fetchAllPages(
+      "jobalio",
+      100,
+      options.full ? 50 : 20,
+      (p) => {
+        options.onRequest?.();
+        return fetchJson(url(p));
+      },
+      (raw) => mapJobalio(raw, now),
+    );
   },
 };

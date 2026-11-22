@@ -18,3 +18,10 @@ jobs:
           curl --fail --silent --show-error \
             -H "Authorization: Bearer ${CRON_SECRET}" \
             https://kdtaihackathon-web.vercel.app/api/cron/scan
+      - name: Collect opportunity pool
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            https://kdtaihackathon-web.vercel.app/api/cron/collect

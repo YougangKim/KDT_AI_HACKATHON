@@ -27,6 +27,14 @@ export const ADAPTERS: SourceAdapter[] = [lhNotice, myhome, applyhome, jobalio, 
 const TTL_MS = 60 * 60 * 1000;
 const cache = new Map<string, { at: number; items: Opportunity[] }>();
 const AI_ENRICH_LIMIT = 15;
+export interface SourceRunMeta {
+  source: string;
+  ok: boolean;
+  count: number;
+  durationMs: number;
+  calls: number;
+  error?: string;
+}
 const aiConditionCache = new Map<string, Condition[]>();
 
 /** 테스트용 */
@@ -36,16 +44,32 @@ export function _clearCache() {
   _clearExtractCache();
 }
 
-async function runAdapter(a: SourceAdapter, now: Date): Promise<Opportunity[]> {
-  if (!process.env[a.envKey]) return [];
+async function runAdapter(
+  a: SourceAdapter,
+  now: Date,
+  options: { full?: boolean; onSource?: (meta: SourceRunMeta) => void } = {},
+): Promise<Opportunity[]> {
+  const started = Date.now();
+  let calls = 0;
+  if (!process.env[a.envKey]) {
+    options.onSource?.({ source: a.id, ok: true, count: 0, durationMs: Date.now() - started, calls });
+    return [];
+  }
   const hit = cache.get(a.id);
-  if (hit && now.getTime() - hit.at < TTL_MS) return hit.items;
+  if (!options.full && hit && now.getTime() - hit.at < TTL_MS) {
+    options.onSource?.({ source: a.id, ok: true, count: hit.items.length, durationMs: Date.now() - started, calls });
+    return hit.items;
+  }
   try {
-    const items = await a.fetch(now);
+    const items = await a.fetch(now, { full: options.full, onRequest: () => calls++ });
+    if (!calls) calls = 1;
     cache.set(a.id, { at: now.getTime(), items });
+    options.onSource?.({ source: a.id, ok: true, count: items.length, durationMs: Date.now() - started, calls });
     return items;
   } catch (e) {
-    console.warn(`[sources] ${a.id} 조회 실패:`, (e as Error).message);
+    const error = (e as Error).message;
+    console.warn(`[sources] ${a.id} 조회 실패:`, error);
+    options.onSource?.({ source: a.id, ok: false, count: 0, durationMs: Date.now() - started, calls: calls || 1, error });
     return [];
   }
 }
@@ -122,19 +146,27 @@ async function enrichWithAi(items: Opportunity[], wait: boolean): Promise<Opport
   return out;
 }
 
-/** 분야별 공고를 모은다. domains 생략 시 6개 분야 전체 */
-export async function loadOpportunities(domains: Domain[] = ALL_DOMAINS, now: Date = new Date(), opts: { waitAi?: boolean } = {}): Promise<Opportunity[]> {
+export async function collectLiveOpportunities(
+  domains: Domain[] = ALL_DOMAINS,
+  now: Date = new Date(),
+  opts: {
+    waitAi?: boolean;
+    full?: boolean;
+    adapters?: SourceAdapter[];
+    onSource?: (meta: SourceRunMeta) => void;
+  } = {},
+): Promise<Opportunity[]> {
   const wanted = domains.filter((d) => ALL_DOMAINS.includes(d));
   const fixture = await readFixture();
-  const adapters = ADAPTERS.filter((a) => a.domains.some((d) => wanted.includes(d)));
+  const adapters = (opts.adapters ?? ADAPTERS).filter((a) => a.domains.some((d) => wanted.includes(d)));
   // 테스트 파일이 있으면 어댑터 응답만 그 파일로 바꾸고, 마감·AI·중복 제거 등 후처리는 운영과 똑같이 거친다
   const [live, web] = fixture
     ? [fixture, []]
     : await Promise.all([
-        Promise.all(adapters.map((a) => runAdapter(a, now))).then((r) => r.flat()),
-        searchWeb(wanted, now), // 선택 기능: 기본 OFF
+        Promise.all(adapters.map((a) => runAdapter(a, now, opts))).then((r) => r.flat()),
+        opts.full ? [] : searchWeb(wanted, now), // 선택 기능은 라이브 경로에서만
       ]);
-  const rss = !fixture && wanted.includes("housing") ? await fetchShRss(now) : []; // 선택 기능: SH 공식 RSS, 기본 OFF
+  const rss = !fixture && !opts.full && wanted.includes("housing") ? await fetchShRss(now) : [];
   const today = todayKst(now);
 
   const out: Opportunity[] = [];
@@ -163,6 +195,25 @@ export async function loadOpportunities(domains: Domain[] = ALL_DOMAINS, now: Da
   }
   const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
   return attachGeo(attachPlaces(deduped));
+}
+
+/** 분야별 공고를 모은다. fixture는 기존 경로, 운영 요청은 저장된 공고 풀을 우선한다. */
+export async function loadOpportunities(
+  domains: Domain[] = ALL_DOMAINS,
+  now: Date = new Date(),
+  opts: { waitAi?: boolean } = {},
+): Promise<Opportunity[]> {
+  const wanted = domains.filter((d) => ALL_DOMAINS.includes(d));
+  if (await readFixture()) return collectLiveOpportunities(wanted, now, opts);
+
+  const { readPool, triggerPoolCollection } = await import("../server/pool");
+  const stored = await readPool();
+  // 비어 있는 풀(전 출처 실패)은 신선해도 쓰지 않는다
+  const fresh = stored && stored.items.length > 0 && now.getTime() - new Date(stored.meta.collectedAt).getTime() < 6 * 60 * 60 * 1000;
+  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain));
+
+  triggerPoolCollection(now);
+  return collectLiveOpportunities(wanted, now, opts);
 }
 
 /**

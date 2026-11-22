@@ -3,11 +3,12 @@ import type { Opportunity } from "../types";
 import { mapLhNotice } from "./lh-notice";
 import { mapMyhome } from "./myhome";
 import { mapJobalio } from "./jobalio";
-import { mapGov24 } from "./gov24";
+import { gov24, mapGov24 } from "./gov24";
 import { mapYouthcenter } from "./youthcenter";
 import { mapWork24Training } from "./work24-training";
 import { mapQnet } from "./qnet";
 import { ALL_DOMAINS, _clearCache, loadOpportunities, parseDomains } from "./index";
+import { _clearPoolMemory } from "../server/pool";
 import housing from "../../data/samples/housing.json";
 import job from "../../data/samples/job.json";
 import parttime from "../../data/samples/parttime.json";
@@ -122,6 +123,26 @@ describe("어댑터 매핑", () => {
     expect(mapJobalio({ resultCode: 500 }, NOW)).toEqual([]);
     expect(mapGov24("<xml/>", NOW)).toEqual([]);
   });
+
+  it("정부24 full 옵션은 이름 필터 없이 1,000건씩 전체를 조회하고 청년 관련만 남긴다", async () => {
+    process.env.DATA_GO_KR_KEY = "test";
+    const fetchMock = vi.fn().mockImplementation((input: string | URL | Request) => {
+      const page = Number(new URL(String(input)).searchParams.get("page"));
+      return Promise.resolve(new Response(JSON.stringify({
+        totalCount: 10_893,
+        data: page === 1 ? [
+          { 서비스ID: "A", 서비스명: "청년 지원", 소관기관명: "정부" },
+          { 서비스ID: "B", 서비스명: "주거급여", 사용자구분: "개인||가구", 지원대상: "소득인정액 기준 충족 가구", 소관기관명: "국토교통부" },
+          { 서비스ID: "C", 서비스명: "어르신 돌봄", 사용자구분: "개인", 지원대상: "65세 이상 노인", 소관기관명: "보건복지부" },
+        ] : [],
+      }), { status: 200 }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const list = await gov24.fetch(NOW, { full: true });
+    expect(fetchMock).toHaveBeenCalledTimes(11);
+    expect(String(fetchMock.mock.calls[0][0])).not.toContain("cond");
+    expect(list.map((o) => o.id)).toEqual(["gov24:A", "gov24:B"]);
+  });
 });
 
 describe("샘플 데이터", () => {
@@ -146,6 +167,7 @@ describe("loadOpportunities", () => {
   const saved = { ...process.env };
   beforeEach(() => {
     _clearCache();
+    _clearPoolMemory();
     delete process.env.DATA_GO_KR_KEY;
     delete process.env.YOUTHCENTER_KEY;
     delete process.env.WORK24_TRAINING_KEY;
@@ -182,7 +204,8 @@ describe("loadOpportunities", () => {
   it("키가 있고 응답이 오면 실데이터 사용", async () => {
     process.env.DATA_GO_KR_KEY = "test";
     const body = { resultCode: 200, result: [{ recrutPblntSn: 1, instNm: "기관", recrutPbancTtl: "청년인턴", pbancEndYmd: "20261210", srcUrl: "https://job.alio.go.kr/1" }] };
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify(body), { status: 200 })));
+    // 응답 본문은 한 번만 읽히므로(백그라운드 풀 수집도 같은 fetch를 쓴다) 호출마다 새 Response
+    vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => new Response(JSON.stringify(body), { status: 200 })));
     const list = await loadOpportunities(["job"], NOW);
     expect(list).toHaveLength(1);
     expect(list[0]).toMatchObject({ id: "jobalio:1", isSample: false });
