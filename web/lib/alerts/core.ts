@@ -59,9 +59,14 @@ export function findDeadlineSoon(
   });
 }
 
-/** 결과 화면의 답변·매칭으로 알림 조건을 만든다. 지금 보이는 공고는 '이미 본 것' */
+/**
+ * 결과 화면의 답변·매칭으로 알림 조건을 만든다. 지금 보이는 공고는 '이미 본 것'.
+ * 감시 분야는 사용자가 "필요해요"라고 답한 분야(지금 0건인 분야도 앞으로 찾도록). 고른 분야가 없으면 전체.
+ */
 export function buildWatch(answers: AnswerRecord[], matches: Match[], now: Date = new Date()): Watch {
-  const domains = Array.from(new Set(matches.map((m) => m.opportunity.domain))) as Domain[];
+  const domains = Array.from(
+    new Set(answers.filter((a) => a.question.attr === "interest" && a.answer === "yes").map((a) => String(a.question.value))),
+  ) as Domain[];
   return {
     createdAt: now.toISOString(),
     answers,

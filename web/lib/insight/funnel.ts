@@ -70,10 +70,8 @@ export function analyzeFunnel(
 
   const steps: FilterStep[] = activeAnswers
     .map((answer) => {
-      const alonePassed = getMatches({
-        pool,
-        answers: [answer],
-      }).length;
+      const aloneIds = new Set(getMatches({ pool, answers: [answer] }).map((m) => m.opportunity.id));
+      const alonePassed = aloneIds.size;
 
       const passedWithout = getMatches({
         pool,
@@ -88,6 +86,7 @@ export function analyzeFunnel(
         attr: answer.question.attr,
         answer,
         aloneRemoved: pool.length - alonePassed,
+        removedIds: pool.filter((o) => !aloneIds.has(o.id)).map((o) => o.id),
         passedWithout,
         hard: hardIdSet.has(answer.question.id),
       };
@@ -98,7 +97,7 @@ export function analyzeFunnel(
         a.questionId.localeCompare(b.questionId),
     );
 
-  const relaxed = steps
+  const gains = steps
     .filter(({ hard }) => !hard)
     .map((step) => ({
       step,
@@ -110,7 +109,15 @@ export function analyzeFunnel(
         b.gain - a.gain ||
         b.step.aloneRemoved - a.step.aloneRemoved ||
         a.step.questionId.localeCompare(b.step.questionId),
-    )[0];
+    );
+  const relaxed = gains[0];
+  // 사는 곳은 쉽게 바꿀 수 없으니, 다른 조건을 먼저 제안하고 지역은 마지막에
+  const relaxOptions = [
+    ...gains.filter(({ step }) => step.attr !== "region"),
+    ...gains.filter(({ step }) => step.attr === "region"),
+  ]
+    .slice(0, 3)
+    .map((r) => ({ ...r, suggestion: relaxationText(r.step, r.gain) }));
 
   const passRate = pool.length === 0 ? 0 : passed / pool.length;
 
@@ -126,6 +133,7 @@ export function analyzeFunnel(
           suggestion: relaxationText(relaxed.step, relaxed.gain),
         }
       : null,
+    relaxOptions,
     scarce: passed <= 3 || passRate < 0.05,
   };
 }
@@ -146,6 +154,22 @@ export function relaxationText(step: FilterStep, gain: number): string {
       return `취업 상태를 "모름"으로 두면 ${gain}건이 더 보여요`;
     case "interest":
       return `다른 분야 공고도 함께 보면 ${gain}건이 더 보여요`;
+    case "subscription":
+      return `청약통장 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+    case "married":
+      return `신혼부부 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+    case "welfare":
+      return `수급자·차상위 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+    case "experienced":
+      return `경력 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+    case "education":
+      return `학력을 "모름"으로 두면 ${gain}건이 더 보여요`;
+    case "field":
+      return `다른 직무 분야도 함께 보면 ${gain}건이 더 보여요`;
+    case "need":
+      return `다른 종류의 지원도 함께 보면 ${gain}건이 더 보여요`;
+    case "housingKind":
+      return `임대·분양을 모두 보면 ${gain}건이 더 보여요`;
   }
 }
 

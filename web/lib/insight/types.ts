@@ -9,6 +9,8 @@ export interface FilterStep {
   answer: AnswerRecord;
   /** 이 답변 하나만 적용했을 때 탈락하는 후보 수 */
   aloneRemoved: number;
+  /** 이 답변 하나 때문에 탈락하는 공고 id(분석 화면 "질문별 탈락 공고" 탭) */
+  removedIds: string[];
   /** 이 답변만 빼고(모름 처리) 나머지 답변을 모두 적용했을 때 통과 수 */
   passedWithout: number;
   hard: boolean; // 사용자가 '타협 불가'로 표시한 조건
@@ -27,6 +29,8 @@ export interface FunnelReport {
   byDomain: Record<Domain, { total: number; passed: number }>;
   steps: FilterStep[]; // aloneRemoved 내림차순
   bottleneck: Relaxation | null; // hard 아닌 조건 중 gain 최대(0이면 null)
+  /** 풀면 결과가 늘어나는 조건들(최대 3개). 바꾸기 어려운 지역 조건은 뒤로 */
+  relaxOptions: Relaxation[];
   scarce: boolean; // passed가 너무 적음(<= 3 또는 passRate < 5%)
 }
 

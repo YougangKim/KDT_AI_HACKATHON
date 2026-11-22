@@ -17,7 +17,15 @@ export type AttrKey =
   | "livingAlone" // 1인 가구·독립(boolean)
   | "incomePct" // 기준중위소득 대비 %(number, 예: 100)
   | "employment" // "student" | "jobseeker" | "employed" | "parttime"
-  | "interest"; // 관심 분야(Domain)
+  | "interest" // 관심 분야(Domain)
+  | "subscription" // 주택청약종합저축(청약통장) 가입(boolean)
+  | "married" // 신혼부부·예비 신혼부부(boolean)
+  | "welfare" // 기초생활수급·차상위 등 저소득 지원 대상(boolean)
+  | "experienced" // 관련 경력 있음(boolean). 경력직 전용 채용에만 붙는다
+  | "education" // 최종 학력 단계(number: 1 고졸, 2 전문대졸, 3 대졸, 4 석사, 5 박사)
+  | "field" // 관심 직무 분야(NCS 대분류 문자열, 여러 개 가능). 취향 조건
+  | "need" // 필요한 지원 종류(정부24 서비스분야, 여러 개 가능). 취향 조건
+  | "housingKind"; // 원하는 주거 형태("rent" 임대 | "sale" 분양). 취향 조건
 
 export type AttrValue = number | string | boolean;
 

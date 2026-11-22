@@ -43,7 +43,7 @@ export const lhNotice: SourceAdapter = {
   async fetch(now) {
     const key = process.env.DATA_GO_KR_KEY!;
     // UPP_AIS_TP_CD=06: 임대주택, PAN_SS=공고중
-    const url = `${ENDPOINT}?serviceKey=${encodeURIComponent(key)}&PG_SZ=50&PAGE=1&UPP_AIS_TP_CD=06&PAN_SS=${encodeURIComponent("공고중")}`;
+    const url = `${ENDPOINT}?serviceKey=${encodeURIComponent(key)}&PG_SZ=150&PAGE=1&UPP_AIS_TP_CD=06&PAN_SS=${encodeURIComponent("공고중")}`; // 공고중 전체(약 70건)
     return mapLhNotice(await fetchJson(url), now);
   },
 };

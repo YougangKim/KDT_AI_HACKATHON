@@ -1,8 +1,9 @@
 // AI 모듈: ANTHROPIC_API_KEY가 있으면 Claude, 없고 GEMINI_API_KEY가 있으면 Gemini, 둘 다 없거나 실패하면 규칙 기반.
 // 개인정보 보호: 외부로 보내는 것은 공고 원문·질문 범주값·매칭 근거 문구뿐이다(사용자 자유입력 없음).
 import Anthropic from "@anthropic-ai/sdk";
+import { defaultQuestionText } from "../engine/phrase";
 import type { AttrKey, Condition, Match, Question } from "../types";
-import { explainMatchRules, phraseQuestionRules, structureConditionsRules } from "./rules";
+import { explainMatchRules, structureConditionsRules } from "./rules";
 
 export { explainMatchRules, phraseQuestionRules, structureConditionsRules, normalizeRegion } from "./rules";
 
@@ -109,10 +110,11 @@ export async function structureConditions(rawText: string): Promise<Condition[]>
 
 /** 질문 → 게임 말투 문장 */
 export async function phraseQuestion(q: Pick<Question, "attr" | "op" | "value">): Promise<string> {
-  const fallback = phraseQuestionRules(q);
+  // 화면의 다른 질문과 말투를 맞춘다(존댓말 "~인가요?/~나요?")
+  const fallback = defaultQuestionText(q);
   const text = await ask(
     FAST_MODEL,
-    "너는 청년 기회를 맞히는 스무고개 게임의 진행자다. 주어진 조건을 예/아니오로 답할 수 있는 반말 질문 한 문장(40자 이내)으로 바꾼다. 문장만 출력한다.",
+    "너는 청년에게 맞는 공고를 찾는 질문을 다듬는다. 주어진 조건을 예/아니오로 답할 수 있는 존댓말 질문 한 문장(40자 이내, '~인가요?'·'~나요?'로 끝남)으로 바꾼다. 반말 금지. 문장만 출력한다.",
     `조건: ${JSON.stringify({ attr: q.attr, op: q.op, value: q.value })}\n참고 문장: ${fallback}`,
     100,
   );
@@ -131,6 +133,33 @@ export async function explainMatch(m: Match): Promise<string> {
     200,
   );
   return text && text.length <= 300 ? text : fallback;
+}
+
+export interface QuestionCandidate {
+  id: string;
+  text: string;
+  yes: number; // 예일 때 남는 후보 수
+  no: number; // 아니오일 때 남는 후보 수
+  resolve: number; // 확인 필요가 풀리는 후보 수
+}
+
+/**
+ * 다음 질문 고르기: 규칙(정보 이득)으로 뽑은 상위 후보 중에서 AI가 사용자 맥락에 가장 맞는 것을 고른다.
+ * 후보 밖의 질문은 만들지 않는다(후보 id만 허용). 실패·지연이면 null → 규칙 1순위 사용.
+ * 외부로 보내는 것은 질문 문장·후보 수·이미 답한 범주 답뿐이다(개인 식별 정보 없음).
+ */
+export async function pickNextQuestion(candidates: QuestionCandidate[], answered: { text: string; answer: string }[], total: number): Promise<string | null> {
+  if (candidates.length < 2) return candidates[0]?.id ?? null;
+  const text = await ask(
+    FAST_MODEL,
+    "너는 청년에게 맞는 공고를 찾는 스무고개의 질문 설계자다. 목표: 적은 질문으로 사용자에게 맞는 공고를 가려내고, 자격을 확정해 알림 정확도를 높이는 것. " +
+      "후보 질문 중 하나를 고른다. 기준: (1) 예/아니오로 남는 후보가 고르게 갈리는 질문(정보 이득), (2) 확인 필요를 많이 푸는 질문, (3) 이미 답한 내용과 겹치거나 답이 뻔한 질문은 피함, (4) 사용자가 쉽게 답할 수 있는 질문 우선. " +
+      '반드시 JSON 한 줄 {"id":"후보 id","why":"20자 이내 이유"}만 출력한다.',
+    JSON.stringify({ 남은후보: total, 이미답함: answered.slice(-12), 후보: candidates }),
+    120,
+  );
+  const id = text?.match(/"id"\s*:\s*"([^"]+)"/)?.[1];
+  return id && candidates.some((c) => c.id === id) ? id : null;
 }
 
 /** 서버에서 AI(Claude 또는 Gemini)가 켜져 있는지(화면의 "AI 생성" 표시 판단용) */

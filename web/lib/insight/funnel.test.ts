@@ -209,6 +209,23 @@ describe("analyzeFunnel", () => {
     );
   });
 
+  it("완화 제안은 여러 개를 주되 바꾸기 어려운 지역은 마지막에 둔다", () => {
+    const homeless = question("homeless", "eq", true, "본인 명의 집이 없나요? (무주택)");
+    const region = question("region", "eq", "부산", "지금 부산에 살고 있나요?");
+    const pool = [
+      opportunity("seoul1", "job", [], ["서울"]),
+      opportunity("seoul2", "job", [], ["서울"]),
+      opportunity("seoul3", "job", [], ["서울"]),
+      opportunity("home", "housing", [condition("homeless", "eq", true)]),
+      opportunity("ok", "exam", []),
+    ];
+    const report = analyzeFunnel(pool, [answer(homeless, "no"), answer(region, "yes")]);
+
+    expect(report.bottleneck?.step.attr).toBe("region"); // 가장 많이 막은 조건은 지역(+3)
+    expect(report.relaxOptions.map((r) => r.step.attr)).toEqual(["homeless", "region"]);
+    expect(report.relaxOptions[0].suggestion).toBe('주택 보유 여부를 "모름"으로 두면 1건이 더 보여요');
+  });
+
   it("답변이 없으면 모든 후보가 통과하고 bottleneck은 null이다", () => {
     const report = analyzeFunnel(FIXTURE_OPPORTUNITIES, []);
 
@@ -289,6 +306,7 @@ describe("relaxationText", () => {
           attr: "incomePct",
           answer: record,
           aloneRemoved: 2,
+          removedIds: [],
           passedWithout: 5,
           hard: false,
         },

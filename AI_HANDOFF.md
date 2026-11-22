@@ -30,6 +30,12 @@
 
 ## 최근 변경 파일
 
+- 2026-11-22 Claude 배포 피드백 6건 수정(공고 991건·알바 분류·조건 8종·선택형 질문·Gemini 다음 질문·분석 탈락 공고 목록·지역 근무 필터). 커밋함, 푸시 안 함 → 배포 반영하려면 사용자 요청 후 푸시. 검수 `cd e2e && node audit-live.mjs http://localhost:5300`, e2e `LIVE_API=1 npm test`.
+
+- 2026-11-22 13:10 Claude 사용성 검수: `docs/검수_절차.md`, `docs/검수_결과_20261122.md`, `e2e/audit-live.mjs`(배포 사이트 자동 검수, `cd e2e && node audit-live.mjs`). 기준선 5/17, Codex 앱 34 반려·절차 64 조건부. 배포가 바뀔 때마다 다시 돌린다. 고칠 목록은 결과 문서 5절
+
+- 11:30 배포 실검증 완료: 실데이터 191건, 알림 저장(Upstash)·서버 재조사 동작. 남은 것: 사용자 크롬에서 알림 허용 후 푸시 도착 확인, 보고서 팀 정보·캡처
+
 - 2026-11-22 Claude 시나리오 보강: 소득 구간 선택, 감시 분야=고른 분야, 받은 알림 유지, 완화 안내 분리, 테스트 전용 공고 파일 경로(E2E_LOCAL=1, 배포 무시). e2e `cd e2e && LIVE_API=1 npm test`(web 빌드 후, 10/10). Codex 4차 a74·b69·c66 반려(차별성). 커밋 안 함.
 
 - 2026-11-22 Claude 사용자 흐름 점검: 지역 한 번에 선택·고른 분야 재질문 제거·홈 분야별 건수·청년 비대상 제외·결과 화면 완화안/조건 고치기·지역 근무 정렬. 변경: web/app/{page,play/page,result/page,result/analysis/page}.tsx, web/components/result/{RelaxSuggestions,ConditionEditor,sort}.tsx|ts, lastResult.ts, web/lib/insight/{funnel,types}.ts, web/lib/sources/index.ts, 새 `e2e/`(시나리오 3개, `cd e2e && npm install && npm test`, 서버 :5300 필요). Codex 2차 a67·b56·c55 반려 유지. 다음: 알림 재조사 e2e, 소득 질문 반복 줄이기. 상세 `docs/사용자흐름_점검.md`

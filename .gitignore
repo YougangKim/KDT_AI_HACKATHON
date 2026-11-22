@@ -27,3 +27,7 @@ web/.next/
 tmp/
 output/
 __pycache__/
+
+# e2e 시나리오 테스트
+e2e/node_modules/
+e2e/artifacts/

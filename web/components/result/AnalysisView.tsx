@@ -26,6 +26,21 @@ export function chipOf(a: AnswerRecord): string | null {
       return yes ? `소득 ${v}%↓` : `소득 ${v}%↑`;
     case "employment":
       return yes ? EMP[String(v)] ?? String(v) : `${EMP[String(v)] ?? v} ✕`;
+    case "subscription":
+      return (v === true) === yes ? "청약통장" : "청약통장 ✕";
+    case "married":
+      return (v === true) === yes ? "신혼부부" : "신혼 ✕";
+    case "welfare":
+      return (v === true) === yes ? "수급·차상위" : "수급 ✕";
+    case "experienced":
+      return (v === true) === yes ? "경력 있음" : "신입";
+    case "education":
+      return yes ? `학력 ${v}단계↑` : `학력 ${Number(v) - 1}단계↓`;
+    case "field":
+    case "need":
+      return yes ? String(v) : `${v} ✕`;
+    case "housingKind":
+      return (v === "sale") === yes ? "분양" : "임대";
     case "interest":
       return yes ? DOMAIN_SHORT[String(v)] ?? String(v) : `${DOMAIN_SHORT[String(v)] ?? v} ✕`;
   }
@@ -40,12 +55,14 @@ export function AnalysisView({
   sampleCount,
   onRelax,
   onKeep,
+  onPickStep,
 }: {
   report: FunnelReport;
   answers: AnswerRecord[];
   sampleCount: number;
   onRelax: (questionId: string) => void;
   onKeep: (questionId: string) => void;
+  onPickStep?: (questionId: string) => void; // 조건별 탈락 막대를 누르면 그 조건 때문에 빠진 공고 목록으로
 }) {
   const pct = Math.round(report.passRate * 100);
   // 같은 수치 조건(소득 250%↓, 200%↓)은 가장 좁은 마지막 답만 칩으로
@@ -116,9 +133,15 @@ export function AnalysisView({
       {/* 4. 조건별 컷 */}
       {cuts.length > 0 && (
         <section className="space-y-2 rounded-3xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold text-slate-500">조건별 탈락</p>
+          <p className="text-xs font-semibold text-slate-500">조건별 탈락 <span className="font-normal text-slate-400">· 누르면 빠진 공고 보기</span></p>
           {cuts.map((s) => (
-            <div key={s.questionId} className="flex items-center gap-2 text-sm">
+            <button
+              type="button"
+              key={s.questionId}
+              onClick={() => onPickStep?.(s.questionId)}
+              aria-label={`${stepChip(s)} 때문에 빠진 공고 ${s.aloneRemoved}개 보기`}
+              className="flex w-full items-center gap-2 text-left text-sm"
+            >
               <span className="w-24 shrink-0 truncate font-medium">
                 {s.hard && "🔒 "}
                 {stepChip(s)}
@@ -130,7 +153,7 @@ export function AnalysisView({
                 />
               </span>
               <span className="w-8 text-right font-bold text-rose-600">−{s.aloneRemoved}</span>
-            </div>
+            </button>
           ))}
         </section>
       )}

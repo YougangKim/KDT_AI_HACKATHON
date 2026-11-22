@@ -1,7 +1,7 @@
 // 행정안전부 대한민국 공공서비스(혜택) 정보 (data.go.kr 15113968, api.odcloud.kr)
 import type { Opportunity } from "../types";
 import type { SourceAdapter } from "./types";
-import { buildConditions, withEligibility, fetchJson, pickArray, str, toIsoDate, toRegions } from "./util";
+import { buildConditions, withEligibility, fetchJson, fetchPages, pickArray, str, toIsoDate, toRegions } from "./util";
 
 const ENDPOINT = "https://api.odcloud.kr/api/gov24/v3/serviceList";
 
@@ -23,7 +23,12 @@ export function mapGov24(raw: unknown, now: Date): Opportunity[] {
         org: org || "정부24",
         region,
         summary: str(r["서비스목적요약"]) || str(r["지원내용"]).slice(0, 120),
-        conditions: buildConditions("benefit", region, [str(r["지원대상"]), str(r["선정기준"])].join(" ")),
+        conditions: buildConditions(
+          "benefit",
+          region,
+          [str(r["지원대상"]), str(r["선정기준"])].join(" "),
+          str(r["서비스분야"]) ? [{ attr: "need", op: "eq", value: str(r["서비스분야"]), rawText: `지원 분야: ${str(r["서비스분야"])}`, confidence: "high" }] : [],
+        ),
         applyEnd: /상시/.test(deadline) ? undefined : toIsoDate(endMatch ? endMatch[1] : deadline),
         url: str(r["상세조회URL"]) || "https://www.gov.kr/portal/rcvfvrSvc/main",
         source: "gov24",
@@ -40,7 +45,8 @@ export const gov24: SourceAdapter = {
   envKey: "DATA_GO_KR_KEY",
   async fetch(now) {
     const key = process.env.DATA_GO_KR_KEY!;
-    const url = `${ENDPOINT}?page=1&perPage=50&returnType=JSON&serviceKey=${encodeURIComponent(key)}&${encodeURIComponent("cond[서비스명::LIKE]")}=${encodeURIComponent("청년")}`;
-    return mapGov24(await fetchJson(url), now);
+    // 서비스명에 "청년"이 들어간 지원 전체(약 390건)를 100건씩 받는다
+    const url = (page: number) => `${ENDPOINT}?page=${page}&perPage=100&returnType=JSON&serviceKey=${encodeURIComponent(key)}&${encodeURIComponent("cond[서비스명::LIKE]")}=${encodeURIComponent("청년")}`;
+    return fetchPages(4, async (p) => mapGov24(await fetchJson(url(p)), now));
   },
 };

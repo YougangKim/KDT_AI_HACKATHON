@@ -16,6 +16,8 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
   parttime: "알바·단기 근로 중",
 };
 
+export const EDU: Record<number, string> = { 1: "고졸", 2: "전문대졸", 3: "대졸(4년제)", 4: "석사", 5: "박사" };
+
 const list = (v: Condition["value"]): AttrValue[] => (Array.isArray(v) ? v : [v]);
 const join = (v: Condition["value"], map?: Record<string, string>) =>
   list(v)
@@ -45,6 +47,22 @@ export function defaultQuestionText(q: Pick<Question, "attr" | "op" | "value">):
       return many
         ? `지금 ${join(value, EMPLOYMENT_LABEL)} 중 하나인가요?`
         : `지금 ${join(value, EMPLOYMENT_LABEL)}인가요?`;
+    case "subscription":
+      return "주택청약종합저축(청약통장)에 가입돼 있나요?";
+    case "married":
+      return "결혼했거나 결혼 예정인 신혼부부인가요?";
+    case "welfare":
+      return "기초생활수급자나 차상위계층에 해당하나요?";
+    case "experienced":
+      return "지원하려는 분야의 경력이 있나요?";
+    case "education":
+      return op === "gte" ? `최종 학력이 ${EDU[Number(value)] ?? value} 이상인가요?` : `최종 학력이 ${EDU[Number(value)] ?? value} 이하인가요?`;
+    case "field":
+      return `${join(value)} 분야 일자리를 찾나요?`;
+    case "need":
+      return `${join(value)} 지원이 필요한가요?`;
+    case "housingKind":
+      return value === "sale" ? "내 집 마련(분양)을 찾나요?" : "임대(월세·전세) 주택을 찾나요?";
     case "interest":
       return many
         ? `${join(value, DOMAIN_LABEL)} 중에 관심 있는 게 있나요?`

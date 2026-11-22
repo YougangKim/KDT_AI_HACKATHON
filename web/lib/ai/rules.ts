@@ -108,6 +108,22 @@ export function phraseQuestionRules(q: Pick<Question, "attr" | "op" | "value">):
       return `가구 소득이 기준중위소득 ${v}% 이하일 것 같아? (잘 모르면 '모름'!)`;
     case "employment":
       return `지금 ${list.map((e) => EMP_LABEL[String(e)] ?? String(e)).join(" 또는 ")}이야?`;
+    case "subscription":
+      return "청약통장(주택청약종합저축) 있어?";
+    case "married":
+      return "결혼했거나 곧 결혼하는 신혼부부야?";
+    case "welfare":
+      return "기초생활수급자나 차상위계층이야?";
+    case "experienced":
+      return "그 분야 경력 있어?";
+    case "education":
+      return `최종 학력이 ${v}단계 이상이야?`;
+    case "field":
+      return `${list.join("·")} 쪽 일자리 찾아?`;
+    case "need":
+      return `${list.join("·")} 지원이 필요해?`;
+    case "housingKind":
+      return v === "sale" ? "분양으로 내 집 마련할 생각이야?" : "임대(월세·전세) 집 찾아?";
     case "interest":
       return `${list.map((d) => DOMAIN_LABEL[String(d)] ?? String(d)).join("·")} 쪽 기회를 찾고 있어?`;
   }

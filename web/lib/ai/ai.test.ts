@@ -46,9 +46,9 @@ describe("키 없이 규칙 기반 폴백", () => {
     expect(await structureConditions("만 19세 이상 39세 이하 무주택자")).toHaveLength(3);
   });
   it("phraseQuestion", async () => {
-    expect(await phraseQuestion({ attr: "age", op: "lte", value: 34 })).toBe("혹시 만 34세 이하야?");
-    expect(await phraseQuestion({ attr: "region", op: "in", value: ["서울", "경기"] })).toBe("서울·경기에 살고 있어?");
-    expect(await phraseQuestion({ attr: "interest", op: "eq", value: "housing" })).toContain("집");
+    expect(await phraseQuestion({ attr: "age", op: "lte", value: 34 })).toBe("만 34세 이하인가요?");
+    expect(await phraseQuestion({ attr: "region", op: "in", value: ["서울", "경기"] })).toBe("서울·경기 중 한 곳에 살고 있나요?");
+    expect(await phraseQuestion({ attr: "interest", op: "eq", value: "housing" })).toContain("주택");
   });
   it("explainMatch", async () => {
     const o = { title: "청년월세 지원", org: "국토교통부", applyEnd: "2026-12-31" } as Opportunity;

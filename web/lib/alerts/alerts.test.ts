@@ -109,12 +109,19 @@ describe("저장소", () => {
     expect(loadWatch()).toBeNull();
     const m: Match = { opportunity: opp("m1"), status: "eligible", reasons: [], unknowns: [] };
     const w = buildWatch([noHomeless], [m], NOW);
-    expect(w.domains).toEqual(["housing"]);
+    expect(w.domains).toEqual([]); // 고른 분야가 없으면 전체를 감시
     expect(w.seenIds).toEqual(["m1"]);
     saveWatch(w);
     expect(loadWatch()).toEqual(w);
     markSeen(w, ["m2", "m1"]);
     expect(loadWatch()?.seenIds).toEqual(["m1", "m2"]);
+  });
+
+  it("감시 분야는 지금 결과가 아니라 고른 분야(지금 0건인 분야도 포함)", () => {
+    const interest = (v: string) => ({ question: { id: `interest:eq:${v}`, attr: "interest" as const, op: "eq" as const, value: v, text: "" }, answer: "yes" as const });
+    const m: Match = { opportunity: opp("m1"), status: "eligible", reasons: [], unknowns: [] };
+    const w = buildWatch([interest("housing"), interest("parttime")], [m], NOW);
+    expect(w.domains.sort()).toEqual(["housing", "parttime"]);
   });
 
   it("알림 기록과 안 읽은 수", () => {

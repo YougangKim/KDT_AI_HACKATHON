@@ -67,7 +67,7 @@ describe("어댑터 매핑", () => {
     const raw = { resultCode: 200, result: [{ recrutPblntSn: 999, instNm: "한국전력공사", recrutPbancTtl: "2026년 체험형 청년인턴", workRgnNmLst: "전라남도", hireTypeNmLst: "청년인턴(체험형)", recrutSeNm: "신입", pbancBgngYmd: "20261118", pbancEndYmd: "20261201", aplyQlfcCn: "만 34세 이하 미취업자", srcUrl: "https://job.alio.go.kr/x" }] };
     const [o] = mapJobalio(raw, NOW);
     expectValid(o);
-    expect(o.region).toEqual([]);
+    expect(o.region).toEqual(["전남"]); // 근무지를 지역 조건으로(다른 지역 거주자 상위 노출 방지)
     expect(o.summary).toContain("근무지 전남");
     expect(o.conditions).toContainEqual(expect.objectContaining({ attr: "age", op: "lte", value: 34 }));
     expect(o.conditions).toContainEqual(expect.objectContaining({ attr: "employment", value: ["jobseeker"] }));
@@ -185,5 +185,16 @@ describe("loadOpportunities", () => {
     expect(parseDomains("housing,benefit,foo")).toEqual(["housing", "benefit"]);
     expect(parseDomains("foo")).toEqual(ALL_DOMAINS);
     expect(parseDomains(null)).toEqual(ALL_DOMAINS);
+  });
+});
+
+describe("청년 비대상 공고 제외", () => {
+  it("고령자·노인 전용 공고는 청년 결과에서 뺀다", async () => {
+    const { notForYouth } = await import("./index");
+    expect(notForYouth({ domain: "housing", title: "부산수영구 고령자형 매입임대주택 예비입주자 모집 공고" })).toBe(true);
+    expect(notForYouth({ domain: "benefit", title: "중장년 전용 재취업 지원금" })).toBe(true);
+    expect(notForYouth({ domain: "housing", title: "서울 행복주택 청년 입주자 모집" })).toBe(false);
+    expect(notForYouth({ domain: "housing", title: "행복주택(청년·고령자) 입주자 모집" })).toBe(false); // 청년도 대상
+    expect(notForYouth({ domain: "job", title: "OO노인복지관 사회복지사 채용" })).toBe(false); // 채용은 청년 지원 가능
   });
 });

@@ -13,7 +13,9 @@ function tidyReasons(reasons: string[]): string[] {
       if (r.length > out[i].length) out[i] = r;
     } else out.push(r);
   }
-  return out.slice(0, 3);
+  // 분야(내가 고른 분야라 당연함)보다 지역·나이·무주택 같은 자격 근거를 먼저 보여 준다
+  const isDomain = (r: string) => /^(분야|관심 분야):/.test(r.replace(/^\[AI 해석\] /, ""));
+  return [...out.filter((r) => !isDomain(r)), ...out.filter(isDomain)].slice(0, 3);
 }
 
 function ddayClass(applyEnd?: string): string {

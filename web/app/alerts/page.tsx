@@ -65,6 +65,11 @@ export default function AlertsPage() {
   async function onScan() {
     setScanning(true);
     const r = await syncWatch(true);
+    // 서버가 찾은 새 공고를 이 기기의 "받은 알림"에도 남긴다(다음 조사 뒤에도 사라지지 않게)
+    if (!r.error) {
+      await checkAlerts();
+      setLog(loadAlertLog());
+    }
     setScanning(false);
     setRs(r);
     setNote(r.error ?? `다시 조사했어요. 새 공고 ${r.lastNewTitles?.length ?? 0}건.`);

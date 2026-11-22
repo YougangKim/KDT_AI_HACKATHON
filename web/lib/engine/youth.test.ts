@@ -57,3 +57,17 @@ describe("근거 없는 탈락 방지", () => {
     expect(getMatches({ pool: [pool[1]], answers: [no("homeless", "eq", true)] })).toHaveLength(0);
   });
 });
+
+describe("지역을 고른 뒤 다른 지역 근무 공고", () => {
+  it("부산에 산다고 하면 전북 근무 채용은 결과에서 빠진다(검수 A7 회귀)", async () => {
+    const { getMatches } = await import("./index");
+    const job = (id: string, region: string[]) => ({
+      id, domain: "job" as const, title: id, org: "", region, summary: "", url: "", source: "jobalio", isSample: false, fetchedAt: "",
+      conditions: [{ attr: "interest" as const, op: "eq" as const, value: "job", rawText: "", confidence: "high" as const }],
+    });
+    const q = { id: "region:eq:부산", attr: "region" as const, op: "eq" as const, value: "부산", text: "지금 부산에 살고 있나요?" };
+    const ids = getMatches({ pool: [job("jeonbuk", ["전북"]), job("busan", ["부산"]), job("anywhere", [])], answers: [{ question: q, answer: "yes" }] }).map((m) => m.opportunity.id);
+    expect(ids).toEqual(expect.arrayContaining(["busan", "anywhere"]));
+    expect(ids).not.toContain("jeonbuk");
+  });
+});

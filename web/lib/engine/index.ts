@@ -32,7 +32,9 @@ interface Knowledge {
   unknownIds: Set<string>;
 }
 
-const MULTI: AttrKey[] = ["interest"];
+const MULTI: AttrKey[] = ["interest", "field", "need"];
+/** 자격 요건이 아니라 취향인 속성: 묻지 않았다고 "확인 필요"로 남기지 않는다(아니오면 제외) */
+const SOFT: AttrKey[] = ["interest", "field", "need", "housingKind"];
 
 const arr = (v: Condition["value"]): AttrValue[] => (Array.isArray(v) ? v : [v]);
 export const questionId = (c: Pick<Condition, "attr" | "op" | "value">) =>
@@ -87,14 +89,15 @@ function learn(kb: Map<AttrKey, Knowledge>, q: Question, a: Answer) {
   }
 }
 
-/** 서비스 대상이 만 19~34세 청년이므로 나이 하한 19를 기본 지식으로 둔다(만 19세 이상 같은 조건을 다시 묻지 않음) */
+/** 서비스 대상이 청년(만 19~34세, 지자체 기준 최대 39세)이므로 나이 19~39를 기본 지식으로 둔다(만 19세 이상·만 60세 이상 같은 질문을 하지 않음) */
 const YOUTH_MIN_AGE = 19;
+const YOUTH_MAX_AGE = 39;
 // 단일값 속성의 가능한 값 전체(아니오로 나머지가 모두 지워졌는지 판단할 때 사용)
 const VALUE_DOMAIN: Partial<Record<AttrKey, string[]>> = { employment: ["student", "jobseeker", "employed", "parttime"] };
 
 function buildKnowledge(answers: AnswerRecord[]): Map<AttrKey, Knowledge> {
   const kb = new Map<AttrKey, Knowledge>();
-  kb.set("age", { ...newKnowledge(), lo: YOUTH_MIN_AGE });
+  kb.set("age", { ...newKnowledge(), lo: YOUTH_MIN_AGE, hi: YOUTH_MAX_AGE });
   for (const r of answers) learn(kb, r.question, r.answer);
   return kb;
 }
@@ -161,7 +164,7 @@ interface Effective {
 
 function effectiveConditions(o: Opportunity): Effective[] {
   // 관심 분야는 자격 요건이 아니라 취향이므로, 묻지 않았다고 "확인 필요"로 남기지 않는다(답이 "아니오"면 여전히 제외)
-  const out: Effective[] = o.conditions.map((cond) => ({ cond, soft: cond.attr === "interest" }));
+  const out: Effective[] = o.conditions.map((cond) => ({ cond, soft: SOFT.includes(cond.attr) }));
   if (o.region.length > 0 && !o.conditions.some((c) => c.attr === "region")) {
     out.push({
       cond: {
@@ -237,19 +240,35 @@ function trivialForYouth(q: Question): boolean {
   return (q.op === "gte" && q.value <= 19) || (q.op === "lte" && q.value >= 39);
 }
 
-export function nextQuestion(s: GameState): Question | null {
+export interface RankedQuestion {
+  question: Question;
+  score: number;
+  yes: number; // 예라고 답하면 남는 후보 수
+  no: number; // 아니오라고 답하면 남는 후보 수
+  resolve: number; // 이 질문으로 "확인 필요"가 풀리는(통과·탈락이 정해지는) 후보 수
+}
+
+/** 이 공고에서 attr 조건 중 아직 판정되지 않은(확인 필요) 것이 있는지 */
+const pending = (kb: Map<AttrKey, Knowledge>, o: Opportunity, attr: AttrKey) =>
+  effectiveConditions(o).some((e) => !e.soft && e.cond.attr === attr && evaluate(kb, e.cond) === null);
+
+/**
+ * 질문 후보를 점수순으로 돌려준다.
+ * 점수 = 평균 탈락 비율 × 예/아니오 균형(엔트로피) + 확인 필요를 푸는 비율(맞춤 판정 가치) × 같은 속성 반복 감점.
+ * 탈락시키지 않아도 "확인 필요"를 "바로 신청"으로 바꿔 주는 질문은 묻는다.
+ */
+export function rankQuestions(s: GameState, limit = 5): RankedQuestion[] {
   const kb = buildKnowledge(s.answers);
   const cands = candidates(s, kb);
   const n = cands.length;
-  if (n === 0) return null;
+  if (n === 0) return [];
 
   const askedIds = new Set(s.answers.map((r) => r.question.id));
   const attrCount = new Map<AttrKey, number>();
   for (const r of s.answers) attrCount.set(r.question.attr, (attrCount.get(r.question.attr) ?? 0) + 1);
   const lastAttr = s.answers.at(-1)?.question.attr;
 
-  let best: Question | null = null;
-  let bestScore = 0;
+  const out: RankedQuestion[] = [];
   for (const q of questionPool(cands)) {
     if (askedIds.has(q.id)) continue;
     const probe: Condition = { ...q, rawText: "", confidence: "high" };
@@ -259,6 +278,7 @@ export function nextQuestion(s: GameState): Question | null {
     let yesAlive = 0;
     let noAlive = 0;
     let both = 0;
+    let resolve = 0;
     const kbYes = buildKnowledge([...s.answers, { question: q, answer: "yes" }]);
     const kbNo = buildKnowledge([...s.answers, { question: q, answer: "no" }]);
     for (const o of cands) {
@@ -267,20 +287,22 @@ export function nextQuestion(s: GameState): Question | null {
       if (y) yesAlive++;
       if (no) noAlive++;
       if (y && no) both++;
+      if (pending(kb, o, q.attr) && (!pending(kbYes, o, q.attr) || !pending(kbNo, o, q.attr))) resolve++;
     }
-    if (both === n) continue; // 누구도 갈리지 않음
-    // 예/아니오를 반반으로 가정한 평균 탈락 비율 × 균형(엔트로피) 가중
+    if (both === n && resolve === 0) continue; // 누구도 갈리지 않고 판정도 안 바뀜
     let score = (1 - (yesAlive + noAlive) / (2 * n)) * (0.5 + 0.5 * entropy(yesAlive / (yesAlive + noAlive)));
     if (yesAlive === 0 || noAlive === 0) score *= 0.3; // 한쪽 답이면 후보 전멸: 마지막 수단
+    score += 0.25 * (resolve / n);
     if (q.attr === lastAttr) score *= 0.5;
     score *= 0.85 ** (attrCount.get(q.attr) ?? 0);
     if (s.answers.length === 0 && q.attr === "interest") score *= 2; // 첫 질문은 관심 분야부터
-    if (score > bestScore || (score === bestScore && best && q.id < best.id)) {
-      best = q;
-      bestScore = score;
-    }
+    if (score > 0) out.push({ question: q, score, yes: yesAlive, no: noAlive, resolve });
   }
-  return best;
+  return out.sort((a, b) => b.score - a.score || a.question.id.localeCompare(b.question.id)).slice(0, limit);
+}
+
+export function nextQuestion(s: GameState): Question | null {
+  return rankQuestions(s, 1)[0]?.question ?? null;
 }
 
 /** 답 기록. 같은 질문에 다시 답하면 덮어쓴다. */

@@ -1,8 +1,9 @@
 // 공고 수집 진입점. 실제 출처만 사용하며 키 없음·실패·0건은 빈 결과로 처리한다.
 import type { Condition, Domain, Opportunity } from "../types";
 import { aiEnabled, structureConditions } from "../ai";
+import { regionsIn } from "../ai/rules";
 import type { SourceAdapter } from "./types";
-import { getEligibility, isOpen, todayKst } from "./util";
+import { getEligibility, isOpen, todayKst, withEligibility } from "./util";
 import { lhNotice } from "./lh-notice";
 import { myhome } from "./myhome";
 import { jobalio } from "./jobalio";
@@ -15,6 +16,7 @@ import { saramin } from "./saramin";
 import { searchWeb } from "./websearch";
 import { fetchShRss } from "./sh-rss";
 import { dedupeOpportunities } from "./dedupe";
+import { addTargetConditions } from "./targets";
 
 export const ALL_DOMAINS: Domain[] = ["housing", "job", "parttime", "benefit", "training", "exam"];
 
@@ -109,18 +111,25 @@ async function enrichWithAi(items: Opportunity[], wait: boolean): Promise<Opport
 /** 분야별 공고를 모은다. domains 생략 시 6개 분야 전체 */
 export async function loadOpportunities(domains: Domain[] = ALL_DOMAINS, now: Date = new Date(), opts: { waitAi?: boolean } = {}): Promise<Opportunity[]> {
   const wanted = domains.filter((d) => ALL_DOMAINS.includes(d));
+  const fixture = await readFixture();
   const adapters = ADAPTERS.filter((a) => a.domains.some((d) => wanted.includes(d)));
-  const [live, web] = await Promise.all([
-    Promise.all(adapters.map((a) => runAdapter(a, now))).then((r) => r.flat()),
-    searchWeb(wanted, now), // 선택 기능: 기본 OFF
-  ]);
-  const rss = wanted.includes("housing") ? await fetchShRss(now) : []; // 선택 기능: SH 공식 RSS, 기본 OFF
+  // 테스트 파일이 있으면 어댑터 응답만 그 파일로 바꾸고, 마감·AI·중복 제거 등 후처리는 운영과 똑같이 거친다
+  const [live, web] = fixture
+    ? [fixture, []]
+    : await Promise.all([
+        Promise.all(adapters.map((a) => runAdapter(a, now))).then((r) => r.flat()),
+        searchWeb(wanted, now), // 선택 기능: 기본 OFF
+      ]);
+  const rss = !fixture && wanted.includes("housing") ? await fetchShRss(now) : []; // 선택 기능: SH 공식 RSS, 기본 OFF
   const today = todayKst(now);
 
   const out: Opportunity[] = [];
   const seen = new Set<string>();
   for (const d of wanted) {
-    const liveOpen = live.filter((o) => o.domain === d && isOpen(o, today));
+    const liveOpen = live.filter((o) => o.domain === d && isOpen(o, today)).map((o) => {
+      const el = getEligibility(o) ?? "";
+      return withEligibility(addTargetConditions(o, el), el); // 새 객체에도 자격요건 원문 유지(AI 해석용)
+    });
     const picked = await enrichWithAi(liveOpen, opts.waitAi ?? false);
     for (const o of picked) {
       if (seen.has(o.id)) continue;
@@ -128,12 +137,41 @@ export async function loadOpportunities(domains: Domain[] = ALL_DOMAINS, now: Da
       out.push(o);
     }
   }
-  for (const o of [...rss, ...web]) {
+  for (const raw of [...rss, ...web]) {
+    // 웹 검색·RSS 결과는 지역 정보가 없으므로 제목의 시도명을 지역으로 쓴다(서울시 청년안심주택 → 서울)
+    const titleRegions = raw.region.length ? raw.region : regionsIn(raw.title);
+    const o = titleRegions.length && !raw.region.length
+      ? { ...raw, region: titleRegions, conditions: [...raw.conditions, { attr: "region" as const, op: "in" as const, value: titleRegions, rawText: `대상 지역: ${titleRegions.join("·")}`, confidence: "high" as const }] }
+      : raw;
     if (seen.has(o.id) || out.some((x) => x.url === o.url)) continue; // 공식 API에 이미 있는 원문은 중복 제외
     seen.add(o.id);
     out.push(o);
   }
-  return dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample"));
+  return dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
+}
+
+/**
+ * 로컬 시나리오 테스트 전용: E2E_LOCAL=1 이고 OPPORTUNITIES_FIXTURE에 JSON 경로가 있으면 어댑터 응답 대신 그 파일을 매번 읽는다
+ * (테스트 중 새 공고를 파일에 추가해 반복 조사를 검증). 배포 환경(VERCEL)에서는 무시하고,
+ * 파일 내용이 null이거나 읽기에 실패하면 실제 출처를 쓴다.
+ */
+async function readFixture(): Promise<Opportunity[] | null> {
+  const path = process.env.OPPORTUNITIES_FIXTURE;
+  if (!path || process.env.E2E_LOCAL !== "1" || process.env.VERCEL) return null;
+  try {
+    const { readFile } = await import("node:fs/promises");
+    const list = JSON.parse(await readFile(path, "utf8")) as unknown;
+    return Array.isArray(list) ? (list as Opportunity[]) : null;
+  } catch (e) {
+    console.warn("[sources] 테스트 공고 파일을 읽지 못해 실제 출처를 씁니다:", (e as Error).message);
+    return null;
+  }
+}
+
+/** 청년이 신청할 수 없는 대상 전용 주거·지원 공고(고령자·노인·중장년 전용). 채용(노인복지관 채용 등)과 "청년"이 들어간 공고는 남긴다 */
+export function notForYouth(o: Pick<Opportunity, "title" | "domain">): boolean {
+  if (o.domain !== "housing" && o.domain !== "benefit") return false;
+  return /고령자|노인|어르신|중장년/.test(o.title) && !/청년/.test(o.title);
 }
 
 /** "housing,benefit" → Domain[] (알 수 없는 값은 버림). 비거나 모두 무효면 전체 */

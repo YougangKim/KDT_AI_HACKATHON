@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Domain } from "@/lib/types";
 
 const DOMAINS: { id: Domain; emoji: string; label: string }[] = [
   { id: "housing", emoji: "🏠", label: "청년 주택" },
   { id: "benefit", emoji: "💰", label: "지원금·혜택" },
   { id: "job", emoji: "💼", label: "채용·인턴" },
-  { id: "parttime", emoji: "⏰", label: "알바" },
+  { id: "parttime", emoji: "⏰", label: "알바·단기직" },
   { id: "training", emoji: "📚", label: "국비 과정" },
   { id: "exam", emoji: "📝", label: "자격증 일정" },
 ];
@@ -17,6 +17,19 @@ const DOMAINS: { id: Domain; emoji: string; label: string }[] = [
 export default function Home() {
   const router = useRouter();
   const [picked, setPicked] = useState<Domain[]>([]);
+  // 분야별 지금 조회되는 공고 수(0건 분야는 고르기 전에 알려 준다). 서버 캐시도 미리 데운다.
+  const [counts, setCounts] = useState<Partial<Record<Domain, number>> | null>(null);
+  useEffect(() => {
+    fetch("/api/opportunities")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((list: { domain: Domain }[]) => {
+        if (!Array.isArray(list) || list.length === 0) return; // 일시 오류로 빈 응답이면 막지 않는다
+        const c: Partial<Record<Domain, number>> = {};
+        for (const o of list) c[o.domain] = (c[o.domain] ?? 0) + 1;
+        setCounts(c);
+      })
+      .catch(() => {});
+  }, []);
   const toggle = (d: Domain) => setPicked((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
   const start = () => router.push(picked.length ? `/play?domains=${picked.join(",")}` : "/play");
 
@@ -41,20 +54,24 @@ export default function Home() {
         <ul className="grid grid-cols-3 gap-2 text-center text-sm">
           {DOMAINS.map((d) => {
             const on = picked.includes(d.id);
+            const n = counts ? (counts[d.id] ?? 0) : null;
+            const empty = n === 0;
             return (
               <li key={d.id}>
                 <button
                   type="button"
                   aria-pressed={on}
+                  disabled={empty}
                   onClick={() => toggle(d.id)}
                   className={`w-full rounded-xl p-3 shadow-sm transition ${
                     on ? "bg-indigo-600 text-white ring-2 ring-indigo-300" : "bg-white text-slate-800"
-                  }`}
+                  } disabled:opacity-40`}
                 >
                   <span className="block text-2xl" aria-hidden>
                     {d.emoji}
                   </span>
                   {d.label}
+                  {n !== null && <span className={`block text-[11px] ${on ? "text-indigo-100" : "text-slate-400"}`}>{empty ? "연결 준비 중" : `${n}건`}</span>}
                 </button>
               </li>
             );
@@ -71,7 +88,7 @@ export default function Home() {
         >
           {picked.length ? `${picked.length}개 분야로 시작하기` : "30초 만에 시작하기"}
         </button>
-        <Link href="/alerts" className="block py-2 text-center text-sm text-slate-500 underline">
+        <Link href="/alerts" className="block py-3 text-center text-sm text-slate-500 underline">
           이미 조건이 있어요 → 알림함
         </Link>
       </div>

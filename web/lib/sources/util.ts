@@ -62,6 +62,15 @@ export function todayKst(now = new Date()): string {
   return new Date(now.getTime() + 9 * 3600_000).toISOString().slice(0, 10);
 }
 
+/**
+ * 여러 쪽을 동시에 받아 합친다(공고 전체를 가져오기 위함). 첫 쪽이 실패하면 throw, 뒤쪽 실패는 건너뛴다.
+ */
+export async function fetchPages<T>(pages: number, load: (page: number) => Promise<T[]>): Promise<T[]> {
+  const first = await load(1);
+  const rest = await Promise.all(Array.from({ length: pages - 1 }, (_, i) => load(i + 2).catch(() => [] as T[])));
+  return [first, ...rest].flat();
+}
+
 /** 타임아웃이 있는 JSON fetch. 실패하면 throw */
 export async function fetchJson(url: string, timeoutMs = 8000): Promise<unknown> {
   const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { Accept: "application/json" } });
