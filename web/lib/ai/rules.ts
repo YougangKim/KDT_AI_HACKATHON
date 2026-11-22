@@ -44,7 +44,9 @@ export function structureConditionsRules(rawText: string): Condition[] {
   if (range) {
     const min = Number(range[1]);
     let max = Number(range[2]);
-    if (/미만/.test(range[0])) max -= 1;
+    // "18~40세 미만"처럼 미만이 범위 뒤에 붙는 경우도 39세까지로 본다
+    const after = text.slice((range.index ?? 0) + range[0].length, (range.index ?? 0) + range[0].length + 4);
+    if (/미만/.test(range[0]) || /^\s*미만/.test(after)) max -= 1;
     if (min < max) {
       out.push(cond("age", "gte", min, range[0], "high"));
       out.push(cond("age", "lte", max, range[0], "high"));

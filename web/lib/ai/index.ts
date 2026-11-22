@@ -1,4 +1,4 @@
-// AI 모듈: ANTHROPIC_API_KEY가 있으면 Claude, 없거나 실패하면 규칙 기반.
+// AI 모듈: ANTHROPIC_API_KEY가 있으면 Claude, 없고 GEMINI_API_KEY가 있으면 Gemini, 둘 다 없거나 실패하면 규칙 기반.
 // 개인정보 보호: 외부로 보내는 것은 공고 원문·질문 범주값·매칭 근거 문구뿐이다(사용자 자유입력 없음).
 import Anthropic from "@anthropic-ai/sdk";
 import type { AttrKey, Condition, Match, Question } from "../types";
@@ -23,9 +23,35 @@ export function _resetClient() {
   client = undefined;
 }
 
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
+
+/** Gemini generateContent(REST). 실패하면 null */
+async function askGemini(system: string, user: string, maxTokens: number): Promise<string | null> {
+  try {
+    const res = await fetch(`${GEMINI_URL}/${GEMINI_MODEL}:generateContent`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: user }] }],
+        generationConfig: { maxOutputTokens: maxTokens, temperature: 0.2 },
+      }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
+    const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
+    return text || null;
+  } catch (e) {
+    console.warn("[ai] Gemini 호출 실패, 규칙 기반으로 폴백:", (e as Error).message);
+    return null;
+  }
+}
+
 async function ask(model: string, system: string, user: string, maxTokens: number): Promise<string | null> {
   const c = getClient();
-  if (!c) return null;
+  if (!c) return process.env.GEMINI_API_KEY ? askGemini(system, user, maxTokens) : null;
   try {
     const res = await c.messages.create({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] });
     const text = res.content.map((b) => (b.type === "text" ? b.text : "")).join("").trim();
@@ -63,7 +89,11 @@ export function parseConditionsJson(text: string): Condition[] | null {
   try {
     const arr = JSON.parse(text.slice(start, end + 1));
     if (!Array.isArray(arr)) return null;
-    return arr.filter(isCondition);
+    const seen = new Set<string>(); // 같은 조건을 두 번 내는 경우가 있어 중복 제거
+    return arr.filter(isCondition).filter((c) => {
+      const k = `${c.attr}|${c.op}|${JSON.stringify(c.value)}`;
+      return !seen.has(k) && seen.add(k);
+    });
   } catch {
     return null;
   }
@@ -103,7 +133,7 @@ export async function explainMatch(m: Match): Promise<string> {
   return text && text.length <= 300 ? text : fallback;
 }
 
-/** 서버에서 Claude가 켜져 있는지(화면의 "AI 생성" 표시 판단용) */
+/** 서버에서 AI(Claude 또는 Gemini)가 켜져 있는지(화면의 "AI 생성" 표시 판단용) */
 export function aiEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return Boolean(process.env.ANTHROPIC_API_KEY || process.env.GEMINI_API_KEY);
 }

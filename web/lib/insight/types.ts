@@ -38,4 +38,6 @@ export interface ScanSnapshot {
   newCount: number;
   byDomainNew: Partial<Record<Domain, number>>;
   failedSources: string[]; // 키 없음·오류로 샘플 폴백된 출처
+  changedCount?: number; // 마감일이 바뀐 공고 수
+  soonCount?: number; // 이번 조사에서 새로 D-3 이내가 된 공고 수
 }

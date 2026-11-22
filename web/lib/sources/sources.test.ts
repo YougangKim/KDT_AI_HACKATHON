@@ -7,7 +7,14 @@ import { mapGov24 } from "./gov24";
 import { mapYouthcenter } from "./youthcenter";
 import { mapWork24Training } from "./work24-training";
 import { mapQnet } from "./qnet";
-import { ALL_DOMAINS, SAMPLES, _clearCache, loadOpportunities, parseDomains } from "./index";
+import { ALL_DOMAINS, _clearCache, loadOpportunities, parseDomains } from "./index";
+import housing from "../../data/samples/housing.json";
+import job from "../../data/samples/job.json";
+import parttime from "../../data/samples/parttime.json";
+import benefit from "../../data/samples/benefit.json";
+import training from "../../data/samples/training.json";
+import exam from "../../data/samples/exam.json";
+const SAMPLES = { housing, job, parttime, benefit, training, exam } as Record<(typeof ALL_DOMAINS)[number], Opportunity[]>;
 import { parsePeriod, toIsoDate, toRegions } from "./util";
 
 const NOW = new Date("2026-11-21T03:00:00Z");
@@ -136,16 +143,19 @@ describe("loadOpportunities", () => {
     delete process.env.YOUTHCENTER_KEY;
     delete process.env.WORK24_TRAINING_KEY;
     delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.SARAMIN_API_KEY;
+    delete process.env.WEB_SEARCH_ENABLED;
+    delete process.env.SH_RSS_ENABLED;
   });
   afterEach(() => {
     process.env = { ...saved };
     vi.unstubAllGlobals();
   });
 
-  it("키 없으면 6개 분야 샘플", async () => {
+  it("키 없으면 샘플 없이 빈 결과", async () => {
     const list = await loadOpportunities(undefined, NOW);
-    expect(new Set(list.map((o) => o.domain))).toEqual(new Set(ALL_DOMAINS));
-    expect(list.every((o) => o.isSample)).toBe(true);
+    expect(list).toEqual([]);
   });
 
   it("분야 필터와 마감 지난 공고 제외", async () => {
@@ -155,12 +165,11 @@ describe("loadOpportunities", () => {
     expect(list.every((o) => !o.applyEnd || o.applyEnd >= "2026-12-11")).toBe(true);
   });
 
-  it("키가 있어도 API 실패 시 샘플로 폴백", async () => {
+  it("API 실패 시 샘플 없이 빈 결과", async () => {
     process.env.DATA_GO_KR_KEY = "test";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network")));
     const list = await loadOpportunities(["job"], NOW);
-    expect(list.length).toBe(SAMPLES.job.length);
-    expect(list.every((o) => o.isSample)).toBe(true);
+    expect(list).toEqual([]);
   });
 
   it("키가 있고 응답이 오면 실데이터 사용", async () => {

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { searchWeb, toOpportunity, webSearchProvider } from "./websearch";
 
 const env = { ...process.env };
@@ -33,5 +33,27 @@ describe("웹 검색 보충(선택 기능)", () => {
     expect(o.summary.length).toBe(200);
     expect(o.source).toBe("web-tavily");
     expect(toOpportunity({ title: "x", url: "javascript:alert(1)", snippet: "" }, "job", "exa", new Date())).toBeNull();
+  });
+  it("Tavily가 한도 초과로 실패하면 Exa로 넘어간다", async () => {
+    process.env.WEB_SEARCH_ENABLED = "1";
+    process.env.TAVILY_API_KEY = "t";
+    process.env.EXA_API_KEY = "e";
+    vi.stubGlobal("fetch", vi.fn(async (url: string) =>
+      url.includes("tavily")
+        ? new Response("{}", { status: 432 })
+        : new Response(JSON.stringify({ results: [{ title: "청년 매입임대 모집", url: "https://lh.or.kr/a", highlights: ["요약"] }] })),
+    ));
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const items = await searchWeb(["benefit"]);
+    vi.unstubAllGlobals();
+    expect(items).toHaveLength(1);
+    expect(items[0].source).toBe("web-exa");
+  });
+  it("메뉴·게시판 목록 페이지는 버리고 공고 제목만 남긴다", () => {
+    const mk = (title: string) => toOpportunity({ title, url: "https://lh.or.kr/x", snippet: "" }, "housing", "exa", new Date());
+    expect(mk("서울주택도시개발공사 >SH소식>공고 및 공지>전체")).toBeNull();
+    expect(mk("공지사항 게시판목록 | 경기청년포털")).toBeNull();
+    expect(mk("일정안내 | Q-net")).toBeNull();
+    expect(mk("서울시 청년안심주택 모집공고 | 서울주거포털")?.title).toBe("서울시 청년안심주택 모집공고");
   });
 });

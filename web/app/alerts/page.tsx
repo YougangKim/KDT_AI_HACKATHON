@@ -1,4 +1,5 @@
 "use client";
+import { checkAlerts } from "@/lib/alerts/client";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -9,7 +10,6 @@ import {
   notificationsSupported,
   pushPublicKey,
   requestPermission,
-  runDemo,
   researchStatus,
   sendTestPush,
   syncWatch,
@@ -51,10 +51,10 @@ export default function AlertsPage() {
     setPerm(await requestPermission());
   }
 
-  async function onDemo() {
-    const items = await runDemo();
+  async function onCheck() {
+    const items = await checkAlerts();
     setLog(loadAlertLog());
-    setNote(items.length ? "새 공고 데모 알림을 보냈어요." : "먼저 결과 화면에서 알림 조건을 저장해 주세요.");
+    setNote(items.length ? "새 알림을 확인했습니다." : "이번 조회에서 새로 알릴 공고가 없습니다.");
   }
 
   async function onPush() {
@@ -183,11 +183,11 @@ export default function AlertsPage() {
           <p className="text-center text-xs text-slate-500">브라우저 알림이 차단돼 있어요. 앱을 열 때 이 화면에 모아 드려요.</p>
         )}
         <button
-          onClick={onDemo}
+          onClick={onCheck}
           disabled={!watch}
           className="w-full rounded-2xl border-2 border-indigo-600 bg-white py-3 font-semibold text-indigo-700 disabled:opacity-40"
         >
-          ✨ &quot;새 공고 도착&quot; 알림 데모
+          새 공고 확인
         </button>
         {pushKey && (
           <button onClick={onPush} className="w-full rounded-2xl bg-slate-800 py-3 text-sm font-semibold text-white">

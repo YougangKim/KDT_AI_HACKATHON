@@ -59,3 +59,9 @@ describe("키 없이 규칙 기반 폴백", () => {
     expect(s).toContain("기준중위소득 60% 이하");
   });
 });
+
+describe("나이 범위 미만", () => {
+  it("'만 18세 ~ 40세 미만'은 39세까지", () => {
+    expect(structureConditionsRules("만 18세 ~ 40세 미만 청년").filter((c) => c.attr === "age").map((c) => c.value)).toEqual([18, 39]);
+  });
+});

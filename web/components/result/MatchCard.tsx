@@ -3,6 +3,19 @@ import { daysLeft, ddayLabel } from "@/lib/alerts/core";
 import { DOMAIN_META } from "./domain";
 import { AI_TAG } from "@/lib/engine";
 
+/** 같은 조건 문장이 질문 근거와 함께 두 번 나오는 것을 하나로 합치고, 최대 3줄만 보여 준다 */
+function tidyReasons(reasons: string[]): string[] {
+  const out: string[] = [];
+  for (const r of reasons) {
+    const base = r.replace(/ \(“.*$/, "");
+    const i = out.findIndex((x) => x.replace(/ \(“.*$/, "") === base);
+    if (i >= 0) {
+      if (r.length > out[i].length) out[i] = r;
+    } else out.push(r);
+  }
+  return out.slice(0, 3);
+}
+
 function ddayClass(applyEnd?: string): string {
   const d = daysLeft(applyEnd);
   if (d === null) return "bg-slate-100 text-slate-600";
@@ -25,6 +38,7 @@ export function MatchCard({ match, aiExplanation }: { match: Match; aiExplanatio
           <div className="flex flex-wrap items-center gap-1 text-xs">
             <span className="text-slate-500">{meta.label}</span>
             {o.isSample && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">샘플 데이터</span>}
+            {o.origin === "rss" && <span className="rounded bg-teal-100 px-1.5 py-0.5 text-teal-800">SH 공식 RSS · 원문 확인</span>}
             {o.origin === "websearch" && (
               <span className="rounded bg-sky-100 px-1.5 py-0.5 text-sky-800">웹 검색 결과 · 원문 확인 필요</span>
             )}
@@ -52,7 +66,7 @@ export function MatchCard({ match, aiExplanation }: { match: Match; aiExplanatio
             </p>
           )}
           <ul className="list-disc space-y-0.5 pl-5 text-emerald-900">
-            {match.reasons.map((r, i) => (
+            {tidyReasons(match.reasons).map((r, i) => (
               <li key={i}>
                 {r.startsWith(AI_TAG) && <span className="mr-1 rounded bg-violet-100 px-1 text-[10px] text-violet-700">AI 해석</span>}
                 {r.startsWith(AI_TAG) ? r.slice(AI_TAG.length) : r}

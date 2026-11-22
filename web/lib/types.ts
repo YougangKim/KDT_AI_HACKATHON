@@ -43,7 +43,7 @@ export interface Opportunity {
   url: string; // 원문 링크
   source: string; // 공급원 id (config/api_keys.csv의 API와 대응)
   isSample: boolean; // 키가 없어 샘플 데이터면 true (화면에 표시)
-  origin?: "api" | "sample" | "websearch"; // websearch = 선택 기능(Tavily·Exa) 결과. 화면에 "웹 검색 결과" 배지
+  origin?: "api" | "sample" | "websearch" | "rss"; // websearch = 선택 기능(Tavily·Exa) 결과. 화면에 "웹 검색 결과" 배지
   fetchedAt: string;
 }
 

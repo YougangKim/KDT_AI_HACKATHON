@@ -1,6 +1,7 @@
 
 # 비밀값
 config/api_keys.csv
+config/*.backup.csv
 .env
 .env.local
 
@@ -21,3 +22,8 @@ config/api_keys.csv
 # Next.js 산출물(루트 기준 안전장치)
 web/node_modules/
 web/.next/
+
+# 작업용 임시·산출물(대회 문서 사본, 소개서 PDF 초안)
+tmp/
+output/
+__pycache__/

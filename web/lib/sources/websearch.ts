@@ -4,6 +4,7 @@
 // 본문은 저장하지 않고 제목·링크·짧은 요약(200자)만 쓴다. 화면에는 "웹 검색 결과" 배지로 공식 API와 구분한다.
 import { createHash } from "node:crypto";
 import type { Domain, Opportunity } from "../types";
+import { judgeYes } from "../ai/jev";
 
 const DEFAULT_DOMAINS = [
   "lh.or.kr",
@@ -75,6 +76,13 @@ async function exa(query: string, domains: string[]): Promise<Hit[]> {
   return (data.results ?? []).map((r) => ({ title: r.title ?? "", url: r.url ?? "", snippet: (r.highlights ?? []).join(" ") }));
 }
 
+/** 개별 공고처럼 보이는 제목만 남긴다(게시판 목록·메뉴·일정 안내 페이지 제외) */
+export function isPostingTitle(t: string): boolean {
+  if (t.length < 6) return false;
+  if (/[>＞<]|게시판|목록|공지사항|정보시스템|일정안내|훈련과정상세|사업소개|포털$/.test(t)) return false;
+  return /모집|공고|채용|접수|선발|신청/.test(t);
+}
+
 export function toOpportunity(hit: Hit, domain: Domain, provider: WebProvider, now: Date): Opportunity | null {
   let host = "";
   try {
@@ -84,12 +92,14 @@ export function toOpportunity(hit: Hit, domain: Domain, provider: WebProvider, n
   } catch {
     return null;
   }
-  if (!hit.title.trim()) return null;
+  // 사이트 이름·메뉴 경로("A | B | C", "A > B")는 앞부분만, 공백 정리
+  const title = hit.title.replace(/\s+/g, " ").split(/ \| | > /)[0].trim();
+  if (!isPostingTitle(title)) return null;
   const id = createHash("sha1").update(hit.url).digest("hex").slice(0, 16);
   return {
     id: `web-${provider}:${id}`,
     domain,
-    title: hit.title.trim().slice(0, 120),
+    title: title.slice(0, 120),
     org: host,
     region: [],
     summary: hit.snippet.replace(/\s+/g, " ").trim().slice(0, 200),
@@ -102,25 +112,46 @@ export function toOpportunity(hit: Hit, domain: Domain, provider: WebProvider, n
   };
 }
 
-/** 켜져 있을 때만 분야별로 웹 검색해 공고 후보를 보충한다. 실패하면 빈 배열(공식 API·샘플 흐름에 영향 없음) */
+/** JEV_API_KEY가 있으면 "청년이 지원할 수 있는 개별 모집 공고인가"를 Jev로 한 번에 판단해 0.5 미만은 뺀다. 키가 없거나 실패하면 그대로 */
+async function keepPostings(items: Opportunity[]): Promise<Opportunity[]> {
+  if (items.length === 0) return items;
+  const p = await judgeYes(
+    items.map((o, i) => ({ id: `p${i}`, 제목: o.title, 요약: o.summary, 사이트: o.org })),
+    Object.fromEntries(items.map((_, i) => [`p${i}`, `p${i} 페이지가 게시판 목록이나 안내 페이지가 아니라, 청년이 지원·신청할 수 있는 개별 모집 공고인가?`])),
+  );
+  return p ? items.filter((_, i) => (p[`p${i}`] ?? 1) >= 0.5) : items;
+}
+
+/** 켜져 있는 제공자 순서(Tavily 우선, 실패하면 Exa로 넘어감) */
+function providers(): WebProvider[] {
+  if (process.env.WEB_SEARCH_ENABLED !== "1") return [];
+  const out: WebProvider[] = [];
+  if (process.env.TAVILY_API_KEY) out.push("tavily");
+  if (process.env.EXA_API_KEY) out.push("exa");
+  return out;
+}
+
+/** 켜져 있을 때만 분야별로 웹 검색해 공고 후보를 보충한다. 한 제공자가 실패(한도 초과 등)하면 다음 제공자, 모두 실패하면 빈 배열 */
 export async function searchWeb(domains: Domain[], now: Date = new Date()): Promise<Opportunity[]> {
-  const provider = webSearchProvider();
-  if (!provider) return [];
+  const list = providers();
+  if (list.length === 0) return [];
   const sites = allowedDomains();
   const results = await Promise.all(
     domains.map(async (d) => {
-      const key = `${provider}:${d}`;
-      const hit = cache.get(key);
-      if (hit && now.getTime() - hit.at < TTL_MS) return hit.items;
-      try {
-        const hits = await (provider === "tavily" ? tavily : exa)(QUERIES[d], sites);
-        const items = hits.map((h) => toOpportunity(h, d, provider, now)).filter((o): o is Opportunity => o !== null);
-        cache.set(key, { at: now.getTime(), items });
-        return items;
-      } catch (e) {
-        console.warn(`[websearch] ${provider} ${d} 실패:`, (e as Error).message);
-        return [];
+      for (const provider of list) {
+        const key = `${provider}:${d}`;
+        const hit = cache.get(key);
+        if (hit && now.getTime() - hit.at < TTL_MS) return hit.items;
+        try {
+          const hits = await (provider === "tavily" ? tavily : exa)(QUERIES[d], sites);
+          const items = await keepPostings(hits.map((h) => toOpportunity(h, d, provider, now)).filter((o): o is Opportunity => o !== null));
+          cache.set(key, { at: now.getTime(), items });
+          return items;
+        } catch (e) {
+          console.warn(`[websearch] ${provider} ${d} 실패:`, (e as Error).message);
+        }
       }
+      return [];
     }),
   );
   return results.flat();

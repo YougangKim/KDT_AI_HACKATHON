@@ -7,37 +7,52 @@ import AnswerButtons from "@/components/game/AnswerButtons";
 import RemainingGauge from "@/components/game/RemainingGauge";
 import styles from "@/components/game/game.module.css";
 import { applyAnswer, getMatches, nextQuestion, remaining, startGame, type GameState } from "@/lib/engine";
-import { FIXTURE_OPPORTUNITIES } from "@/lib/engine/__fixtures__/opportunities";
+import { readLastResult } from "@/components/result/lastResult";
 import type { Answer, Opportunity } from "@/lib/types";
 
 const MAX_QUESTIONS = 6; // 가벼운 사용감: 6문항 안쪽(UX 레퍼런스), 2문항부터 바로 결과 보기
 const DONE_AT = 5;
 
-async function loadPool(): Promise<{ pool: Opportunity[]; fallback: boolean }> {
+async function loadPool(domains: string | null): Promise<{ pool: Opportunity[]; error: boolean }> {
   try {
-    const res = await fetch("/api/opportunities");
+    const res = await fetch(domains ? `/api/opportunities?domains=${encodeURIComponent(domains)}` : "/api/opportunities");
     if (res.ok) {
       const data = (await res.json()) as Opportunity[];
-      if (Array.isArray(data) && data.length > 0) return { pool: data, fallback: false };
+      if (Array.isArray(data)) return { pool: data.filter((o) => !o.isSample && o.origin !== "sample"), error: false };
     }
   } catch {
-    // API 없음 → 픽스처
+    // 조회 실패 시 가상 공고를 주입하지 않는다.
   }
-  return { pool: FIXTURE_OPPORTUNITIES, fallback: true };
+  return { pool: [], error: true };
 }
 
 export default function PlayPage() {
   const router = useRouter();
   const [history, setHistory] = useState<GameState[] | null>(null);
-  const [fallback, setFallback] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [stopNow, setStopNow] = useState(false);
+  const [limit, setLimit] = useState(MAX_QUESTIONS);
+  const [base, setBase] = useState(0); // 이어서 묻기일 때 이미 답한 수
   const [aiText, setAiText] = useState<Record<string, string>>({});
   const aiOff = useRef(false);
 
   useEffect(() => {
-    loadPool().then(({ pool, fallback }) => {
-      setFallback(fallback);
+    const params = new URLSearchParams(window.location.search);
+    // 결과 화면의 "추가 질문으로 좁히기": 지난 답을 이어서 3문항 더
+    if (params.get("continue") === "1") {
+      try {
+        const last = readLastResult();
+        if (last?.pool?.length) {
+          setLimit((last.answers?.length ?? 0) + 3);
+          setBase(last.answers?.length ?? 0);
+          setHistory([{ pool: last.pool, answers: last.answers ?? [] }]);
+          return;
+        }
+      } catch {}
+    }
+    loadPool(params.get("domains")).then(({ pool, error }) => {
+      setLoadError(error);
       setHistory([startGame(pool)]);
     });
   }, []);
@@ -48,14 +63,14 @@ export default function PlayPage() {
     const left = remaining(state);
     const asked = state.answers.length;
     const q = nextQuestion(state);
-    const done = stopNow || !q || asked >= MAX_QUESTIONS || (asked > 0 && left <= DONE_AT);
+    const done = stopNow || !q || asked >= limit || (asked > base && left <= Math.min(DONE_AT, base ? 3 : DONE_AT));
     // 예·아니오 각각을 골랐을 때 남는 후보 수(질문이 얼마나 갈라 주는지 보여 줌)
     const split = q ? { yes: remaining(applyAnswer(state, q, "yes")), no: remaining(applyAnswer(state, q, "no")) } : null;
     return { left, asked, q, done, split };
-  }, [state, stopNow]);
+  }, [state, stopNow, limit, base]);
 
   useEffect(() => {
-    if (!state || !view?.done) return;
+    if (!state || !state.pool.length || !view?.done) return;
     setFinishing(true);
     const result = { answers: state.answers, matches: getMatches(state), pool: state.pool };
     try {
@@ -99,13 +114,23 @@ export default function PlayPage() {
     );
   }
 
+  if (state.pool.length === 0) {
+    return (
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
+        <h1 className="text-xl font-bold">{loadError ? "공고 조회 실패" : "조회 가능한 공고 없음"}</h1>
+        <p className="text-sm text-slate-500">현재 연결된 출처에서 공고를 가져오지 못했습니다. 예시 데이터는 제공하지 않습니다.</p>
+        <button onClick={() => window.location.reload()} className="text-indigo-600 underline">다시 조회</button>
+        <Link href="/" className="text-slate-500 underline">관심 분야 다시 선택</Link>
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-1 flex-col gap-6 py-6 text-slate-900">
       <header className="flex items-center justify-between text-sm">
         <Link href="/" className="text-slate-500">
           ← 처음으로
         </Link>
-        {fallback && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs text-amber-700">임시 샘플 데이터</span>}
       </header>
 
       <RemainingGauge remaining={view.left} total={state.pool.length} />
@@ -125,7 +150,7 @@ export default function PlayPage() {
           <section key={view.q.id} className={`${styles.cardIn} flex flex-1 flex-col justify-center gap-8`}>
             <div className="space-y-3 rounded-3xl bg-white p-6 text-center text-slate-900 shadow-sm">
               <p className="text-sm font-medium text-indigo-500">
-                질문 {view.asked + 1} / 약 {MAX_QUESTIONS}
+                질문 {view.asked + 1} / 약 {limit}
               </p>
               <p className="text-2xl font-bold leading-snug break-keep">{shownText}</p>
               {aiText[view.q.id] && <p className="text-xs text-slate-400">AI 생성 문장</p>}
@@ -136,7 +161,7 @@ export default function PlayPage() {
               )}
             </div>
             <AnswerButtons onAnswer={answer} disabled={finishing} />
-            {view.asked >= 2 && (
+            {view.asked >= base + 2 && (
               <button
                 type="button"
                 onClick={() => setStopNow(true)}

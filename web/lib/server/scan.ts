@@ -5,6 +5,7 @@ import { getMatches } from "@/lib/engine";
 import type { Domain } from "@/lib/types";
 import { loadOpportunities } from "@/lib/sources";
 import { allIds, deleteRecord, getRecord, putRecord, type WatchRecord } from "./store";
+import { detectChanges, pushSummary } from "./changes";
 
 function vapidReady(): boolean {
   const pub = process.env.VAPID_PUBLIC_KEY;
@@ -15,14 +16,18 @@ function vapidReady(): boolean {
 }
 
 export async function scanOne(rec: WatchRecord, now = new Date()): Promise<WatchRecord> {
-  const pool = await loadOpportunities(rec.watch.domains.length ? rec.watch.domains : undefined);
+  const pool = await loadOpportunities(rec.watch.domains.length ? rec.watch.domains : undefined, new Date(), { waitAi: true }); // 반복 조사는 AI 해석까지 기다린다
   const fresh = findNew(rec.watch, pool, now);
   const byDomainNew: Partial<Record<Domain, number>> = {};
   for (const o of fresh) byDomainNew[o.domain] = (byDomainNew[o.domain] ?? 0) + 1;
+  const matched = getMatches({ pool, answers: rec.watch.answers }).map((m) => m.opportunity);
+  const changes = detectChanges(matched, rec.known, now);
   const snapshot = {
     at: now.toISOString(),
     total: pool.length,
-    passed: getMatches({ pool, answers: rec.watch.answers }).length,
+    passed: matched.length,
+    changedCount: changes.changed.length,
+    soonCount: changes.soon.length,
     newCount: fresh.length,
     byDomainNew,
     failedSources: [...new Set(pool.filter((o) => o.isSample).map((o) => o.source))],
@@ -35,20 +40,14 @@ export async function scanOne(rec: WatchRecord, now = new Date()): Promise<Watch
     lastSources: [...new Set(pool.map((o) => o.source))],
     lastNewTitles: fresh.slice(0, 5).map((o) => o.title),
     totalNew: rec.totalNew + fresh.length,
+    known: changes.known,
   };
-  if (fresh.length > 0 && rec.subscription && vapidReady()) {
+  const hasNews = fresh.length > 0 || changes.changed.length > 0 || changes.soon.length > 0;
+  if (hasNews && rec.subscription && vapidReady()) {
     try {
       await webpush.sendNotification(
         rec.subscription,
-        JSON.stringify({
-          title: `조건에 맞는 새 공고 ${fresh.length}건`,
-          body: fresh
-            .slice(0, 3)
-            .map((o) => o.title)
-            .join(" · ")
-            .slice(0, 200),
-          url: "/alerts",
-        }),
+        JSON.stringify({ ...pushSummary(fresh, changes), url: "/alerts" }),
       );
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode;

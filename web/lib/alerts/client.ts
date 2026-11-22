@@ -1,6 +1,6 @@
 // 브라우저 전용: 서비스워커·알림 권한·인앱 알림 확인·Web Push
 import type { Domain, Opportunity } from "@/lib/types";
-import { addAlerts, collectAlerts, demoOpportunity, loadAlertLog, loadWatch, markSeen, type AlertItem } from "./index";
+import { addAlerts, collectAlerts, loadAlertLog, loadWatch, markSeen, type AlertItem } from "./index";
 
 export const ALERTS_EVENT = "alerts-changed";
 
@@ -47,10 +47,10 @@ export async function fetchPool(domains: Domain[]): Promise<Opportunity[]> {
 }
 
 /** 앱을 열 때 호출: 저장한 조건으로 새 공고·마감 임박을 찾아 기록하고 브라우저 알림을 띄운다 */
-export async function checkAlerts(extraPool: Opportunity[] = []): Promise<AlertItem[]> {
+export async function checkAlerts(): Promise<AlertItem[]> {
   const w = loadWatch();
   if (!w) return [];
-  const pool = [...extraPool, ...(await fetchPool(w.domains))];
+  const pool = (await fetchPool(w.domains)).filter((o) => !o.isSample && o.origin !== "sample");
   const items = collectAlerts(w, pool, loadAlertLog());
   if (items.length === 0) return [];
   addAlerts(items);
@@ -61,13 +61,6 @@ export async function checkAlerts(extraPool: Opportunity[] = []): Promise<AlertI
   window.dispatchEvent(new Event(ALERTS_EVENT));
   for (const a of items.slice(0, 3)) await showNotification(a);
   return items;
-}
-
-/** 키 없이 동작하는 "새 공고 도착" 시연 */
-export async function runDemo(): Promise<AlertItem[]> {
-  const w = loadWatch();
-  if (!w) return [];
-  return checkAlerts([demoOpportunity(w)]);
 }
 
 // ---- Web Push (VAPID 키가 서버 env에 있을 때만) ----

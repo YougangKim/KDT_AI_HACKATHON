@@ -17,10 +17,12 @@ export interface WatchRecord {
   totalNew: number;
   history?: ScanSnapshot[]; // 최근 조사 기록(주간 리포트용, 최대 30개)
   tokenHash?: string; // 소유자 토큰 sha256(원문은 저장하지 않음)
+  known?: import("./changes").Known; // 공고별 마지막 마감일·D-3 알림 여부
 }
 
-const URL_ = process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// Vercel의 Upstash 연동은 KV_REST_API_* 이름으로 넣는다
+const URL_ = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 const memory = new Map<string, WatchRecord>();
 const INDEX = "watch:index";
 

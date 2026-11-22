@@ -16,6 +16,8 @@ export function WeeklyReport({ history, now = new Date() }: { history: ScanSnaps
   for (const h of week)
     for (const [d, n] of Object.entries(h.byDomainNew)) byDomain[d as Domain] = (byDomain[d as Domain] ?? 0) + (n ?? 0);
   const newTotal = week.reduce((a, h) => a + h.newCount, 0);
+  const changedTotal = week.reduce((a, h) => a + (h.changedCount ?? 0), 0);
+  const soonTotal = week.reduce((a, h) => a + (h.soonCount ?? 0), 0);
   const last = week.at(-1)!;
   const rate = last.total ? Math.round((last.passed / last.total) * 1000) / 10 : 0;
   const failed = [...new Set(week.flatMap((h) => h.failedSources))];
@@ -27,6 +29,11 @@ export function WeeklyReport({ history, now = new Date() }: { history: ScanSnaps
         이번 주 <b>{week.length}회</b> 조사해서 새 공고 <b>{newTotal}건</b>을 찾았어요. 최근 조사에서는 전체 {last.total}건 중{" "}
         <b>{last.passed}건({rate}%)</b>이 내 조건을 통과했어요.
       </p>
+      {(changedTotal > 0 || soonTotal > 0) && (
+        <p className="text-xs text-slate-600">
+          마감일이 바뀐 공고 {changedTotal}건 · 마감 3일 이내로 들어온 공고 {soonTotal}건
+        </p>
+      )}
       {Object.keys(byDomain).length > 0 && (
         <ul className="space-y-1">
           {(Object.entries(byDomain) as [Domain, number][])

@@ -1,5 +1,10 @@
 # 작업 로그 — 대한상공회의소 AI 해커톤
 
+## 2026-11-22 소개서 시각 검수 재개 (Codex)
+- 승인된 셸로 렌더 이미지를 읽어 시각 검수 성공. API 각주 겹침 수정, 공식 API→규칙/Gemini와 Tavily→Exa→Jev 검색 보충 경로 분리.
+- 서울 거주(예) → 무주택(아니오) → 나이(모름)에 따른 가상 공고 유지·제외 페이지 추가. 본문 10쪽 + 표지 + 별첨 = 총 12쪽.
+- `scripts/refine_project_intro.py`와 별도 흐름도 PDF·PNG 생성. 검색 결과 자격조건이 비어 있는 한계 명시. 제출 전 팀 정보·공개 URL·사전 개발 이력·상세 이용조건 확인 필요.
+
 단계: 환경 설정 → 아이데이션 → 기획 → 개발
 
 ## 2026-11-19 환경 설정
@@ -174,3 +179,126 @@
 - 작업 스케줄러 등록은 자동 모드 권한에서 차단 → 사용자 승인 필요
 - AI_HANDOFF "다음 작업"을 현재 기준으로 재정리
 - 11:45 SH 약관·공식 RSS 확인, 브라우저로 약관·RSS·robots 열어 줌. 결론: 크롤링 대신 공식 RSS(기본 OFF, 제목·링크·날짜만). docs/research_tools.md
+
+## 2026-11-21 11:00 사용자 할 일 정리·업로드 준비·제출 초안 (Claude, 통합 스레드)
+- docs/사용자_할일.md: 모든 스레드의 사용자 작업 15개(필수/선택·소요·방법·전달 형식, 완료 체크)
+- 작업 스케줄러 자동 등록이 자동 모드에서 차단 → register-resume-task.ps1(30분 주기) 사용자 1회 실행 방식으로 변경
+- GitHub 업로드: 사용자 허락, 커밋 명령이 자동 모드에서 차단 → .gitignore 보강 후 사용자 실행 명령 안내
+- 제출 초안: docs/제출_소개서_초안.md(양식 순서), docs/제출_AI활용내역_초안.md(1,736자)
+
+## 2026-11-21 11:10 SH 공식 RSS + 미반영 목록 (Claude, 통합 스레드)
+- 사용자 승인으로 SH 공식 RSS 어댑터 추가(기본 OFF). 실제 피드 확인: RSS 리더 UA 필요, EUC-KR, 29건 중 모집 공고만 필터. test 70·build 통과
+- docs/미반영_목록.md: 미구현 기능(우선순위·출처)과 사용자 미완료 작업
+
+## 2026-11-21 12:50 마감 변경·임박 감지 + 중복 제거 (Claude, 통합 스레드)
+- 작업 스케줄러(사용자 등록)가 10:44 대기열 테스트 작업을 자동 재실행 완료. GitHub 푸시(9b0f8d5) 확인
+- 반복 조사에 마감일 변경·D-3 임박(공고당 1회) 감지 추가, 푸시는 "새 공고·마감 변경·마감 임박" 한 건으로 묶음
+- 출처 간 같은 공고 제목 정규화로 하나만 남김(공식 API > RSS > 웹 검색 > 샘플)
+- test 74·build·lint 통과. 미반영 목록·사용자 할 일 체크 갱신
+
+## 2026-11-21 13:35 데모 확인용 제공 + 판정 개선 (Claude, 통합 스레드)
+- 사용자 요청: 배포 전 UI를 예시 데이터로 확인. localhost:3400에 최신 빌드, 화면 5장 캡처, docs/데모_확인방법.md
+- 화면 점검 중 발견: 같은 답에서 "바로 신청 0개" → 원인 3가지(관심 분야 미질문, 만 19세 이상, 취업상태 추론) 수정 → 22개. 테스트 2개 추가(총 76)
+- 개선 후보: 지역 질문이 도시 하나씩 나옴
+
+## 2026-11-21 14:55 공모전 보고서 초안 (Claude, 통합 스레드)
+- docs/제출_보고서_초안.md: 대회 양식 순서(표지·요약·01~08·별첨)와 AI 활용내역(1,917자) 통합 초안, 빈칸 목록 7개
+- Codex --review: 문서 기준 65/100 반려. 과장·불일치 문장 7개 수정 반영, 남은 감점은 배포·실데이터·AI 구조화 정확도 증거
+
+## 2026-11-21 22:40 결과 흐름 UX 개편 (Claude, 통합 스레드)
+- 사용자 요청 4가지: 홈 관심사 선택, 끝나자마자 공고 3개 + 더보기/추가 질문, 분석 별도 페이지, 분석 화면 단답형 리디자인
+- 확인: 3분야 선택 → 30개 결과 → 추가 질문 2개로 19개까지 좁힘, 분석 페이지 표시. test 77·build 통과. 데모 localhost:3700
+
+## 2026-11-21 22:50 취업 상태 오탈락 수정 (Claude)
+- 사용자 지적: "알바 중"이라고 답하면 미취업자 대상 공고가 전부 제외됨(그만두거나 이직할 사람도 대상일 수 있음)
+- `web/lib/engine/index.ts` `lenient()`: 맞지 않아도 탈락 대신 "확인 필요"로 남길 조건 = 취업 상태 전부, 우대·우선·가능·무관·다름 문구, confidence low, 기준중위소득이 아닌 소득 기준
+- 점검 결과 그대로 둔 하드 조건: 나이, 지역, 무주택, 1인 가구, 기준중위소득, 관심 분야 아니오
+- 테스트 4개 추가(`lib/engine/youth.test.ts`), test 81·build·lint 통과, 데모 http://localhost:3800
+
+## 2026-11-21 23:05 Vercel 배포·data.go.kr 신청 안내 (Claude)
+- data.go.kr 개발계정 승인 5개: LH 분양임대공고문(15058530), 마이홈 공공주택 모집공고(15108420), 잡알리오 공공기관 채용(15125273), 공공서비스(혜택)(15113968), 국가자격 시험일정(15074408). 키는 사용자가 `config/api_keys.csv`에 직접 입력 예정
+- 온통청년(15143273)은 LINK형이라 youthcenter.go.kr에서 별도 가입·신청 필요, 내일배움은 고용24 별도 키
+- Vercel: 기존 이메일 계정(kimyk 팀, Hobby)에 GitHub 연결·GitHub App 설치, 프로젝트 `kdt_ai_hackathon-web`(Root=web, 브랜치 claude/project-thread-pm1ii1) 생성. 빌드 성공했으나 Next.js 15.5.4 취약 버전이라 Vercel이 배포 차단 → `next`·`eslint-config-next`를 15.5.29로 올린 뒤 푸시 필요(사용자 푸시 보류)
+
+## 2026-11-21 23:15 민간 API 조사 (Claude, 조사 전용·web/ 미수정)
+- 결과 `docs/민간API_조사.md`. 추천 1: 청약홈 분양정보(data.go.kr 15098547, 자동승인, 민영 APT·무순위/잔여·오피스텔/민간임대·공공지원 민간임대, odcloud 형식이라 gov24.ts와 같은 방식). 추천 2: 사람인 API(심사 승인·주말이라 마감 전 불확실 → 지금 신청, 어댑터 기본 OFF)
+- 제외: 잡코리아(약관상 개인·프로젝트 불승인), 알바몬·알바천국(공개 API 없음), 원티드(사업자번호 필수·3영업일), 직방·다방·피터팬(공개 API 없음, 크롤링뿐). ODsay는 무료 일 30회라 보류
+
+## 2026-11-21 23:20 실데이터 점검 준비 + Next.js 보안 패치 (Claude)
+- `web/scripts/check-sources.mjs`: CSV의 DATA_GO_KR_KEY로 5개 출처(LH·마이홈·잡알리오·공공서비스·Q-Net) 직접 호출해 상태·건수·필드명만 출력, `--env`면 `web/.env.local` 기록. 현재 CSV 키 칸이 비어 있어 미실행
+- Vercel 배포 차단 대응: next·eslint-config-next 15.5.4 → 15.5.29, sharp 취약점 audit fix. 남은 audit: next 내장 postcss(빌드 시 CSS 처리, 16.x 업그레이드 필요라 보류). test 81·build·lint 통과
+- 데모 서버 http://localhost:3900 (3800 포트 잔류)
+
+## 2026-11-21 23:35 청약홈·사람인 어댑터 + 키 입력 파일 (Claude)
+- `web/lib/sources/applyhome.ts`: 청약홈 분양정보(APT·무순위·오피스텔/민간임대), DATA_GO_KR_KEY 공용(별도 활용신청), 일부 실패 허용, 무주택은 low 신뢰도 힌트
+- `web/lib/sources/saramin.ts`: 사람인 채용(신입), 기본 OFF(`SARAMIN_ENABLED=1`+`SARAMIN_KEY`), "사람인 제공" 출처 표기
+- 테스트 `lib/sources/private.test.ts`(5). test 86·build·lint 통과
+- 키 입력은 기존 `config/api_keys.csv`(사용자 요청). 엑셀 한글 깨짐 방지로 UTF-8 BOM 추가. `web/scripts/check-sources.mjs`가 CSV(UTF-8/cp949 모두)를 읽고 `--env`로 `web/.env.local`에 반영. keys.txt는 만들었다가 삭제
+- 데모 서버 http://localhost:4000
+
+## 2026-11-21 23:55 실데이터 연결 확인 (Claude)
+- 사용자 CSV 입력 → `web/.env.local` 반영(DATA_GO_KR_KEY), VAPID 키·CRON_SECRET 로컬 생성(값은 기록 안 함)
+- 실호출: LH 50·마이홈 50·잡알리오 50·공공서비스 50·Q-Net 75건 OK, 청약홈 401(활용신청 전)
+- 버그: 중복 제거가 같은 출처의 회차만 다른 공고(Q-Net 75→2)까지 합침 → 같은 출처끼리는 합치지 않게 수정(+테스트). 앱 목록 174건(실데이터 156 + 알바·국비 샘플 18)
+- 브라우저 확인: 주거+채용 선택 시 후보 104개, 결과 57개(바로 신청 43) 실공고 표시. 데모 http://localhost:4400. test 87·build·lint 통과
+
+## 2026-11-22 00:10 Tavily·Exa 웹 검색 실동작 확인 (Claude)
+- CSV의 TAVILY·EXA 키를 `web/.env.local`에 반영, `WEB_SEARCH_ENABLED=1`
+- Tavily: HTTP 432 "plan usage limit 초과"(계정 한도) → 0건. Exa: 정상(분야별 5건)
+- 수정 `lib/sources/websearch.ts`: Tavily 실패 시 Exa로 자동 전환, 게시판·메뉴·일정 안내 페이지 제목 제외(`isPostingTitle`), 제목의 사이트명 꼬리 제거. 필터 전 30건 중 대부분 목록 페이지 → 필터 후 2건(청년안심주택 모집공고, 국가기술자격검정 시행공고)
+- test 89·build·lint 통과. 데모 http://localhost:4600
+
+## 2026-11-22 00:30 Gemini·Jev AI 연결 (Claude)
+- `web/lib/ai/index.ts`: ANTHROPIC 키 없고 GEMINI_API_KEY 있으면 Gemini generateContent(REST, `x-goog-api-key`, 기본 모델 `gemini-3.5-flash-lite`, `GEMINI_MODEL`로 변경)로 자격요건 구조화·질문 문장·맞는 이유. 실패 시 규칙 기반. `aiEnabled()`가 Gemini도 인정
+- `web/lib/ai/jev.ts`: TypeSafe Jev Noul(예/아니오 확률) `judgeYes`. JEV_API_KEY 있을 때만. 웹 검색 결과가 개별 모집 공고인지 판단해 0.5 미만 제외(`lib/sources/websearch.ts` keepPostings)
+- 근거 문서: docs.typesafe.ai/api/system-one.md, aistudio.google.com/docs/models. Gemini 무료 모델 id는 문서에 명시 없음 → 키 받으면 실호출로 확인 필요
+- 테스트 `lib/ai/providers.test.ts`(4). test 93·build·lint 통과. CSV 26·27행(GEMINI·JEV) 추가는 엑셀이 파일을 열고 있어 실패 → 엑셀 닫은 뒤 추가
+
+## 2026-11-22 00:45 CSV 정리·Upstash 변수명·청약홈 실데이터 (Claude)
+- `config/api_keys.csv` 정리(사용자 요청): 키 입력된 행(1·3·6·10·15·23·24)과 앞으로 넣을 행(8 사람인·11 온통청년·14 고용24 훈련·26 Gemini·27 Jev)만 남김. 입력된 키 3종 값 보존 확인, UTF-8 BOM 유지. 백업 `config/api_keys.20261121.backup.csv`(gitignore)
+- `lib/server/store.ts`: Vercel Upstash 연동 변수 `KV_REST_API_URL/TOKEN` 폴백
+- 청약홈 활용신청 반영됨: 실호출 34건(APT 21·무순위 9·오피스텔/민간임대 4), 마감·지역 모두 채워짐. 데모 http://localhost:4700
+
+- 00:58 CSV 14행(고용24 훈련과정, 기업회원 전용이라 발급 불가) 삭제(사용자 요청). 국비 과정은 키가 없으면 예시 데이터로 자동 표시(코드 변경 없음)
+
+## 2026-11-22 01:15 Gemini 실동작 + AI 안전장치 (Claude)
+- CSV 14행(고용24 훈련과정) 삭제 완료, 다른 키 보존 확인. 국비 과정은 예시 데이터 유지
+- Gemini 키 반영: `gemini-3.5-flash-lite` 200 OK. 자격요건 3문장 구조화가 규칙 결과와 일치, 질문 문장 생성 OK
+- 실데이터 AI 해석에서 오류 발견: 정년(만 60세 미만)→나이 상한, "세종학당재단"→세종 거주, "자립준비청년"→무주택, 나이 0세 이상 → `plausibleAiCondition`으로 버림(`lib/sources/index.ts`, 테스트 추가)
+- Gemini 무료 등급 429(동시 15건) → 동시 2건으로 제한. 그래도 첫 로딩 약 24초·일부 429는 규칙 기반 폴백. 이후 1시간 캐시
+- 청약홈 API가 00시 이후 totalCount 0 반환(키 문제 아님, 일시적 추정) → 재확인 필요
+- test 94·build·lint 통과. 데모 http://localhost:4900
+
+## 2026-11-22 01:50 개발 재개: Jev 확인·로딩 개선·시연 구분 (Claude)
+- Jev 실호출 OK(jev-1.14.0): "청년안심주택 모집공고" 0.91, "공지사항 게시판 목록" 0.05. 웹 검색 필터에 사용 중
+- 청약홈 재확인: 정상(21건, 자정 직후 일시 0건이었음)
+- 첫 로딩 24초 → 3초: 화면 요청은 AI 해석을 기다리지 않고 뒤에서 해석(`enrichWithAi` wait 옵션, 중복 호출 방지), 반복 조사(`lib/server/scan.ts`)는 기다림
+- AI 조건 중복 제거(`parseConditionsJson`)
+- 홈: 알바·국비 과정에 "예시 데이터" 표시, 출처 문구를 실시간 출처 기준으로 수정
+- `docs/배포_환경변수.md`: Vercel 필수/권장/선택 변수 목록
+- AI 정확도: `web/scripts/ai-eval.test.ts`(AI_EVAL=1일 때만)로 실공고 20건 AI·규칙 결과 `plan/ai_eval_data.json` 생성 → Codex 채점 요청 중
+- test 94(+1 skip)·build·lint 통과. 데모 http://localhost:5100
+
+## 2026-11-22 02:10 AI 정확도 근거 (Claude, 채점은 Codex)
+- 1차 채점(`.ai-sync/tasks/20261121T154503-codex/`): AI 정밀도 69.8%·재현율 78.9%, 규칙 91.4%·84.2% → 앱을 규칙 우선+AI 보완으로 변경, 규칙 "~40세 미만" 경계 오류·AI 소득→취업상태 오해 수정, AI 중복 제거
+- 재채점(`.ai-sync/tasks/20261121T154839-codex/`): 합성(앱 방식) 정밀도 94.6%(35/37)·재현율 92.1%(35/38). 보고서 07절에 표 반영
+- test 95(+1 skip)·build·lint 통과
+## 2026-11-22 01:36 프로젝트 소개서 PDF (Codex)
+- `AGENTS.md`, `CLAUDE.md`, `AI_HANDOFF.md`, 기존 docs와 대회 양식·안내문·AI 활용 및 출처 기준 PDF를 대조했다.
+- `scripts/build_project_intro.py`로 A4 가로 11쪽 소개서 생성: 표지, 프로젝트 요약, 01~08, 지정 별첨. 통계 그래프, 사용자 흐름·Happy Path, 인프라 구조, 공공 API별 수집→Opportunity 공통화→규칙 우선/Gemini 보완→질문별 예·아니오·모름 필터→Vercel Cron·Upstash·Web Push 흐름을 포함했다.
+- 결과물: `output/pdf/찾아줄게_프로젝트소개서_20261122.pdf`. 저장소에 없는 팀 정보·공개 URL·사전 개발/타 공모전 확인은 빨간 입력 필요 항목으로 남겼다.
+- 검증: Vitest 95개 통과(+AI 평가 1개 skip), ESLint 통과, Next.js production build 통과. PDF 11쪽 PNG 렌더, 빈 페이지 없음, 모든 문자 bbox 페이지 경계 안, 한글 추출 확인. 로컬 이미지 뷰어와 브라우저 미리보기는 Windows ACL helper 오류로 열리지 않아 좌표·렌더 기반으로 검수했다.
+
+## 2026-11-22 소개서 디자인 개정 (Codex)
+- 사용자 요청에 따라 impeccable typeset 지침과 독립 타이포그래피 검토를 반영. Noto Sans KR 3개 굵기, 16:9, 제목 30pt, 일관된 여백·색상·정렬로 재구성. 상세 출처는 별첨으로 옮기고 본문 10쪽 유지.
+- 최신 제작 스크립트 `scripts/build_intro_designed.py`. 소개서 15쪽(표지+본문 10+별첨 4), API 연계/질문 필터 별도 2쪽 PDF 및 PNG 갱신.
+- 공식 API 6종 이용조건 확인, SDK 라이선스 수정, 통계 잠정치 및 소표본 평가 한계 표기. Tavily 크레딧 한도로 Exa 사용.
+- 15쪽 전체 렌더 시각 확인 및 pdfplumber 문자 경계 검사 통과. 기존 테스트 기록은 날짜와 함께 인용; 문서 작업이므로 앱 테스트 재실행·앱 수정·배포·커밋·푸시 없음.
+- 남음: 팀명·팀원·역할, 사전 개발/타 공모전 이력, 공개 URL, 운영 Cron/앱 종료 푸시 검증.
+
+## 2026-11-22 서비스 예시 데이터 제거 (Codex)
+- API 실패·0건 샘플 대체, 게임 fixture 대체, demo 결과, 가상 알림 생성 경로 제거. 기존 세션 결과와 알림 기록의 샘플도 표시에서 제외. 테스트 데이터는 보존하고 런타임 import 제거.
+- sampleResult.ts 삭제(기존 Git 추적본에서 복구 가능). 홈 안내 수정, 조회 가능한 공고가 없을 때 빈 상태·재조회 경로 제공. React 검토 지침으로 hook 순서와 빈 상태 확인.
+- sources 회귀 테스트 수정·lastResult 테스트 2개 추가: 97개 통과·1개 제외. 최종 빌드로 타입·린트 재검증. 배포·커밋·푸시 없음.
+- Jev는 웹 검색 후보의 개별 모집 공고 여부(p≥0.5), Gemini는 규칙 미추출 속성 보완과 질문 문장 작성에 사용. 최종 자격 필터는 규칙 엔진이며, 웹 검색 공고의 자격조건 추출은 미구현.
+- 소개서 양식 항목 복원·명사형 제목/문어체 설명 반영 완료, 최신 렌더의 시각 검수는 후속 필요.

@@ -87,8 +87,14 @@ function learn(kb: Map<AttrKey, Knowledge>, q: Question, a: Answer) {
   }
 }
 
+/** 서비스 대상이 만 19~34세 청년이므로 나이 하한 19를 기본 지식으로 둔다(만 19세 이상 같은 조건을 다시 묻지 않음) */
+const YOUTH_MIN_AGE = 19;
+// 단일값 속성의 가능한 값 전체(아니오로 나머지가 모두 지워졌는지 판단할 때 사용)
+const VALUE_DOMAIN: Partial<Record<AttrKey, string[]>> = { employment: ["student", "jobseeker", "employed", "parttime"] };
+
 function buildKnowledge(answers: AnswerRecord[]): Map<AttrKey, Knowledge> {
   const kb = new Map<AttrKey, Knowledge>();
+  kb.set("age", { ...newKnowledge(), lo: YOUTH_MIN_AGE });
   for (const r of answers) learn(kb, r.question, r.answer);
   return kb;
 }
@@ -114,16 +120,35 @@ function decide(k: Knowledge, c: Condition): "pass" | "fail" | null {
     return null;
   }
   if (k.is !== undefined) return strs.includes(k.is) ? "pass" : "fail";
+  const domain = VALUE_DOMAIN[c.attr];
+  if (domain && !k.allowed && k.not.size > 0) {
+    const left = domain.filter((s) => !k.not.has(s));
+    if (left.length > 0 && left.every((s) => strs.includes(s))) return "pass";
+  }
   const possible = (k.allowed ?? strs).filter((s) => !k.not.has(s));
   if (!strs.some((s) => possible.includes(s))) return "fail";
   if (k.allowed && k.allowed.filter((s) => !k.not.has(s)).every((s) => strs.includes(s))) return "pass";
   return null;
 }
 
+/**
+ * 맞지 않아도 탈락시키지 않고 "확인 필요"로 남길 조건(맞으면 통과 근거로는 쓴다).
+ * - 취업 상태: 알바 중이어도 그만두고 구직하거나 이직할 수 있어 지금 상태로 자르면 안 된다.
+ * - 우대·우선·예외("가능", "무관")가 붙은 조건: 자격 요건이 아니다.
+ * - 자동 해석이 불확실한 조건(confidence low).
+ * - 기준중위소득이 아닌 소득 기준(연소득, 도시근로자 월평균소득, 학자금 구간): 질문은 기준중위소득으로 묻기 때문에 답으로 판정할 수 없다.
+ */
+export function lenient(c: Condition): boolean {
+  if (c.attr === "employment" || c.confidence === "low") return true;
+  if (/우대|우선|가능|무관|다름/.test(c.rawText)) return true;
+  return c.attr === "incomePct" && !/중위/.test(c.rawText);
+}
+
 function evaluate(kb: Map<AttrKey, Knowledge>, c: Condition): Verdict {
   const k = kb.get(c.attr);
   if (!k) return null;
   const d = decide(k, c);
+  if (d === "fail" && lenient(c)) return "unknown";
   if (d) return d;
   return k.unknownIds.has(questionId(c)) ? "unknown" : null;
 }
@@ -135,7 +160,8 @@ interface Effective {
 }
 
 function effectiveConditions(o: Opportunity): Effective[] {
-  const out: Effective[] = o.conditions.map((cond) => ({ cond, soft: false }));
+  // 관심 분야는 자격 요건이 아니라 취향이므로, 묻지 않았다고 "확인 필요"로 남기지 않는다(답이 "아니오"면 여전히 제외)
+  const out: Effective[] = o.conditions.map((cond) => ({ cond, soft: cond.attr === "interest" }));
   if (o.region.length > 0 && !o.conditions.some((c) => c.attr === "region")) {
     out.push({
       cond: {
