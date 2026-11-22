@@ -274,14 +274,14 @@ export default function PlayPage() {
     return { left, asked, step, q, done, split: chosen ? { yes: chosen.yes, no: chosen.no } : null, choice, ranked, waiting, byAi: !!picked && chosen?.question.id === picked, stuck: continuing && step === 0 && noMore };
   }, [state, stopNow, limit, base, history, aiPick, continuing]);
 
-  // 다음 질문을 AI(Gemini/Claude)가 고른다: 규칙 상위 5개 후보 + 이미 답한 내용 → 후보 id 하나. 실패·4초 초과면 규칙 1순위
+  // 다음 질문을 AI(Gemini/Claude)가 고른다: 규칙 상위 5개 후보 + 이미 답한 내용 → 후보 id 하나. 실패·1.2초 초과면 규칙 1순위(질문 넘김이 늘어지지 않게)
   const pickKey = view?.waiting ? view.step : null;
   useEffect(() => {
     if (pickKey === null || !view || !state) return;
     let alive = true;
     const candidates = view.ranked.map((r) => ({ id: r.question.id, text: choiceFor(state, r.question)?.title ?? r.question.text, yes: r.yes, no: r.no, resolve: r.resolve }));
     const answered = state.answers.map((a) => ({ text: a.question.text, answer: a.answer }));
-    fetch("/api/next-question", { method: "POST", body: JSON.stringify({ candidates, answered, total: view.left }), signal: AbortSignal.timeout(5000) })
+    fetch("/api/next-question", { method: "POST", body: JSON.stringify({ candidates, answered, total: view.left }), signal: AbortSignal.timeout(1200) })
       .then((r) => r.json())
       .then((d: { ai: boolean; id?: string }) => {
         if (!d.ai) pickOff.current = pickKey === 0 ? true : pickOff.current; // 처음부터 AI가 꺼져 있으면 이후 호출 안 함
