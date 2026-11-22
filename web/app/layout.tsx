@@ -3,7 +3,7 @@ import "./globals.css";
 import { AlertBell } from "@/components/result/AlertBell";
 
 export const metadata: Metadata = {
-  title: "찾아줄게 | 청년 기회 아키네이터",
+  title: "마이뉴스 | 나에게 맞는 청년 공고 소식",
   description: "예·아니오만 답하면 지금 받을 수 있는 청년 주택·지원금·일자리를 맞혀 주고, 새 공고가 뜨면 알려 드려요.",
   manifest: "/manifest.json",
 };

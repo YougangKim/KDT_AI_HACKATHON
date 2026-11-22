@@ -3,6 +3,7 @@ import type { Condition, Domain, Opportunity } from "../types";
 import { aiEnabled, structureConditions } from "../ai";
 import { regionsIn } from "../ai/rules";
 import { attachGeo } from "../geo/geocode";
+import { attachPlaces, _clearExtractCache } from "../geo/extract";
 import type { SourceAdapter } from "./types";
 import { getEligibility, isOpen, todayKst, withEligibility } from "./util";
 import { lhNotice } from "./lh-notice";
@@ -32,6 +33,7 @@ const aiConditionCache = new Map<string, Condition[]>();
 export function _clearCache() {
   cache.clear();
   aiConditionCache.clear();
+  _clearExtractCache();
 }
 
 async function runAdapter(a: SourceAdapter, now: Date): Promise<Opportunity[]> {
@@ -155,7 +157,7 @@ export async function loadOpportunities(domains: Domain[] = ALL_DOMAINS, now: Da
     out.push(o);
   }
   const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
-  return attachGeo(deduped);
+  return attachGeo(attachPlaces(deduped));
 }
 
 /**

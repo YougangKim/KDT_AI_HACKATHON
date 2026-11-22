@@ -48,6 +48,8 @@ export interface Opportunity {
   conditions: Condition[];
   applyStart?: string; // ISO 날짜
   applyEnd?: string; // ISO 날짜. 없으면 상시
+  apply?: { how: string; where?: string; url?: string };
+  place?: string; // 공고 원문에서 추출한 근무지·주택 소재지 또는 장소명
   url: string; // 원문 링크
   source: string; // 공급원 id (config/api_keys.csv의 API와 대응)
   isSample: boolean; // 키가 없어 샘플 데이터면 true (화면에 표시)

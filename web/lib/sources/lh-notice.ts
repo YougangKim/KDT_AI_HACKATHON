@@ -18,6 +18,7 @@ export function mapLhNotice(raw: unknown, now: Date): Opportunity[] {
       const title = str(r.PAN_NM);
       const region = toRegions(r.CNP_CD_NM);
       const type = [str(r.UPP_AIS_TP_NM), str(r.AIS_TP_CD_NM)].filter(Boolean).join(" · ");
+      const url = str(r.DTL_URL) || "https://apply.lh.or.kr/";
       return {
         id: `lh-notice:${str(r.PAN_ID) || title}`,
         domain: "housing" as const,
@@ -28,7 +29,8 @@ export function mapLhNotice(raw: unknown, now: Date): Opportunity[] {
         conditions: buildConditions("housing", region, title),
         applyStart: toIsoDate(r.PAN_NT_ST_DT),
         applyEnd: toIsoDate(r.CLSG_DT),
-        url: str(r.DTL_URL) || "https://apply.lh.or.kr/",
+        apply: { how: "LH청약플러스에서 온라인 신청", url },
+        url,
         source: "lh-notice",
         isSample: false,
         fetchedAt: now.toISOString(),

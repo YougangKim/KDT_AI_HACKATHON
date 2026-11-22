@@ -36,6 +36,8 @@ export function mapJobalio(raw: unknown, now: Date): Opportunity[] {
       const work = toRegions(r.workRgnNmLst).join("·") || str(r.workRgnNmLst);
       const eligibility = [str(r.aplyQlfcCn), str(r.prefCondCn), str(r.recrutSeNm)].join(" ");
       const domain = shortTerm(title, str(r.hireTypeNmLst)) ? ("parttime" as const) : ("job" as const);
+      const applyEnd = toIsoDate(r.pbancEndYmd);
+      const url = str(r.srcUrl).match(/https?:\/\/[^\s,]+/)?.[0] ?? "https://job.alio.go.kr/recruit.do";
       const opp: Opportunity = {
         id: `jobalio:${str(r.recrutPblntSn) || title}`,
         domain,
@@ -47,9 +49,11 @@ export function mapJobalio(raw: unknown, now: Date): Opportunity[] {
         summary: [str(r.hireTypeNmLst), str(r.recrutSeNm), work && `근무지 ${work}`, str(r.recrutNope) && `${str(r.recrutNope)}명`].filter(Boolean).join(" / "),
         conditions: buildConditions(domain, toRegions(r.workRgnNmLst), eligibility, jobConditions(r)),
         applyStart: toIsoDate(r.pbancBgngYmd),
-        applyEnd: toIsoDate(r.pbancEndYmd),
+        applyEnd,
+        apply: { how: `기관 채용 사이트에서 지원서 접수${applyEnd ? ` (마감 ${applyEnd})` : ""}`, where: str(r.instNm) || undefined, url },
+        place: [str(r.instNm), work].filter(Boolean).join(" ") || undefined,
         // 원문 링크가 "a, b"처럼 여러 개거나 공백이 섞여 오면 첫 번째 정상 주소만 쓴다
-        url: str(r.srcUrl).match(/https?:\/\/[^\s,]+/)?.[0] ?? "https://job.alio.go.kr/recruit.do",
+        url,
         source: "jobalio",
         isSample: false,
         fetchedAt: now.toISOString(),

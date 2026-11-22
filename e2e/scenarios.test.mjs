@@ -192,7 +192,7 @@ for (const [name, pool] of DATASETS) {
       const eligible = Number((await page.getByText(/바로 신청 \d+개/).textContent()).match(/바로 신청 (\d+)개/)[1]);
       assert.ok(eligible >= 1, "바로 신청 가능한 공고가 1개 이상");
       // 상위 3개 카드: 모두 서울 대상이고 "왜 맞는지"에 지역 근거가 있다
-      const cards = page.locator("div.space-y-3 > *").filter({ hasText: "공고 원문 보기" });
+      const cards = page.locator("div.space-y-3 > *").filter({ hasText: "신청 페이지 열기" });
       const shown = await cards.count();
       assert.ok(shown >= 1, "결과 카드가 1개 이상 보여야 한다");
       if (pool === FIXTURE) assert.ok(shown >= 3, "고정 데이터(서울 주거 6건)에서는 카드 3개");
@@ -201,6 +201,8 @@ for (const [name, pool] of DATASETS) {
         assert.match(t, /대상 지역: 서울/, `상위 ${i + 1}번째 카드가 서울 공고가 아니다: ${t.slice(0, 80)}`);
         assert.doesNotMatch(t, /고령자|노인/, "청년 비대상 공고가 상위에 있다");
       }
+      assert.ok(await cards.first().getByText("신청 방법", { exact: true }).isVisible(), "카드에 신청 방법이 보여야 한다");
+      assert.ok(await cards.first().getByRole("link", { name: /신청 페이지 열기/ }).isVisible(), "카드에 신청 페이지 링크가 보여야 한다");
       await page.screenshot({ path: ART + `a_success_${name}.png`, fullPage: true });
       await page.context().close();
     });

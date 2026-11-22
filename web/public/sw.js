@@ -1,4 +1,4 @@
-// 찾아줄게 서비스워커: Web Push 수신과 알림 클릭 처리
+// 마이뉴스 서비스워커: Web Push 수신과 알림 클릭 처리
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
@@ -10,7 +10,7 @@ self.addEventListener("push", (event) => {
     data = { body: event.data ? event.data.text() : "" };
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || "찾아줄게", {
+    self.registration.showNotification(data.title || "마이뉴스", {
       body: data.body || "새 알림이 있어요",
       data: { url: data.url || "/alerts" },
     }),

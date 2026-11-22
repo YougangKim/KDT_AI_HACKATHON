@@ -34,12 +34,16 @@ export function MatchCard({
   location,
   highlighted,
   onShowMap,
+  aiSummary,
+  summaryMs,
 }: {
   match: Match;
   aiExplanation?: string;
   location?: UserLocation;
   highlighted?: boolean;
   onShowMap?: () => void;
+  aiSummary?: { summary: string; how: string };
+  summaryMs?: number;
 }) {
   const o = match.opportunity;
   const meta = DOMAIN_META[o.domain];
@@ -48,6 +52,7 @@ export function MatchCard({
     <article
       id={`match-${encodeURIComponent(o.id)}`}
       data-highlighted={highlighted ? "true" : undefined}
+      data-summary-ms={summaryMs === undefined ? undefined : Math.round(summaryMs)}
       className={`space-y-3 rounded-2xl bg-white p-4 text-slate-900 shadow-sm transition ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
     >
       <header className="flex items-start gap-3">
@@ -74,7 +79,21 @@ export function MatchCard({
         </span>
       </header>
 
-      {o.summary && <p className="text-sm text-slate-700">{o.summary}</p>}
+      {(aiSummary?.summary || o.summary) && (
+        <section className="text-sm text-slate-700">
+          <h3 className="font-semibold text-slate-800">📝 요약</h3>
+          <p>
+            {aiSummary && <span className="mr-1 rounded bg-violet-100 px-1 text-[10px] text-violet-700">AI 요약</span>}
+            {aiSummary?.summary ?? o.summary}
+          </p>
+        </section>
+      )}
+      {o.place && <p className="text-sm text-slate-700">📍 {o.place}</p>}
+      <section className="text-sm text-slate-700">
+        <h3 className="font-semibold text-slate-800">신청 방법</h3>
+        <p>{aiSummary?.how ?? o.apply?.how ?? "공고 상세 페이지에서 신청 방법 확인"}</p>
+        {o.apply?.where && <p className="text-xs text-slate-500">접수: {o.apply.where}</p>}
+      </section>
       {distance !== null && <p className="text-sm font-semibold text-indigo-700">내 위치에서 {distance.toFixed(1)}km</p>}
       {location && (!o.geo || o.geo.precision === "region") && (
         <p className="text-xs text-slate-500">위치가 지역 단위라 거리 판단 불가</p>
@@ -121,12 +140,12 @@ export function MatchCard({
       )}
 
       <a
-        href={o.url}
+        href={o.apply?.url || o.url}
         target="_blank"
         rel="noopener noreferrer"
         className="block rounded-xl border border-slate-200 py-2 text-center text-sm font-medium text-indigo-700"
       >
-        공고 원문 보기 ↗
+        신청 페이지 열기 ↗
       </a>
     </article>
   );

@@ -75,13 +75,20 @@ describe("어댑터 매핑", () => {
 
   it("공공서비스(혜택) — 지자체는 지역, 상시는 마감 없음", () => {
     const raw = { data: [
-      { 서비스ID: "A1", 서비스명: "서울 청년 월세 지원", 소관기관명: "서울특별시", 지원대상: "만 19세~39세 무주택 청년, 기준중위소득 150% 이하", 신청기한: "2026-11-01 ~ 2026-12-10", 상세조회URL: "https://www.gov.kr/x" },
+      {
+        서비스ID: "A1", 서비스명: "서울 청년 월세 지원", 소관기관명: "서울특별시",
+        지원대상: "만 19세~39세 무주택 청년, 기준중위소득 150% 이하",
+        신청기한: "2026-11-01 ~ 2026-12-10", 신청방법: "온라인\n신청",
+        접수기관: "서울특별시", 지원내용: "월세를 지원합니다.", 상세조회URL: "https://www.gov.kr/x",
+      },
       { 서비스ID: "B2", 서비스명: "청년 마음건강", 소관기관명: "보건복지부", 지원대상: "청년", 신청기한: "상시신청", 상세조회URL: "https://www.gov.kr/y" },
     ] };
     const [a, b] = mapGov24(raw, NOW);
     expectValid(a);
     expect(a.region).toEqual(["서울"]);
     expect(a.applyEnd).toBe("2026-12-10");
+    expect(a.summary).toBe("월세를 지원합니다.");
+    expect(a.apply).toEqual({ how: "온라인 신청", where: "서울특별시", url: "https://www.gov.kr/x" });
     expect(a.conditions.map((c) => c.attr)).toEqual(expect.arrayContaining(["age", "homeless", "incomePct", "region"]));
     expect(b.region).toEqual([]);
     expect(b.applyEnd).toBeUndefined();

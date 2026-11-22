@@ -27,6 +27,7 @@ export function mapApplyhome(raw: unknown, kind: Kind, now: Date): Opportunity[]
       const start = toIsoDate(r[startKey]) ?? toIsoDate(r.RCEPT_BGNDE);
       const type = str(r.HOUSE_DTL_SECD_NM) || str(r.HOUSE_SECD_NM);
       const units = str(r.TOT_SUPLY_HSHLDCO);
+      const url = str(r.PBLANC_URL) || "https://www.applyhome.co.kr";
       return {
         id: `applyhome:${str(r.HOUSE_MANAGE_NO)}:${str(r.PBLANC_NO)}`,
         domain: "housing" as const,
@@ -36,7 +37,9 @@ export function mapApplyhome(raw: unknown, kind: Kind, now: Date): Opportunity[]
         summary: [str(r.HSSPLY_ADRES), type, units && `${units}세대`, start && `접수 ${start}~`].filter(Boolean).join(" · "),
         conditions: buildConditions("housing", region, "", kind === "remndr" ? [] : [HOMELESS_HINT]),
         applyEnd: end,
-        url: str(r.PBLANC_URL) || "https://www.applyhome.co.kr/",
+        apply: { how: "청약홈에서 온라인 청약", where: str(r.BSNS_MBY_NM) || undefined, url },
+        place: str(r.HSSPLY_ADRES) || undefined,
+        url,
         source: "applyhome",
         isSample: false,
         fetchedAt: now.toISOString(),

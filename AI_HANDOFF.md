@@ -14,7 +14,7 @@
 
 - 마지막 갱신: 2026-11-22 / Codex 서비스 예시 데이터 제거
 - 단계: 개발 (병렬 스레드 3개 + 통합)
-- 확정 방향: **청년 기회 아키네이터 "찾아줄게"** — 예/아니오/모름 스무고개로 주거·지원금·채용·알바·국비과정·자격증 기회를 맞히고 새 공고 알림(PWA). 계획 `.claude/plans/youth-akinator.plan.md`, 병렬 계약 `web/CONTRACT.md`, API 키 기록 `config/api_keys.csv`(gitignore)
+- 확정 방향: **"마이뉴스"(2026-11-22 개명, 구 "찾아줄게")** — 예/아니오/모름 스무고개로 주거·지원금·채용·알바·국비과정·자격증 기회를 맞히고 새 공고 알림(PWA). 계획 `.claude/plans/youth-akinator.plan.md`, 병렬 계약 `web/CONTRACT.md`, API 키 기록 `config/api_keys.csv`(gitignore)
 - 최근 산출물: `research/청년고민_4대분야.md` (주거·교통·구직·알바 GPT 딥리서치 + 해결방안 판정으로 교체)
 - Git 커밋·푸시: 사용자 요청 전까지 금지
 
@@ -29,6 +29,8 @@
 5. 대기열: `.ai-sync/queue/*.json`이 있으면 `node .ai-sync/resume.mjs`로 재개(리셋 시각 지난 것만 실행)
 
 ## 최근 변경 파일
+
+- 2026-11-22 저녁 Claude: 서비스명 "마이뉴스"로 변경(앱 제목·홈·manifest·푸시·아이콘·문서). 지도(위치·반경·핀↔리스트), 카드 요약·신청 방법·신청 페이지 버튼, 주소 추출(규칙+Gemini)·캐시, Gemini 429 시 10분 호출 중지. 카카오 키 대기(KAKAO_REST_API_KEY). 커밋함, 푸시 안 함.
 
 - 2026-11-22 Claude 배포 피드백 6건 수정(공고 991건·알바 분류·조건 8종·선택형 질문·Gemini 다음 질문·분석 탈락 공고 목록·지역 근무 필터). 커밋함, 푸시 안 함 → 배포 반영하려면 사용자 요청 후 푸시. 검수 `cd e2e && node audit-live.mjs http://localhost:5300`, e2e `LIVE_API=1 npm test`.
 

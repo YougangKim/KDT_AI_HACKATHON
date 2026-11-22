@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     await webpush.sendNotification(
       sub,
       JSON.stringify({
-        title: "찾아줄게",
+        title: "마이뉴스",
         body: "조건에 맞는 새 공고가 도착했어요. 눌러서 확인해 보세요.",
         url: "/alerts",
       }),

@@ -15,6 +15,8 @@ import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { myRegion, sortMatches } from "@/components/result/sort";
 import { opportunityDistance } from "@/lib/geo/distance";
 
+type AiSummary = { id: string; summary: string; how: string };
+
 const FIRST = 3; // 끝나자마자 먼저 보여 줄 공고 수
 
 export default function ResultPage() {
@@ -23,6 +25,8 @@ export default function ResultPage() {
   const [showAll, setShowAll] = useState(false);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState("");
+  const [summaries, setSummaries] = useState<Record<string, AiSummary>>({});
+  const [summaryMs, setSummaryMs] = useState<Record<string, number>>({});
 
   const [hard, setHard] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
@@ -32,6 +36,30 @@ export default function ResultPage() {
     setResult(readLastResult());
     try {
       setHard(JSON.parse(localStorage.getItem("hardConditions") ?? "[]"));
+    } catch {}
+  }, []);
+
+  const requestSummaries = useCallback(async (ids: string[]) => {
+    if (!ids.length) return;
+    const started = performance.now();
+    try {
+      const response = await fetch("/api/summary", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const body = await response.json() as { ai?: boolean; items?: AiSummary[] };
+      const elapsed = performance.now() - started;
+      if (body.ai && body.items?.length) {
+        setSummaries((current) => Object.fromEntries([
+          ...Object.entries(current),
+          ...body.items!.map((item) => [item.id, item]),
+        ]));
+        setSummaryMs((current) => ({
+          ...current,
+          ...Object.fromEntries(body.items!.map((item) => [item.id, elapsed])),
+        }));
+      }
     } catch {}
   }, []);
 
@@ -93,6 +121,25 @@ export default function ResultPage() {
     window.setTimeout(() => setHighlighted(""), 2500);
   }, []);
 
+  // 정렬·첫 요약 요청은 훅이라 조기 return보다 위에 둔다
+  const sortedAll = useMemo(() => {
+    if (!result) return [];
+    return sortMatches(result.matches, myRegion(result.answers)).sort((a, b) => {
+      if (!result.location) return 0;
+      if (a.status !== b.status) return a.status === "eligible" ? -1 : 1;
+      const da = opportunityDistance(result.location, a.opportunity);
+      const db = opportunityDistance(result.location, b.opportunity);
+      if (da === null && db === null) return 0;
+      if (da === null) return 1;
+      if (db === null) return -1;
+      return da - db;
+    });
+  }, [result]);
+  const firstIds = sortedAll.slice(0, FIRST).map((match) => match.opportunity.id).join("|");
+  useEffect(() => {
+    void requestSummaries(firstIds ? firstIds.split("|") : []);
+  }, [firstIds, requestSummaries]);
+
   if (result === undefined) return null;
 
   const editor = result?.answers.length ? (
@@ -149,16 +196,13 @@ export default function ResultPage() {
     );
   }
 
-  const sorted = sortMatches(result.matches, myRegion(result.answers)).sort((a, b) => {
-    if (!result.location) return 0;
-    if (a.status !== b.status) return a.status === "eligible" ? -1 : 1;
-    const da = opportunityDistance(result.location, a.opportunity);
-    const db = opportunityDistance(result.location, b.opportunity);
-    if (da === null && db === null) return 0;
-    if (da === null) return 1;
-    if (db === null) return -1;
-    return da - db;
-  });
+  const sorted = sortedAll;
+
+  function showMore() {
+    setShowAll(true);
+    void requestSummaries(sorted.slice(FIRST, FIRST + 5).map((match) => match.opportunity.id));
+  }
+
   const shown = showAll ? sorted : sorted.slice(0, FIRST);
   const eligible = result.matches.filter((m) => m.status === "eligible").length;
   const rest = sorted.length - shown.length;
@@ -177,7 +221,7 @@ export default function ResultPage() {
       </header>
 
       <div>
-        <h1 className="text-2xl font-bold">🔮 딱 맞는 공고예요</h1>
+        <h1 className="text-2xl font-bold">📰 딱 맞는 공고예요</h1>
         <p className="text-sm text-slate-500">
           전체 {result.matches.length}개 · 바로 신청 {eligible}개
         </p>
@@ -210,13 +254,15 @@ export default function ResultPage() {
             location={result.location}
             highlighted={highlighted === m.opportunity.id}
             onShowMap={m.opportunity.geo?.precision !== "region" ? () => mapRef.current?.show(m.opportunity.id) : undefined}
+            aiSummary={summaries[m.opportunity.id]}
+            summaryMs={summaryMs[m.opportunity.id]}
           />
         ))}
       </div>
 
       <div className={`grid gap-2 ${!showAll && rest > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
         {!showAll && rest > 0 && (
-          <button onClick={() => setShowAll(true)} className="rounded-2xl border border-slate-300 bg-white py-3 text-sm font-semibold">
+          <button onClick={showMore} className="rounded-2xl border border-slate-300 bg-white py-3 text-sm font-semibold">
             더보기 +{rest}
           </button>
         )}

@@ -55,7 +55,7 @@ def head(c,section,title,sub=None):
     line(c,52,425,908,425)
 
 
-def foot(c,source='찾아줄게  /  2026 대한민국 청년 CAREER FAIR AI 해커톤'):
+def foot(c,source='마이뉴스  /  2026 대한민국 청년 CAREER FAIR AI 해커톤'):
     line(c,52,42,908,42)
     txt(c,52,23,source,9,'R',SUB)
     c.setFont('M',10); c.drawRightString(908,23,f'{c.getPageNumber():02}')
@@ -69,7 +69,7 @@ def link(c,x,y,label,url,size=10):
 def cover(c):
     rect(c,0,0,W,H,INK)
     txt(c,56,467,'2026 대한민국 청년 CAREER FAIR AI 해커톤',13,'M','#CEDDD9')
-    txt(c,52,343,'찾아줄게',64,'B',WHITE)
+    txt(c,52,343,'마이뉴스',64,'B',WHITE)
     txt(c,56,282,'청년 맞춤 공고 탐색·반복 조사\nAI 에이전트',25,'M',WHITE,leading=39)
     line(c,56,160,904,160,'#526A6D')
     txt(c,56,122,'주거 · 채용 · 지원금  /  질문 기반 필터링 · 조건 저장 · 새 공고 알림',14,'R','#CEDDD9')
@@ -193,7 +193,7 @@ def happy(c):
 
 def difference(c):
     head(c,'06 차별점','분야 간 조건 재사용·필터 근거·변화 알림')
-    txt(c,52,378,'비교 축',13,'M',SUB); txt(c,250,378,'분야별 서비스의 일반적 이용 흐름',14,'M',SUB); txt(c,610,378,'찾아줄게',16,'B',ACC)
+    txt(c,52,378,'비교 축',13,'M',SUB); txt(c,250,378,'분야별 서비스의 일반적 이용 흐름',14,'M',SUB); txt(c,610,378,'마이뉴스',16,'B',ACC)
     rows=[('조건 입력','분야별로 조건을 다시 설정','공통 답변을 여러 분야에 재사용'),('결과 이해','추천 목록에서 원문을 개별 확인','맞는 이유·확인 필요·필터 병목 표시'),('반복 확인','주거·채용·혜택 알림을 각각 확인','새 공고·마감 변경·D-3를 묶어 전달')]
     for i,(a,d,e) in enumerate(rows):
         y=326-i*76; line(c,52,y+29,908,y+29)
@@ -298,12 +298,12 @@ def evidence(c):
 
 def build():
     OUT.mkdir(parents=True,exist_ok=True)
-    path=OUT/'찾아줄게_프로젝트소개서_20261122.pdf'
+    path=OUT/'마이뉴스_프로젝트소개서_20261122.pdf'
     c=canvas.Canvas(str(path),pagesize=(W,H),pageCompression=1)
-    c.setTitle('찾아줄게 | 프로젝트 소개서'); c.setAuthor('찾아줄게 프로젝트')
+    c.setTitle('마이뉴스 | 프로젝트 소개서'); c.setAuthor('마이뉴스 프로젝트')
     for fn in [cover,summary,problem,users,ai,architecture,filtering,happy,difference,implementation,effects,team,api_sources,resources,evidence]: fn(c)
     c.save()
-    c=canvas.Canvas(str(OUT/'찾아줄게_API와_질문필터_흐름도.pdf'),pagesize=(W,H),pageCompression=1)
+    c=canvas.Canvas(str(OUT/'마이뉴스_API와_질문필터_흐름도.pdf'),pagesize=(W,H),pageCompression=1)
     architecture(c); filtering(c); c.save()
     print(path)
 

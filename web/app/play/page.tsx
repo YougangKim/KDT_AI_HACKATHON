@@ -354,7 +354,7 @@ export default function PlayPage() {
   if (!state || !view) {
     return (
       <main className="flex flex-1 items-center justify-center text-slate-500">
-        <span className={styles.orb}>🔮</span>&nbsp;공고를 모으는 중…
+        <span className={styles.orb}>📰</span>&nbsp;공고를 모으는 중…
       </main>
     );
   }
@@ -409,7 +409,7 @@ export default function PlayPage() {
       ) : view.done ? (
         <section className={`${styles.cardIn} flex flex-1 flex-col items-center justify-center gap-3 text-center`}>
           <p className="text-5xl">
-            <span className={styles.orb}>🔮</span>
+            <span className={styles.orb}>📰</span>
           </p>
           <p className="text-xl font-bold">
             {view.left > 0 ? `${view.left}개로 좁혔어요!` : "딱 맞는 공고를 못 찾았어요"}
@@ -418,7 +418,7 @@ export default function PlayPage() {
         </section>
       ) : view.waiting ? (
         <section className="flex flex-1 items-center justify-center text-sm text-slate-500">
-          <span className={styles.orb}>🔮</span>&nbsp;다음 질문을 고르는 중…
+          <span className={styles.orb}>📰</span>&nbsp;다음 질문을 고르는 중…
         </section>
       ) : (
         view.q && (

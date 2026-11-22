@@ -8,7 +8,7 @@ import { explainMatchRules, structureConditionsRules } from "./rules";
 export { explainMatchRules, phraseQuestionRules, structureConditionsRules, normalizeRegion } from "./rules";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
-const FAST_MODEL = process.env.ANTHROPIC_FAST_MODEL || "claude-haiku-5-5";
+export const FAST_MODEL = process.env.ANTHROPIC_FAST_MODEL || "claude-haiku-5-5";
 const ATTRS: AttrKey[] = ["age", "region", "homeless", "livingAlone", "incomePct", "employment", "interest", "subscription", "married", "welfare", "experienced", "education"];
 const OPS = ["eq", "lte", "gte", "in"] as const;
 
@@ -22,13 +22,19 @@ function getClient(): Anthropic | null {
 /** 테스트용: 클라이언트 캐시 초기화 */
 export function _resetClient() {
   client = undefined;
+  geminiBlockedUntil = 0;
 }
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 
+/** 무료 등급 한도(429)에 걸리면 10분간 호출을 멈춘다(실패할 요청 수백 건이 한도를 계속 갉아먹는 것 방지) */
+let geminiBlockedUntil = 0;
+const GEMINI_COOLDOWN_MS = 10 * 60_000;
+
 /** Gemini generateContent(REST). 실패하면 null */
-async function askGemini(system: string, user: string, maxTokens: number): Promise<string | null> {
+export async function askGemini(system: string, user: string, maxTokens: number): Promise<string | null> {
+  if (Date.now() < geminiBlockedUntil) return null;
   try {
     const res = await fetch(`${GEMINI_URL}/${GEMINI_MODEL}:generateContent`, {
       method: "POST",
@@ -40,6 +46,7 @@ async function askGemini(system: string, user: string, maxTokens: number): Promi
       }),
       signal: AbortSignal.timeout(15_000),
     });
+    if (res.status === 429) geminiBlockedUntil = Date.now() + GEMINI_COOLDOWN_MS;
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     const text = (data.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
@@ -50,7 +57,7 @@ async function askGemini(system: string, user: string, maxTokens: number): Promi
   }
 }
 
-async function ask(model: string, system: string, user: string, maxTokens: number): Promise<string | null> {
+export async function ask(model: string, system: string, user: string, maxTokens: number): Promise<string | null> {
   const c = getClient();
   if (!c) return process.env.GEMINI_API_KEY ? askGemini(system, user, maxTokens) : null;
   try {

@@ -1,0 +1,105 @@
+import { FAST_MODEL, ask, aiEnabled } from "../ai";
+import type { Opportunity } from "../types";
+import { getEligibility } from "../sources/util";
+
+export interface ExtractedPlace {
+  address: string | null;
+  place: string | null;
+}
+
+const cache = new Map<string, ExtractedPlace>();
+const pending = new Set<string>();
+const MAX_AI_EXTRACTIONS = 30;
+const CONCURRENCY = 2;
+const ADDRESS_RE =
+  /[가-힣]+(?:특별시|광역시|특별자치시|특별자치도|도)\s+[가-힣0-9]+(?:시|군|구)(?:\s+[가-힣0-9]+구)?(?:\s+[가-힣0-9·.-]+(?:읍|면|동|가|로|길)(?:\s+\d+(?:-\d+)?)?)?/;
+
+export function _clearExtractCache() {
+  cache.clear();
+  pending.clear();
+}
+
+export function parsePlaceJson(text: string): ExtractedPlace | null {
+  const start = text.indexOf("{");
+  const end = text.lastIndexOf("}");
+  if (start < 0 || end <= start) return null;
+  try {
+    const value = JSON.parse(text.slice(start, end + 1)) as Record<string, unknown>;
+    const address = typeof value.address === "string" && value.address.trim() ? value.address.trim() : null;
+    const place = typeof value.place === "string" && value.place.trim() ? value.place.trim() : null;
+    return { address, place };
+  } catch {
+    return null;
+  }
+}
+
+export function extractPlaceRules(opportunity: Opportunity): ExtractedPlace | null {
+  const text = [opportunity.title, opportunity.summary, opportunity.org, getEligibility(opportunity)].filter(Boolean).join(" ");
+  // 청약홈은 요약 첫 부분이 공급 위치 주소 그대로라 가장 정확하다
+  if (opportunity.source === "applyhome") {
+    const first = opportunity.summary.split(" · ", 1)[0].trim();
+    const m = first.match(ADDRESS_RE)?.[0]?.trim();
+    if (m) return { address: m, place: null };
+    if (first && /(?:시|군|구|읍|면|동|로|길)/.test(first)) return { address: first, place: null };
+  }
+  const address = text.match(ADDRESS_RE)?.[0]?.trim();
+  if (address) return { address, place: null };
+  return null;
+}
+
+export async function extractPlace(opportunity: Opportunity): Promise<ExtractedPlace> {
+  const ruled = extractPlaceRules(opportunity);
+  if (ruled) return ruled;
+  const hit = cache.get(opportunity.id);
+  if (hit) return hit;
+  if (!aiEnabled()) return { address: null, place: null };
+
+  const text = await ask(
+    FAST_MODEL,
+    '한국 공고에서 실제 근무지 또는 주택 소재지를 찾는다. 추측하지 말고 JSON 한 줄 {"address":string|null,"place":string|null}만 출력한다. 도로명·지번 주소는 address, 기관·단지·역 등 장소명은 place에 둔다.',
+    JSON.stringify({
+      제목: opportunity.title,
+      기관: opportunity.org,
+      요약: opportunity.summary,
+      자격요건: getEligibility(opportunity) ?? "",
+    }),
+    120,
+  );
+  const result = (text && parsePlaceJson(text)) || { address: null, place: null };
+  cache.set(opportunity.id, result); // 실패도 캐시해 무료 한도를 반복 소모하지 않는다
+  return result;
+}
+
+/**
+ * 규칙 결과와 기존 AI 캐시는 즉시 반영하고, 새 AI 추출은 뒤에서 최대 30건·동시 2건만 수행한다.
+ * 따라서 공고 목록 응답은 AI를 기다리지 않는다.
+ */
+export function attachPlaces(items: Opportunity[]): Opportunity[] {
+  const output = items.map((item) => {
+    if (item.place) return item;
+    const extracted = extractPlaceRules(item) ?? cache.get(item.id);
+    const place = extracted?.address ?? extracted?.place;
+    return place ? { ...item, place } : item;
+  });
+
+  if (!aiEnabled()) return output;
+  const todo = items
+    .filter((item) => !item.place && !extractPlaceRules(item) && !cache.has(item.id) && !pending.has(item.id))
+    .slice(0, MAX_AI_EXTRACTIONS);
+  todo.forEach((item) => pending.add(item.id));
+  if (!todo.length) return output;
+
+  let next = 0;
+  const worker = async () => {
+    while (next < todo.length) {
+      const item = todo[next++];
+      try {
+        await extractPlace(item);
+      } finally {
+        pending.delete(item.id);
+      }
+    }
+  };
+  void Promise.all(Array.from({ length: CONCURRENCY }, worker)).catch(() => {});
+  return output;
+}

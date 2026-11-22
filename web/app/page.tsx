@@ -37,9 +37,10 @@ export default function Home() {
     <main className="flex flex-1 flex-col justify-center gap-7 py-10">
       <div className="space-y-3 text-center">
         <p className="text-5xl" aria-hidden>
-          🔮
+          📰
         </p>
-        <h1 className="text-3xl font-bold">찾아줄게</h1>
+        <h1 className="text-3xl font-bold">마이뉴스</h1>
+        <p className="text-sm font-semibold text-indigo-600">나에게 맞는 청년 공고만 모아 보는 뉴스</p>
         <p className="text-lg font-semibold leading-snug text-slate-700 break-keep">
           질문 몇 개로 조건을 저장하면,
           <br />

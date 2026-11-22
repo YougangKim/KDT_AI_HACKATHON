@@ -30,6 +30,7 @@ export function mapQnet(raw: unknown, now: Date): Opportunity[] {
         conditions: buildConditions("exam", [], ""),
         applyStart: toIsoDate(s),
         applyEnd,
+        apply: { how: "Q-Net 원서접수", url: "https://www.q-net.or.kr" },
         url: "https://www.q-net.or.kr/",
         source: "qnet",
         isSample: false,

@@ -12,6 +12,7 @@ export function mapMyhome(raw: unknown, now: Date): Opportunity[] {
     .map((r) => {
       const title = str(r.pblancNm);
       const region = toRegions(r.brtcNm);
+      const url = str(r.pcUrl) || str(r.url) || "https://apply.lh.or.kr/";
       return {
         id: `myhome:${str(r.pblancId) || title}`,
         domain: "housing" as const,
@@ -22,7 +23,9 @@ export function mapMyhome(raw: unknown, now: Date): Opportunity[] {
         conditions: buildConditions("housing", region, [title, str(r.suplyTyNm)].join(" ")),
         applyStart: toIsoDate(r.beginDe),
         applyEnd: toIsoDate(r.endDe),
-        url: str(r.pcUrl) || str(r.url) || "https://www.myhome.go.kr/",
+        apply: { how: "LH청약플러스에서 온라인 신청", url },
+        place: str(r.fullAdres) || str(r.hsmpNm) || undefined,
+        url,
         source: "myhome",
         isSample: false,
         fetchedAt: now.toISOString(),

@@ -45,6 +45,14 @@ function requestFor(opportunity: Opportunity): {
   query: string;
   precision: "exact" | "approx";
 } | null {
+  if (opportunity.place) {
+    const address = /(?:특별시|광역시|특별자치시|특별자치도|도)\s+.+(?:시|군|구)/.test(opportunity.place);
+    return {
+      endpoint: address ? "address" : "keyword",
+      query: opportunity.place,
+      precision: address ? "exact" : "approx",
+    };
+  }
   if (opportunity.source === "applyhome") {
     const query = applyhomeAddress(opportunity.summary);
     return query ? { endpoint: "address", query, precision: "exact" } : null;

@@ -16,13 +16,17 @@ export function mapGov24(raw: unknown, now: Date): Opportunity[] {
       const region = /(특별시|광역시|특별자치|도)$/.test(org.split(" ")[0] ?? "") ? toRegions(org.split(" ")[0]) : [];
       const deadline = str(r["신청기한"]);
       const endMatch = deadline.match(/~\s*(.+)$/);
+      const support = str(r["지원내용"]);
+      const detailUrl = str(r["상세조회URL"]) || "https://www.gov.kr/portal/rcvfvrSvc/main";
+      const how = str(r["신청방법"]).replace(/\s+/g, " ");
+      const where = str(r["접수기관"]);
       const opp: Opportunity = {
         id: `gov24:${str(r["서비스ID"]) || title}`,
         domain: "benefit" as const,
         title,
         org: org || "정부24",
         region,
-        summary: str(r["서비스목적요약"]) || str(r["지원내용"]).slice(0, 120),
+        summary: str(r["서비스목적요약"]) || support.slice(0, 80),
         conditions: buildConditions(
           "benefit",
           region,
@@ -30,7 +34,8 @@ export function mapGov24(raw: unknown, now: Date): Opportunity[] {
           str(r["서비스분야"]) ? [{ attr: "need", op: "eq", value: str(r["서비스분야"]), rawText: `지원 분야: ${str(r["서비스분야"])}`, confidence: "high" }] : [],
         ),
         applyEnd: /상시/.test(deadline) ? undefined : toIsoDate(endMatch ? endMatch[1] : deadline),
-        url: str(r["상세조회URL"]) || "https://www.gov.kr/portal/rcvfvrSvc/main",
+        apply: { how: how || "정부24 상세 페이지에서 신청 방법 확인", where: where || undefined, url: detailUrl },
+        url: detailUrl,
         source: "gov24",
         isSample: false,
         fetchedAt: now.toISOString(),

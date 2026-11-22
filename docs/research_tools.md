@@ -24,7 +24,7 @@
 - 설치한 것 중 훅을 거는 도구는 없다(Scrapling 라이브러리, agent-browser CLI, k-skill은 SKILL.md+스크립트).
 - k-skill은 프로젝트 범위라 다른 프로젝트 세션에 영향 없음. 스킬 이름이 ECC와 겹치지 않음.
 
-## 앱(찾아줄게) 적용 판단
+## 앱(마이뉴스) 적용 판단
 
 ### 서비스 런타임
 - **LH**: 이미 공식 API(data.go.kr 15058530)로 `web/lib/sources/lh-notice.ts`에 연결되어 있다. k-skill 방식(공식 사이트 목록 조회·k-skill-proxy)은 필요 없다.
