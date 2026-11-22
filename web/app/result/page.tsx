@@ -177,6 +177,18 @@ export default function ResultPage() {
 
   if (result === undefined) return null;
 
+  const narrowControl = result?.pool?.length ? (
+    canNarrow ? (
+      <Link href="/play?continue=1" className="block w-full rounded-2xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm">
+        <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />추가 질문으로 더 좁히기
+      </Link>
+    ) : (
+      <p className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm text-slate-600 break-keep">
+        더 좁힐 질문이 없어요. 조건 고치기에서 관심 키워드나 지역 반경을 좁혀 보세요.
+      </p>
+    )
+  ) : null;
+
   const editor = result?.answers.length ? (
     <section className="space-y-2">
       <button type="button" onClick={() => setEditing(!editing)} aria-expanded={editing} className="w-full rounded-2xl bg-white py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
@@ -227,6 +239,7 @@ export default function ResultPage() {
             <Icon name="analysis" className="mr-1 inline h-4 w-4 align-[-3px]" />왜 없을까? 분석 보기
           </Link>
         ) : null}
+        <div className="w-full">{narrowControl}</div>
         <div className="w-full text-left">{editor}</div>
         <Link href="/" className="rounded-2xl bg-slate-100 px-6 py-3 font-semibold text-slate-700">
           {result ? "처음부터 다시" : "시작하기"}
@@ -272,6 +285,14 @@ export default function ResultPage() {
           전체 {selectedMatches.length}개 · 바로 신청 {eligible}개
         </p>
       </div>
+
+      {result.narrowedFrom !== undefined && (
+        <p role="status" className="rounded-xl bg-emerald-50 p-3 text-center text-sm font-semibold text-emerald-800">
+          {result.narrowedFrom}개 → {result.matches.length}개로 좁혔어요
+        </p>
+      )}
+
+      {narrowControl}
 
       {domains.length >= 2 && (
         <nav aria-label="결과 분야" className="flex gap-2 overflow-x-auto pb-1">
@@ -325,21 +346,11 @@ export default function ResultPage() {
         ))}
       </div>
 
-      <div className={`grid gap-2 ${!showAll && rest > 0 ? "grid-cols-2" : "grid-cols-1"}`}>
-        {!showAll && rest > 0 && (
-          <button onClick={showMore} className="rounded-2xl border border-slate-300 bg-white py-3 text-sm font-semibold">
-            더보기 +{rest}
-          </button>
-        )}
-        {/* 더보기를 눌러도 사라지지 않게 항상 둔다. 더 물을 질문이 없으면 이유를 보여 준다 */}
-        {canNarrow ? (
-          <Link href="/play?continue=1" className="rounded-2xl bg-indigo-50 py-3 text-center text-sm font-semibold text-indigo-700">
-            <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />질문 더 해서 좁히기
-          </Link>
-        ) : (
-          <p className="rounded-2xl bg-slate-100 py-3 text-center text-xs text-slate-500 break-keep">더 물어볼 질문이 없어요 · 아래 조건 고치기로 바꿔 보세요</p>
-        )}
-      </div>
+      {!showAll && rest > 0 && (
+        <button onClick={showMore} className="w-full rounded-2xl border border-slate-300 bg-white py-3 text-sm font-semibold">
+          더보기 +{rest}
+        </button>
+      )}
 
       {editor}
 

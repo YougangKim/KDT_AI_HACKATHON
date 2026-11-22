@@ -10,6 +10,7 @@ import { Icon } from "@/components/brand/Icons";
 import { LocationStep } from "@/components/game/LocationStep";
 import { applyAnswer, defaultQuestionText, getMatches, questionId, rankQuestions, remaining, startGame, type GameState, type RankedQuestion } from "@/lib/engine";
 import { readLastResult } from "@/components/result/lastResult";
+import { INCOME_THRESHOLDS, NCS_FIELDS } from "@/lib/engine/choices";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { nearestRegion } from "@/lib/geo/regions";
 import type { Answer, AnswerRecord, Domain, Opportunity, Question } from "@/lib/types";
@@ -50,11 +51,12 @@ async function loadPool(domains: string | null): Promise<{ pool: Opportunity[]; 
 interface Choice {
   title: string;
   group: string;
-  options: { label: string; picks: AnswerRecord[] }[];
+  options: { label: string; picks: AnswerRecord[]; count?: number }[];
   unknown: AnswerRecord[]; // "모르겠어요": 관련 질문을 모두 모름으로
   multi?: boolean; // 여러 개 고르기: 고른 것은 예, 안 고른 것은 아니오
   unknownLabel?: string;
   rest?: AnswerRecord[]; // 여러 개 고르기에서 화면에 못 보인 나머지 값(고르면 "아니오"로 처리해 같은 질문 반복 방지)
+  help?: string;
 }
 
 const aliveOpps = (s: GameState) => {
@@ -74,52 +76,67 @@ function regionChoice(s: GameState): Choice | null {
     group: "사는 지역",
     options: [
       ...regions.map((r) => ({ label: r, picks: [ask(r, "yes")] })),
-      { label: "목록에 없어요", picks: regions.map((r) => ask(r, "no")) },
+      { label: "선택지에 없어요", picks: regions.map((r) => ask(r, "no")) },
     ],
     unknown: regions.map((r) => ask(r, "unknown")),
+    unknownLabel: "잘 모르겠어요",
+    help: "지역 제한이 없는 전국 대상 공고는 어느 지역을 골라도 그대로 남아요.",
   };
 }
 
-/** 소득: "150% 이하? 140% 이하? 100% 이하?"를 반복하지 않고 구간 하나를 고른다 */
+/** 소득: 현실적으로 답할 수 있는 100% 이하 구간과 100% 초과만 고른다. */
 function incomeChoice(s: GameState): Choice | null {
-  const freq = new Map<number, number>();
+  const values = new Set<number>();
   for (const o of aliveOpps(s))
-    for (const c of o.conditions)
-      if (c.attr === "incomePct" && c.op === "lte" && typeof c.value === "number") freq.set(c.value, (freq.get(c.value) ?? 0) + 1);
-  // 기준이 너무 많으면 자주 나오는 5개만 구간 경계로
-  const t = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([v]) => v).sort((a, b) => a - b);
-  if (!t.length) return null;
+    for (const c of o.conditions) if (c.attr === "incomePct" && c.op === "lte" && typeof c.value === "number") values.add(c.value);
+  if (!values.size) return null;
   const ask = (v: number, answer: Answer): AnswerRecord => ({ question: makeQuestion("incomePct", v, "lte"), answer });
+  // 공고에 120·150% 같은 기준이 있어도 선택지는 100% 이하로만 보여 주고, 답 하나로 모든 기준을 한 번에 정리한다(같은 질문 반복 방지)
+  const all = [...new Set([...values, ...INCOME_THRESHOLDS])].sort((a, b) => a - b);
+  const resolve = (low: number, high: number | null): AnswerRecord[] =>
+    all.map((v) => ask(v, v < low ? "no" : high !== null && v >= high ? "yes" : "unknown"));
   return {
     title: "가구 소득은 기준중위소득의 몇 % 정도인가요?",
     group: "소득 구간",
     options: [
-      ...t.map((v, i) => ({
-        label: i === 0 ? `${v}% 이하` : `${t[i - 1] + 1}~${v}%`,
-        picks: [ask(v, "yes"), ...(i > 0 ? [ask(t[i - 1], "no")] : [])],
+      ...INCOME_THRESHOLDS.map((v, i) => ({
+        label: i === 0 ? `${v}% 이하` : `${INCOME_THRESHOLDS[i - 1] + 1}~${v}%`,
+        // 내 소득이 (이전 기준, v] 구간: 이전 기준 이하 조건은 아니오, v 이상 조건은 예
+        picks: resolve(i === 0 ? 0 : INCOME_THRESHOLDS[i - 1] + 1, v),
       })),
-      { label: `${t.at(-1)}% 초과`, picks: [ask(t.at(-1)!, "no")] },
+      // 100% 초과: 100% 이하 기준은 아니오, 그보다 높은 기준(120·150%)은 확인 필요
+      { label: "100% 넘어요", picks: resolve(101, null) },
     ],
-    unknown: t.map((v) => ask(v, "unknown")),
+    unknown: all.map((v) => ask(v, "unknown")),
+    unknownLabel: "잘 모르겠어요",
   };
 }
 
 /** 나이: "34세 이하? 29세 이하?"를 반복하지 않고 구간 하나를 고른다 */
 function ageChoice(s: GameState): Choice | null {
   const set = new Set<number>();
+  const every = new Set<number>(); // 39세 이상 같은 기준도 답 하나로 함께 정리(다시 묻지 않게)
   for (const o of aliveOpps(s))
-    for (const c of o.conditions) if (c.attr === "age" && c.op === "lte" && typeof c.value === "number" && c.value >= 20 && c.value < 39) set.add(c.value);
+    for (const c of o.conditions) if (c.attr === "age" && c.op === "lte" && typeof c.value === "number") {
+      every.add(c.value);
+      if (c.value >= 20 && c.value < 39) set.add(c.value);
+    }
+  const all = [...every].sort((a, b) => a - b);
   const t = [...set].sort((a, b) => a - b).slice(-5);
   if (!t.length) return null;
   const ask = (v: number, answer: Answer): AnswerRecord => ({ question: makeQuestion("age", v, "lte"), answer });
+  // 버튼은 5구간만 보여 주되, 답 하나로 모든 나이 기준에 한꺼번에 답한다(같은 질문 반복 방지)
+  const resolve = (low: number, high: number | null): AnswerRecord[] =>
+    all.map((v) => ask(v, v < low ? "no" : high !== null && v >= high ? "yes" : "unknown"));
   return {
     title: "만 나이가 어떻게 되나요?",
     group: "나이",
     options: [
-      ...t.map((v, i) => ({ label: i === 0 ? `${v}세 이하` : `${t[i - 1] + 1}~${v}세`, picks: [ask(v, "yes"), ...(i > 0 ? [ask(t[i - 1], "no")] : [])] })),
-      { label: `${t.at(-1)! + 1}세 이상`, picks: [ask(t.at(-1)!, "no")] },
+      ...t.map((v, i) => ({ label: i === 0 ? `${v}세 이하` : `${t[i - 1] + 1}~${v}세`, picks: resolve(i === 0 ? 0 : t[i - 1] + 1, v) })),
+      { label: `${t.at(-1)! + 1}세 이상`, picks: resolve(t.at(-1)! + 1, null) },
     ],
-    unknown: t.map((v) => ask(v, "unknown")),
+    unknown: all.map((v) => ask(v, "unknown")),
+    unknownLabel: "잘 모르겠어요",
   };
 }
 
@@ -132,6 +149,7 @@ function employmentChoice(): Choice {
     group: "취업 상태",
     options: EMPLOYMENT.map(([v, label]) => ({ label, picks: [ask(v, "yes")] })),
     unknown: EMPLOYMENT.map(([v]) => ask(v, "unknown")),
+    unknownLabel: "잘 모르겠어요",
   };
 }
 
@@ -144,6 +162,7 @@ function educationChoice(): Choice {
     group: "학력",
     options: levels.map(([n, label]) => ({ label, picks: [ask(n, "yes"), ...(n < 5 ? [ask(n + 1, "no")] : [])] })),
     unknown: levels.map(([n]) => ask(n, "unknown")),
+    unknownLabel: "잘 모르겠어요",
   };
 }
 
@@ -153,17 +172,28 @@ function multiChoice(s: GameState, attr: "field" | "need", title: string, group:
   for (const o of aliveOpps(s))
     for (const c of o.conditions) if (c.attr === attr) for (const v of Array.isArray(c.value) ? c.value : [c.value]) count.set(String(v), (count.get(String(v)) ?? 0) + 1);
   const all = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([v]) => v);
-  const values = all.slice(0, 8);
+  const fields = attr === "field"
+    ? [
+        ...NCS_FIELDS,
+        ...all.filter((value) => !NCS_FIELDS.some((field) => field.value === value))
+          .map((value) => ({ value, label: value })),
+      ]
+    : all.slice(0, 8).map((value) => ({ value, label: value }));
+  const values = fields.map((field) => field.value);
   if (values.length < 2) return null;
   const ask = (v: string, answer: Answer): AnswerRecord => ({ question: makeQuestion(attr, v), answer });
   return {
     title,
     group,
     multi: true,
-    options: values.map((v) => ({ label: v, picks: [ask(v, "yes")] })),
+    options: fields.map(({ value, label }) => ({
+      label,
+      picks: [ask(value, "yes")],
+      count: count.get(value) ?? 0,
+    })),
     unknown: all.map((v) => ask(v, "unknown")),
-    unknownLabel: "상관없어요",
-    rest: all.slice(8).map((v) => ask(v, "no")),
+    unknownLabel: attr === "field" ? "찾는 분야가 없어요" : "해당 없음",
+    rest: attr === "field" ? [] : all.slice(8).map((v) => ask(v, "no")),
   };
 }
 
@@ -178,7 +208,7 @@ function housingKindChoice(): Choice {
       { label: "분양(내 집 마련)", picks: [ask("sale", "yes")] },
     ],
     unknown: [ask("rent", "unknown"), ask("sale", "unknown")],
-    unknownLabel: "둘 다 괜찮아요",
+    unknownLabel: "선택지에 없어요",
   };
 }
 
@@ -194,7 +224,7 @@ function interestChoice(s: GameState): Choice | null {
     multi: true,
     options: domains.map((d) => ({ label: DOMAIN_NAME[d] ?? d, picks: [ask(d, "yes")] })),
     unknown: domains.map((d) => ask(d, "unknown")),
-    unknownLabel: "전부 보여 주세요",
+    unknownLabel: "해당 없음",
   };
 }
 
@@ -226,6 +256,7 @@ export default function PlayPage() {
   const [selected, setSelected] = useState<string[]>([]); // 여러 개 고르기 선택 중
   const [aiPick, setAiPick] = useState<Record<number, string>>({}); // 단계별 AI가 고른 질문 id("" = 규칙 1순위)
   const [locationStage, setLocationStage] = useState<LocationStage>("location");
+  const [narrowedFrom, setNarrowedFrom] = useState<number>();
   const [location, setLocation] = useState<UserLocation>();
   const aiOff = useRef(false);
   const pickOff = useRef(false);
@@ -238,6 +269,7 @@ export default function PlayPage() {
         const last = readLastResult();
         if (last?.pool?.length) {
           setContinuing(true);
+          setNarrowedFrom(last.matches.length);
           setLimit((last.answers?.length ?? 0) + MORE_QUESTIONS);
           setBase(last.answers?.length ?? 0);
           setHistory([{ pool: last.pool, answers: last.answers ?? [] }]);
@@ -298,7 +330,7 @@ export default function PlayPage() {
     if (!state || !state.pool.length || !view?.done) return;
     setFinishing(true);
     const filtered = filterMatchesByRadius(getMatches(state), location);
-    const result = { answers: state.answers, matches: filtered.matches, pool: state.pool, location, radiusExcluded: filtered.excluded };
+    const result = { answers: state.answers, matches: filtered.matches, pool: state.pool, location, radiusExcluded: filtered.excluded, narrowedFrom };
     try {
       sessionStorage.setItem("lastResult", JSON.stringify(result));
     } catch {
@@ -306,7 +338,7 @@ export default function PlayPage() {
     }
     const t = setTimeout(() => router.push("/result"), 900);
     return () => clearTimeout(t);
-  }, [state, view?.done, router, location]);
+  }, [state, view?.done, router, location, narrowedFrom]);
 
   // ANTHROPIC_API_KEY가 있으면 서버에서 질문 문장을 다듬는다. 없으면 기본 문장 그대로.
   const skippedPicker = Boolean(view?.q && PICKER_ATTRS.has(view.q.attr) && !view.choice);
@@ -454,6 +486,9 @@ export default function PlayPage() {
           <section key={view.q.id} className={`${styles.cardIn} flex flex-1 flex-col justify-center gap-8`}>
             <div className="app-card space-y-4 p-6 text-center text-slate-900">
               <p data-testid="question" className="text-2xl font-bold leading-snug break-keep">{view.choice ? view.choice.title : shownText}</p>
+              {view.choice?.help && (
+                <p className="text-sm text-slate-500 break-keep">{view.choice.help}</p>
+              )}
               {(aiText[view.q.id] || view.byAi) && (
                 <p className="text-xs text-slate-400">{[view.byAi && "AI가 고른 질문", aiText[view.q.id] && !view.choice && "AI 생성 문장"].filter(Boolean).join(" · ")}</p>
               )}
@@ -475,9 +510,10 @@ export default function PlayPage() {
                         disabled={finishing}
                         aria-pressed={view.choice!.multi ? on : undefined}
                         onClick={() => (view.choice!.multi ? setSelected(on ? selected.filter((x) => x !== o.label) : [...selected, o.label]) : pick(o.picks))}
-                        className={`min-h-12 rounded-xl px-2 py-3 text-base font-semibold shadow-sm ring-1 active:scale-[0.98] break-keep ${on ? "bg-indigo-600 text-white ring-indigo-600" : "bg-white text-slate-900 ring-slate-200"}`}
+                        className={`min-h-12 rounded-xl px-2 py-3 text-base font-semibold shadow-sm ring-1 active:scale-[0.98] break-keep ${on ? "bg-indigo-600 text-white ring-indigo-600" : o.count === 0 ? "bg-slate-50 text-slate-400 ring-slate-200" : "bg-white text-slate-900 ring-slate-200"}`}
                       >
-                        {o.label}
+                        <span>{o.label}</span>
+                        {o.count !== undefined && <span aria-hidden className="ml-1 text-xs font-normal">({o.count}건)</span>}
                       </button>
                     );
                   })}

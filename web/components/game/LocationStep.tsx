@@ -24,6 +24,7 @@ export function LocationStep({
   const [searching, setSearching] = useState(false);
   const [radiusKm, setRadiusKm] = useState<number | null | undefined>(initial?.radiusKm);
   const [error, setError] = useState("");
+  const [found, setFound] = useState(""); // 주소 검색으로 찾은 장소 이름(카카오 결과)
 
   useEffect(() => {
     if (!mapElement.current || mapRef.current) return;
@@ -74,8 +75,10 @@ export function LocationStep({
     try {
       const res = await fetch(`/api/geocode?q=${encodeURIComponent(query.trim())}`);
       const d = (await res.json()) as { lat?: number; lng?: number; label?: string };
-      if (typeof d.lat === "number" && typeof d.lng === "number") setPoint({ lat: d.lat, lng: d.lng });
-      else setError("주소를 찾지 못했어요. 시·구·동까지 넣거나 지도에서 직접 찍어 주세요.");
+      if (typeof d.lat === "number" && typeof d.lng === "number") {
+        setPoint({ lat: d.lat, lng: d.lng });
+        setFound(d.label || query.trim());
+      } else setError("주소를 찾지 못했어요. 시·구·동까지 넣거나 지도에서 직접 찍어 주세요.");
     } catch {
       setError("주소 검색에 실패했어요. 지도에서 직접 찍어 주세요.");
     } finally {
@@ -129,6 +132,7 @@ export function LocationStep({
 
       <div ref={mapElement} data-testid="location-map" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />
       <p className="text-center text-sm text-slate-600">또는 지도에서 원하는 위치를 직접 눌러 주세요.</p>
+      {found && !error && <p className="rounded-xl bg-indigo-50 px-3 py-2 text-sm text-indigo-800 break-keep">검색 위치: {found}</p>}
       {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
       {point && (

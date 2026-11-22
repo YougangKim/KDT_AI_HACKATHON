@@ -66,8 +66,9 @@ function incomeOption(labels, pct) {
     if ((m = l.match(/^(\d+)% 이하$/)) && pct <= +m[1]) return l;
     if ((m = l.match(/^(\d+)~(\d+)%$/)) && pct >= +m[1] && pct <= +m[2]) return l;
     if ((m = l.match(/^(\d+)% 초과$/)) && pct > +m[1]) return l;
+    if (/^100% 넘어요$/.test(l) && pct > 100) return l;
   }
-  return "모르겠어요";
+  return "잘 모르겠어요";
 }
 
 /** 나이 구간 버튼 중 내 나이가 들어가는 것 */
@@ -78,7 +79,7 @@ function ageOption(labels, age) {
     if ((m = l.match(/^(\d+)~(\d+)세$/)) && age >= +m[1] && age <= +m[2]) return l;
     if ((m = l.match(/^(\d+)세 이상$/)) && age >= +m[1]) return l;
   }
-  return "모르겠어요";
+  return "잘 모르겠어요";
 }
 
 /** 가상 사용자 프로필로 질문에 끝까지 답한다. 물어본 질문 문장 목록을 돌려준다 */
@@ -102,13 +103,13 @@ async function playAs(page, profile) {
     asked.push(text);
     if (text.includes("어디에 살고")) {
       const group = page.getByRole("group", { name: "사는 지역" });
-      const labels = (await group.getByRole("button").allTextContents()).filter((l) => l !== "목록에 없어요" && l !== "모르겠어요");
+      const labels = (await group.getByRole("button").allTextContents()).filter((l) => l !== "선택지에 없어요" && l !== "잘 모르겠어요");
       const region = profile.region === "rarest" ? labels.at(-1) : profile.region;
-      await group.getByRole("button", { name: labels.includes(region) ? region : "목록에 없어요", exact: true }).click();
+      await group.getByRole("button", { name: labels.includes(region) ? region : "선택지에 없어요", exact: true }).click();
     } else if (text.includes("기준중위소득의 몇 %")) {
       const group = page.getByRole("group", { name: "소득 구간" });
       const labels = await group.getByRole("button").allTextContents();
-      await group.getByRole("button", { name: profile.income === undefined ? "모르겠어요" : incomeOption(labels, profile.income), exact: true }).click();
+      await group.getByRole("button", { name: profile.income === undefined ? "잘 모르겠어요" : incomeOption(labels, profile.income), exact: true }).click();
     } else if (text.includes("만 나이가")) {
       const group = page.getByRole("group", { name: "나이" });
       const labels = await group.getByRole("button").allTextContents();
@@ -116,7 +117,7 @@ async function playAs(page, profile) {
     } else if (text.includes("최종 학력")) {
       await page.getByRole("group", { name: "학력" }).getByRole("button", { name: profile.education ?? "대졸(4년제)", exact: true }).click();
     } else if (text.includes("어떤 집을 찾고")) {
-      await page.getByRole("group", { name: "주거 형태" }).getByRole("button", { name: profile.housingKind ?? "둘 다 괜찮아요", exact: true }).click();
+      await page.getByRole("group", { name: "주거 형태" }).getByRole("button", { name: profile.housingKind ?? "선택지에 없어요", exact: true }).click();
     } else if (/어떤 분야 일을|어떤 지원이 필요한가요|어떤 정보가 필요한가요/.test(text)) {
       const group = page.getByRole("group", { name: text.includes("분야 일을") ? "직무 분야" : text.includes("어떤 정보") ? "관심 분야" : "필요한 지원" });
       const wanted = profile.multi ?? [];
@@ -125,9 +126,9 @@ async function playAs(page, profile) {
       if (hit.length) {
         for (const l of hit) await group.getByRole("button", { name: l, exact: true }).click();
         await group.getByRole("button", { name: /개 고르고 다음/ }).click();
-      } else await group.getByRole("button", { name: /상관없어요|전부 보여 주세요/ }).click();
+      } else await group.getByRole("button", { name: /찾는 분야가 없어요|해당 없음/ }).click();
     } else if (text.includes("어떤 상태인가요")) {
-      await page.getByRole("group", { name: "취업 상태" }).getByRole("button", { name: profile.employment ?? "모르겠어요", exact: true }).click();
+      await page.getByRole("group", { name: "취업 상태" }).getByRole("button", { name: profile.employment ?? "잘 모르겠어요", exact: true }).click();
     } else {
       await page.getByRole("button", { name: profile.answer(text), exact: true }).click();
     }
@@ -288,6 +289,39 @@ for (const [name, pool] of DATASETS) {
       await page.context().close();
     });
 
+    if (pool === FIXTURE) test("f) 결과에서 추가 질문으로 더 좁힌다", async () => {
+      const page = await newPage();
+      await page.goto(`${BASE}/`);
+      await page.getByRole("button", { name: /시작하기/ }).click();
+      await page.getByRole("button", { name: "건너뛰기", exact: true }).click();
+
+      for (let i = 0; i < 2; i++) {
+        const question = page.getByTestId("question");
+        await question.waitFor();
+        const text = await question.textContent();
+        if (text.includes("어떤 정보가 필요한가요")) {
+          await page.getByRole("group", { name: "관심 분야" }).getByRole("button", { name: /해당 없음/ }).click();
+        } else {
+          // 질문 유형마다 "모르겠어요" 버튼 문구가 다르다(잘 모르겠어요·선택지에 없어요·해당 없음)
+          await page.getByRole("button", { name: /^(모르겠어요|잘 모르겠어요|선택지에 없어요|해당 없음|찾는 분야가 없어요)$/ }).first().click();
+        }
+      }
+      // 고정 데이터는 질문이 적어 두 번 답하면 바로 결과로 갈 수 있다
+      const stop = page.getByRole("button", { name: /여기까지만 답하고 바로 결과 보기/ });
+      if (await stop.isVisible().catch(() => false)) await stop.click();
+      await page.waitForURL("**/result");
+      const before = await total(page);
+
+      await page.getByRole("link", { name: /추가 질문으로 더 좁히기/ }).click();
+      const asked = await playAs(page, seoulJobseeker);
+      assert.ok(asked.length >= 1, "추가 질문을 한 개 이상 물어야 한다");
+      const message = await page.getByText(/\d+개 → \d+개로 좁혔어요/).textContent();
+      const [, from, to] = message.match(/(\d+)개 → (\d+)개/);
+      assert.equal(Number(from), before, "좁히기 전 건수를 안내해야 한다");
+      assert.ok(Number(to) < Number(from), `결과 건수가 감소해야 한다: ${message}`);
+      await page.context().close();
+    });
+
     if (pool === FIXTURE) test("d) GPS 위치와 반경으로 결과 지도를 탐색한다", async () => {
       const page = await newPage({ latitude: 37.5665, longitude: 126.978 });
       await start(page, [/청년 주택/]);
@@ -364,7 +398,7 @@ for (const [name, pool] of DATASETS) {
       for (const o of options) assert.match(o, /"모름"으로 두면 \d+건이 더 보여요|함께 보면 \d+건이 더 보여요/);
       const regionIdx = options.findIndex((o) => o.includes("다른 지역"));
       assert.ok(regionIdx === -1 || regionIdx === options.length - 1, "바꾸기 어려운 지역 완화는 마지막에 제안");
-      if (fixed) assert.match(options[0], /^소득 기준을/, "소득에 막힌 경우 소득 완화를 먼저 제안");
+      if (fixed) assert.match(options[0], /^소득 기준을/, `소득에 막힌 경우 소득 완화를 먼저 제안: ${options.join(" / ")}`);
 
       const promised = Number(options[0].match(/(\d+)건이 더/)[1]);
       const eligible = async () => Number((await page.getByText(/^전체 \d+개 · 바로 신청 \d+개$/).textContent().catch(() => "바로 신청 0개")).match(/바로 신청 (\d+)개/)[1]);

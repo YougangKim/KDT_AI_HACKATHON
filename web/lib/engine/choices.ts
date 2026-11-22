@@ -1,0 +1,28 @@
+export const INCOME_THRESHOLDS = [50, 60, 80, 100] as const;
+
+export const NCS_FIELDS = [
+  { value: "사업관리", label: "사업관리" },
+  { value: "경영·회계·사무", label: "경영·회계·사무" },
+  { value: "금융·보험", label: "금융·보험" },
+  { value: "교육·자연·사회과학", label: "교육·연구" },
+  { value: "법률·경찰·소방·교도·국방", label: "법률·경찰·소방" },
+  { value: "보건·의료", label: "보건·의료" },
+  { value: "사회복지·종교", label: "사회복지" },
+  { value: "문화·예술·디자인·방송", label: "디자인·문화예술" },
+  { value: "운전·운송", label: "운전·운송" },
+  { value: "영업판매", label: "영업·판매" },
+  { value: "경비·청소", label: "경비·청소" },
+  { value: "이용·숙박·여행·오락·스포츠", label: "숙박·여행·스포츠" },
+  { value: "음식서비스", label: "음식·서비스" },
+  { value: "건설", label: "건설" },
+  { value: "기계", label: "기계" },
+  { value: "재료", label: "재료" },
+  { value: "화학·바이오", label: "화학·바이오" },
+  { value: "섬유·의복", label: "섬유·의복" },
+  { value: "전기·전자", label: "전기·전자" },
+  { value: "정보통신", label: "정보통신(IT·소프트웨어)" },
+  { value: "식품가공", label: "식품가공" },
+  { value: "인쇄·목재·가구·공예", label: "인쇄·목재·가구·공예" },
+  { value: "환경·에너지·안전", label: "환경·에너지·안전" },
+  { value: "농림어업", label: "농림어업" },
+] as const;

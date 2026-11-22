@@ -13,6 +13,7 @@ import { gov24 } from "./gov24";
 import { youthcenter } from "./youthcenter";
 import { work24Training } from "./work24-training";
 import { work24Recruit } from "./work24-recruit";
+import { seoulRecruit } from "./seoul-recruit";
 import { qnet } from "./qnet";
 import { applyhome } from "./applyhome";
 import { saramin } from "./saramin";
@@ -23,7 +24,7 @@ import { addTargetConditions } from "./targets";
 
 export const ALL_DOMAINS: Domain[] = ["housing", "job", "parttime", "benefit", "training", "exam"];
 
-export const ADAPTERS: SourceAdapter[] = [lhNotice, myhome, applyhome, jobalio, saramin, gov24, youthcenter, work24Training, work24Recruit, qnet];
+export const ADAPTERS: SourceAdapter[] = [lhNotice, myhome, applyhome, jobalio, saramin, gov24, youthcenter, work24Training, work24Recruit, seoulRecruit, qnet];
 
 const TTL_MS = 60 * 60 * 1000;
 const cache = new Map<string, { at: number; items: Opportunity[] }>();

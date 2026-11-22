@@ -1,6 +1,7 @@
 import type { Answer, AnswerRecord, Match, Opportunity } from "@/lib/types";
 import { getMatches } from "@/lib/engine";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
+import { relatedAnswerIds } from "@/lib/insight/funnel";
 
 export type LastResult = {
   answers: AnswerRecord[];
@@ -8,6 +9,7 @@ export type LastResult = {
   pool?: Opportunity[];
   location?: UserLocation;
   radiusExcluded?: number;
+  narrowedFrom?: number;
 };
 
 export function readLastResult(): LastResult | null {
@@ -21,6 +23,7 @@ export function readLastResult(): LastResult | null {
       pool: r.pool?.filter((o) => !o.isSample && o.origin !== "sample"),
       location: r.location,
       radiusExcluded: r.radiusExcluded ?? 0,
+      narrowedFrom: r.narrowedFrom,
     } : null;
   } catch {
     return null;
@@ -30,7 +33,9 @@ export function readLastResult(): LastResult | null {
 
 /** 답 하나를 "모름"으로 바꿔(조건 완화) 결과를 다시 계산하고 저장한다 */
 export function relaxAnswer(r: LastResult, questionId: string): LastResult {
-  return setAnswer(r, questionId, "unknown");
+  // 소득·나이처럼 한 번에 여러 기준에 답한 경우 함께 "모름"으로(제안한 만큼 실제로 늘어나게)
+  const ids = relatedAnswerIds(r.answers, questionId);
+  return [...ids].reduce((acc, id) => setAnswer(acc, id, "unknown"), r);
 }
 
 /** 답 하나를 바꿔(조건 고치기) 결과를 다시 계산하고 저장한다 */

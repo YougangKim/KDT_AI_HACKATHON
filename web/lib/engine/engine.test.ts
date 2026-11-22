@@ -54,6 +54,24 @@ describe("후보 축소", () => {
     expect(getMatches(s).map((m) => m.opportunity.id).sort()).toEqual(["all", "seoul"]);
   });
 
+  it("지역 조건이 없는 전국 공고는 다른 지역 답 뒤에도 남는다", () => {
+    const nationwide = opp("nationwide", [], []);
+    const local = opp("busan", [], ["부산"]);
+    const s = applyAnswer(startGame([nationwide, local]), q("region", "eq", "서울"), "yes");
+    expect(getMatches(s).map((m) => m.opportunity.id)).toEqual(["nationwide"]);
+  });
+
+  it("소득 100% 초과 답은 120%·150% 이하 조건을 탈락시키지 않고 확인 필요로 남긴다", () => {
+    const s = applyAnswer(startGame([
+      opp("u120", [cond("incomePct", "lte", 120)]),
+      opp("u150", [cond("incomePct", "lte", 150)]),
+    ]), q("incomePct", "lte", 100), "no");
+    expect(getMatches(s).map((m) => [m.opportunity.id, m.status])).toEqual([
+      ["u120", "needs_check"],
+      ["u150", "needs_check"],
+    ]);
+  });
+
   it("질문은 남은 후보를 반반에 가깝게 나누는 쪽을 고른다", () => {
     const pool = [
       opp("1", [cond("homeless", "eq", true)]),

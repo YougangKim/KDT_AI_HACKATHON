@@ -37,14 +37,24 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
 const values = (value: Condition["value"]) =>
   (Array.isArray(value) ? value : [value]).map(String);
 
+// 소득·나이는 선택지 하나로 여러 기준(50·60·80·100%)에 한꺼번에 답하므로 완화도 한꺼번에 한다
+const GROUPED_ATTRS = new Set(["incomePct", "age"]);
+
+/** 완화할 때 함께 "모름"으로 바꿀 답들의 id(소득·나이는 같은 속성 전부) */
+export function relatedAnswerIds(answers: AnswerRecord[], questionId: string): Set<string> {
+  const target = answers.find((a) => a.question.id === questionId);
+  if (!target || !GROUPED_ATTRS.has(target.question.attr)) return new Set([questionId]);
+  return new Set(answers.filter((a) => a.question.attr === target.question.attr).map((a) => a.question.id));
+}
+
 const replaceAnswer = (
   answers: AnswerRecord[],
   questionId: string,
   answer: Answer,
-): AnswerRecord[] =>
-  answers.map((record) =>
-    record.question.id === questionId ? { ...record, answer } : record,
-  );
+): AnswerRecord[] => {
+  const ids = relatedAnswerIds(answers, questionId);
+  return answers.map((record) => (ids.has(record.question.id) ? { ...record, answer } : record));
+};
 
 export function analyzeFunnel(
   pool: Opportunity[],
@@ -110,11 +120,19 @@ export function analyzeFunnel(
         b.step.aloneRemoved - a.step.aloneRemoved ||
         a.step.questionId.localeCompare(b.step.questionId),
     );
-  const relaxed = gains[0];
+  // 같은 속성(소득·나이)의 여러 답은 완화 결과가 같으므로 하나만 남긴다
+  const seenAttr = new Set<string>();
+  const uniqueGains = gains.filter(({ step }) => {
+    if (!GROUPED_ATTRS.has(step.attr)) return true;
+    if (seenAttr.has(step.attr)) return false;
+    seenAttr.add(step.attr);
+    return true;
+  });
+  const relaxed = uniqueGains[0];
   // 사는 곳은 쉽게 바꿀 수 없으니, 다른 조건을 먼저 제안하고 지역은 마지막에
   const relaxOptions = [
-    ...gains.filter(({ step }) => step.attr !== "region"),
-    ...gains.filter(({ step }) => step.attr === "region"),
+    ...uniqueGains.filter(({ step }) => step.attr !== "region"),
+    ...uniqueGains.filter(({ step }) => step.attr === "region"),
   ]
     .slice(0, 3)
     .map((r) => ({ ...r, suggestion: relaxationText(r.step, r.gain) }));
