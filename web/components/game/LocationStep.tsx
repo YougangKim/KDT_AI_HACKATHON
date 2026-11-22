@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { UserLocation } from "@/lib/geo/distance";
+import { Icon } from "@/components/brand/Icons";
 
 export function LocationStep({
   onComplete,
@@ -104,7 +105,7 @@ export function LocationStep({
       </div>
 
       <button type="button" onClick={useGps} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white">
-        📍 현재 위치 사용
+        <Icon name="pin" className="mr-1 inline h-5 w-5 align-[-4px]" />현재 위치 사용
       </button>
 
       <form

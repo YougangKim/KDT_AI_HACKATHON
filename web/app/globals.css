@@ -114,6 +114,11 @@ button:not(:disabled) {
   width: 26px;
 }
 
+.map-pin svg {
+  height: 15px;
+  width: 15px;
+}
+
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #111426;

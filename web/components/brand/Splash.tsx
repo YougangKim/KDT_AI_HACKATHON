@@ -47,11 +47,12 @@ export function Splash() {
         .splashLeaving { opacity: 0; }
         .splash strong { font-size: 24px; letter-spacing: -0.04em; margin-top: 18px; }
         .splash > span:last-child { color: var(--text-muted); font-size: 13px; font-weight: 600; }
-        .splashSignal { animation: pulse 900ms ease-out; position: relative; }
-        .splashSignal::before, .splashSignal::after { animation: wave 900ms ease-out; border: 2px solid var(--brand); border-radius: 999px; content: ""; inset: 10px; position: absolute; }
+        .splashSignal { animation: pulse 900ms ease-out; isolation: isolate; position: relative; }
+        .splashSignal :global(svg) { position: relative; z-index: 1; }
+        .splashSignal::before, .splashSignal::after { animation: wave 900ms ease-out; border: 2px solid var(--brand); border-radius: 999px; content: ""; inset: -8px; position: absolute; z-index: 0; }
         .splashSignal::after { animation-delay: 180ms; }
         @keyframes pulse { 50% { transform: scale(1.06); } }
-        @keyframes wave { to { opacity: 0; transform: scale(2); } }
+        @keyframes wave { from { opacity: 0.55; transform: scale(1); } to { opacity: 0; transform: scale(2); } }
         @media (prefers-reduced-motion: reduce) { .splashSignal, .splashSignal::before, .splashSignal::after { animation: none; } }
       `}</style>
     </div>

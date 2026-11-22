@@ -7,6 +7,7 @@ import { AnalysisView } from "@/components/result/AnalysisView";
 import { readLastResult, relaxAnswer, type LastResult } from "@/components/result/lastResult";
 import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
 import { RemovedByQuestion } from "@/components/result/RemovedByQuestion";
+import { Icon } from "@/components/brand/Icons";
 
 /** 궁금할 때만 여는 분석 화면: 통과율, 내 조건, 병목, 조건별 탈락, 분야별 */
 export default function AnalysisPage() {
@@ -56,7 +57,7 @@ export default function AnalysisPage() {
         <Link href="/result" className="text-sm text-slate-500">
           ← 결과로
         </Link>
-        <h1 className="text-base font-bold">📊 분석</h1>
+        <h1 className="flex items-center gap-1 text-base font-bold"><Icon name="analysis" className="h-5 w-5" />분석</h1>
         <span className="w-12" />
       </header>
 

@@ -9,6 +9,7 @@ import { summarizeConditions } from "@/lib/insight/funnel";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { LocationStep } from "@/components/game/LocationStep";
 import { DOMAIN_META } from "@/components/result/domain";
+import { Icon } from "@/components/brand/Icons";
 
 const DOMAINS: Domain[] = ["housing", "job", "parttime", "benefit", "training", "exam"];
 const INTERVALS = [
@@ -100,7 +101,7 @@ export default function SettingsPage() {
   if (!watch) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-        <h1 className="text-xl font-bold">⚙️ 알림 설정</h1>
+        <h1 className="flex items-center gap-2 text-xl font-bold"><Icon name="settings" className="h-5 w-5" />알림 설정</h1>
         <p className="text-sm text-slate-600">먼저 질문에 답하고 알림 조건을 저장해 주세요.</p>
         <Link href="/play" className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white">질문 시작하기</Link>
       </main>
@@ -117,7 +118,7 @@ export default function SettingsPage() {
     <main className="flex flex-1 flex-col gap-5 py-6">
       <header className="flex items-center justify-between">
         <Link href="/alerts" className="text-sm text-slate-500">← 알림함</Link>
-        <h1 className="text-lg font-bold">⚙️ 알림 설정</h1>
+        <h1 className="flex items-center gap-1 text-lg font-bold"><Icon name="settings" className="h-5 w-5" />알림 설정</h1>
         <Link href="/play" className="text-sm text-indigo-700 underline">질문 다시 하기</Link>
       </header>
 
@@ -143,7 +144,10 @@ export default function SettingsPage() {
                 })}
                 className={`rounded-xl p-2 text-sm font-semibold ${active ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700"}`}
               >
-                {DOMAIN_META[domain].emoji} {DOMAIN_META[domain].label}
+                <span className="mr-1 inline-grid h-6 w-6 place-items-center rounded-md text-white align-[-6px]" style={{ backgroundColor: DOMAIN_META[domain].color }} aria-hidden>
+                  <Icon name={DOMAIN_META[domain].icon} className="h-4 w-4" />
+                </span>
+                {DOMAIN_META[domain].label}
               </button>
             );
           })}

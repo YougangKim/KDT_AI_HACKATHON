@@ -6,14 +6,15 @@ import { useEffect, useState } from "react";
 import type { Domain } from "@/lib/types";
 import { Logo } from "@/components/brand/Logo";
 import { Splash } from "@/components/brand/Splash";
+import { Icon, type IconName } from "@/components/brand/Icons";
 
-const DOMAINS: { id: Domain; emoji: string; label: string }[] = [
-  { id: "housing", emoji: "🏠", label: "청년 주택" },
-  { id: "benefit", emoji: "💰", label: "지원금·혜택" },
-  { id: "job", emoji: "💼", label: "채용·인턴" },
-  { id: "parttime", emoji: "⏰", label: "알바·단기직" },
-  { id: "training", emoji: "📚", label: "국비 과정" },
-  { id: "exam", emoji: "📝", label: "자격증 일정" },
+const DOMAINS: { id: Domain; icon: IconName; label: string; color: string }[] = [
+  { id: "housing", icon: "housing", label: "청년 주택", color: "#15803d" },
+  { id: "benefit", icon: "benefit", label: "지원금·혜택", color: "#7e22ce" },
+  { id: "job", icon: "job", label: "채용·인턴", color: "#1d4ed8" },
+  { id: "parttime", icon: "parttime", label: "알바·단기직", color: "#c2410c" },
+  { id: "training", icon: "training", label: "국비 과정", color: "#0f766e" },
+  { id: "exam", icon: "exam", label: "자격증 일정", color: "#475569" },
 ];
 
 export default function Home() {
@@ -69,8 +70,12 @@ export default function Home() {
                     on ? "bg-indigo-600 text-white ring-2 ring-indigo-300" : "bg-slate-50 text-slate-800 ring-1 ring-slate-200"
                   } disabled:opacity-40`}
                 >
-                  <span className="block text-2xl" aria-hidden>
-                    {d.emoji}
+                  <span
+                    className="mx-auto mb-1 grid h-9 w-9 place-items-center rounded-xl text-white"
+                    style={{ backgroundColor: on ? "rgb(255 255 255 / 18%)" : d.color }}
+                    aria-hidden
+                  >
+                    <Icon name={d.icon} className="h-5 w-5" />
                   </span>
                   {d.label}
                   {n !== null && <span className={`block text-[11px] ${on ? "text-indigo-100" : "text-slate-400"}`}>{empty ? "연결 준비 중" : `${n}건`}</span>}
@@ -94,14 +99,14 @@ export default function Home() {
           이미 조건이 있어요 → 알림함
         </Link>
         <Link href="/settings" className="block text-center text-sm text-slate-500 underline">
-          ⚙️ 알림 설정
+          <Icon name="settings" className="mr-1 inline h-4 w-4 align-[-2px]" />알림 설정
         </Link>
       </div>
 
-      <p className="text-center text-xs text-slate-400">
-        연결 출처: LH·마이홈·청약홈·잡알리오·정부24·Q-Net. 실제 조회된 공고만 제공하며, 분야에 따라 결과가 없을 수 있습니다.
+      <p className="text-center text-[13px] leading-5 text-slate-600 break-keep">
+        LH·마이홈·청약홈·잡알리오·정부24·Q-Net 등 연결 출처에서 실제 조회된 공고만 제공하며, 분야에 따라 결과가 없을 수 있어요.
         <br />
-        결과는 참고용이며 최종 자격은 원문에서 확인하세요. 알림을 켜면 예·아니오 답변만 서버에 저장돼요.
+        최종 자격은 원문에서 확인하고, 알림을 켜면 예·아니오 답변만 서버에 저장돼요.
       </p>
     </main>
   );

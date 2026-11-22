@@ -2,6 +2,7 @@ import type { Match } from "@/lib/types";
 import { daysLeft, ddayLabel } from "@/lib/alerts/core";
 import { DOMAIN_META } from "./domain";
 import { opportunityDistance, type UserLocation } from "@/lib/geo/distance";
+import { Icon } from "@/components/brand/Icons";
 
 function ddayClass(applyEnd?: string): string {
   const d = daysLeft(applyEnd);
@@ -40,8 +41,12 @@ export function MatchCard({
       className={`app-card space-y-4 border-l-4 p-4 text-slate-900 ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
     >
       <header className="flex items-start gap-3">
-        <span className="text-3xl" aria-hidden>
-          {meta.emoji}
+        <span
+          className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-white"
+          style={{ backgroundColor: meta.color }}
+          aria-hidden
+        >
+          <Icon name={meta.icon} className="h-6 w-6" />
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1 text-xs">
@@ -65,14 +70,14 @@ export function MatchCard({
 
       {(aiSummary?.summary || o.summary) && (
         <section className="rounded-xl bg-slate-50 p-3 text-sm leading-relaxed text-slate-700">
-          <h3 className="font-semibold text-slate-800">📝 요약</h3>
+          <h3 className="flex items-center gap-1 font-semibold text-slate-800"><Icon name="exam" className="h-4 w-4" />요약</h3>
           <p>
             {aiSummary && <span className="mr-1 rounded bg-violet-100 px-1 text-[10px] text-violet-700">AI 요약</span>}
             {aiSummary?.summary ?? o.summary}
           </p>
         </section>
       )}
-      {o.place && <p className="text-sm text-slate-700">📍 {o.place}</p>}
+      {o.place && <p className="flex items-center gap-1 text-sm text-slate-700"><Icon name="pin" className="h-4 w-4" />{o.place}</p>}
       <section className="text-sm text-slate-700">
         <h3 className="font-semibold text-slate-800">신청 방법</h3>
         <p>{aiSummary?.how ?? o.apply?.how ?? "공고 상세 페이지에서 신청 방법 확인"}</p>

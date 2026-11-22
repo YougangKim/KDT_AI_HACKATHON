@@ -15,6 +15,7 @@ import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { myRegion, sortMatches } from "@/components/result/sort";
 import { opportunityDistance } from "@/lib/geo/distance";
 import { DOMAIN_META } from "@/components/result/domain";
+import { Icon } from "@/components/brand/Icons";
 
 type AiSummary = { id: string; summary: string; how: string };
 type ResultTab = "all" | Domain;
@@ -112,7 +113,7 @@ export default function ResultPage() {
       return;
     }
     setSaved(true);
-    setNote(p === "granted" ? "저장했어요. 매일 다시 찾아보고 새 공고·마감 임박을 알려 드려요." : "저장했어요. 알림이 꺼져 있어 앱을 열 때 🔔로 알려 드려요.");
+    setNote(p === "granted" ? "저장했어요. 매일 다시 찾아보고 새 공고·마감 임박을 알려 드려요." : "저장했어요. 알림이 꺼져 있어 앱을 열 때 알림함에 표시해 드려요.");
   }
 
   async function onCheck() {
@@ -177,18 +178,21 @@ export default function ResultPage() {
   const editor = result?.answers.length ? (
     <section className="space-y-2">
       <button type="button" onClick={() => setEditing(!editing)} aria-expanded={editing} className="w-full rounded-2xl bg-white py-2.5 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
-        ✏️ 조건 고치기 ({result.answers.length}개) {editing ? "▲" : "▼"}
+        <Icon name="edit" className="mr-1 inline h-4 w-4 align-[-3px]" />조건 고치기 ({result.answers.length}개) {editing ? "▲" : "▼"}
       </button>
       {editing && <ConditionEditor answers={result.answers} onChange={onEdit} />}
     </section>
   ) : null;
 
   const saveBar = result ? (
-    <div className="sticky bottom-0 z-10 w-full space-y-1 bg-slate-50/95 backdrop-blur py-3">
+    <div className="fixed inset-x-0 bottom-0 z-20">
+      <div className="pointer-events-none h-8 bg-gradient-to-b from-transparent to-slate-50/95" />
+      <div className="bg-slate-50/90 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_30px_rgb(15_23_42/8%)] backdrop-blur-xl">
+      <div className="mx-auto w-full max-w-lg space-y-1">
       {!saved ? (
         <>
           <button onClick={onSave} className="w-full rounded-2xl bg-indigo-600 py-3 font-semibold text-white shadow active:scale-95">
-            🔔 {result.matches.length ? "이 조건으로 알림 받기" : "이 조건으로 새 공고 오면 알림 받기"}
+            <Icon name="bell" className="mr-1 inline h-5 w-5 align-[-4px]" />{result.matches.length ? "이 조건으로 알림 받기" : "이 조건으로 새 공고 오면 알림 받기"}
           </button>
           <p className="text-center text-[11px] text-slate-400">예·아니오 답변만 저장 · 알림함에서 삭제 가능</p>
         </>
@@ -201,16 +205,15 @@ export default function ResultPage() {
         알림 시간·위치 바꾸기
       </Link>}
       {note && <p className="text-center text-xs text-slate-600" role="status">{note}</p>}
+      </div>
+      </div>
     </div>
   ) : null;
 
-
   if (!result || result.matches.length === 0) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
-        <p className="text-5xl" aria-hidden>
-          🤔
-        </p>
+      <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-[calc(8rem+env(safe-area-inset-bottom))] pt-16 text-center">
+        <Icon name="smile" className="h-12 w-12 text-indigo-500" />
         <p className="text-slate-600">{result ? "지금 조건에 맞는 공고가 없어요." : "아직 결과가 없어요."}</p>
         {relax.length > 0 && (
           <div className="w-full text-left">
@@ -219,7 +222,7 @@ export default function ResultPage() {
         )}
         {result?.pool?.length ? (
           <Link href="/result/analysis" className="rounded-full bg-amber-100 px-4 py-2 text-sm font-semibold text-amber-900">
-            📊 왜 없을까? 분석 보기
+            <Icon name="analysis" className="mr-1 inline h-4 w-4 align-[-3px]" />왜 없을까? 분석 보기
           </Link>
         ) : null}
         <div className="w-full text-left">{editor}</div>
@@ -244,16 +247,18 @@ export default function ResultPage() {
   const domains = [...domainCounts.entries()].filter(([, count]) => count > 0);
 
   return (
-    <main className="flex flex-1 flex-col gap-4 py-6">
+    <main className="flex flex-1 flex-col gap-4 pb-[calc(8rem+env(safe-area-inset-bottom))] pt-6">
       <header className="flex items-center justify-between">
-        <Link href="/" className="text-sm text-slate-500">
+        <Link href="/" className="inline-flex h-10 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100">
           ← 처음으로
         </Link>
         {result.pool?.length ? (
           <span className="flex items-center gap-2">
-            <Link href="/settings" className="text-sm text-indigo-700">⚙️ 설정</Link>
-            <Link href="/result/analysis" className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white">
-              📊 분석 보기
+            <Link href="/settings" className="inline-flex h-10 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+              <Icon name="settings" className="h-4 w-4" />설정
+            </Link>
+            <Link href="/result/analysis" className="inline-flex h-10 items-center gap-1 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-slate-100">
+              <Icon name="analysis" className="h-4 w-4" />분석 보기
             </Link>
           </span>
         ) : null}
@@ -275,7 +280,10 @@ export default function ResultPage() {
             const meta = DOMAIN_META[domain];
             return (
               <button key={domain} type="button" aria-pressed={tab === domain} onClick={() => selectTab(domain)} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${tab === domain ? "text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`} style={tab === domain ? { backgroundColor: meta.color } : undefined}>
-                {meta.emoji} {meta.label} {count}
+                <span className="mr-1 inline-grid h-5 w-5 place-items-center rounded-md text-white align-[-4px]" style={{ backgroundColor: tab === domain ? "rgb(255 255 255 / 18%)" : meta.color }} aria-hidden>
+                  <Icon name={meta.icon} className="h-3.5 w-3.5" />
+                </span>
+                {meta.label} {count}
               </button>
             );
           })}
@@ -324,7 +332,7 @@ export default function ResultPage() {
         {/* 더보기를 눌러도 사라지지 않게 항상 둔다. 더 물을 질문이 없으면 이유를 보여 준다 */}
         {canNarrow ? (
           <Link href="/play?continue=1" className="rounded-2xl bg-indigo-50 py-3 text-center text-sm font-semibold text-indigo-700">
-            🎯 질문 더 해서 좁히기
+            <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />질문 더 해서 좁히기
           </Link>
         ) : (
           <p className="rounded-2xl bg-slate-100 py-3 text-center text-xs text-slate-500 break-keep">더 물어볼 질문이 없어요 · 아래 조건 고치기로 바꿔 보세요</p>

@@ -226,14 +226,14 @@ for (const [name, pool] of DATASETS) {
 
       const tabs = page.getByRole("navigation", { name: "결과 분야" });
       await tabs.waitFor();
-      assert.ok(await tabs.getByRole("button", { name: /^🏠 주거 \d+$/ }).isVisible(), "주거 탭이 보여야 한다");
-      assert.ok(await tabs.getByRole("button", { name: /^💰 지원금 \d+$/ }).isVisible(), "지원금 탭이 보여야 한다");
-      await tabs.getByRole("button", { name: /^🏠 주거 \d+$/ }).click();
+      assert.ok(await tabs.getByRole("button", { name: /^주거 \d+$/ }).isVisible(), "주거 탭이 보여야 한다");
+      assert.ok(await tabs.getByRole("button", { name: /^지원금 \d+$/ }).isVisible(), "지원금 탭이 보여야 한다");
+      await tabs.getByRole("button", { name: /^주거 \d+$/ }).click();
       await page.waitForFunction(() => new URL(location.href).searchParams.get("tab") === "housing");
       for (const domain of await page.locator("article[data-domain]").evaluateAll((items) => items.map((item) => item.getAttribute("data-domain")))) {
         assert.equal(domain, "housing", "주거 탭에는 주거 카드만 보여야 한다");
       }
-      await tabs.getByRole("button", { name: /^💰 지원금 \d+$/ }).click();
+      await tabs.getByRole("button", { name: /^지원금 \d+$/ }).click();
       await page.waitForFunction(() => new URL(location.href).searchParams.get("tab") === "benefit");
       for (const domain of await page.locator("article[data-domain]").evaluateAll((items) => items.map((item) => item.getAttribute("data-domain")))) {
         assert.equal(domain, "benefit", "지원금 탭에는 지원금 카드만 보여야 한다");
@@ -306,7 +306,7 @@ for (const [name, pool] of DATASETS) {
 
       const card = page.locator("article").filter({ has: page.getByRole("button", { name: "지도에서 보기" }) }).first();
       const title = (await card.getByRole("heading").first().textContent()).trim();
-      await page.locator(".leaflet-marker-icon").filter({ hasText: /🏠/ }).first().click();
+      await page.locator(".leaflet-marker-icon:has([data-domain=\"housing\"])").first().click();
       await page.locator('article[data-highlighted="true"]').waitFor();
       assert.ok((await page.locator('article[data-highlighted="true"]').textContent()).includes(title), "핀에 대응하는 카드가 강조돼야 한다");
 

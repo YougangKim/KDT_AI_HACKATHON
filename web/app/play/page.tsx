@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AnswerButtons from "@/components/game/AnswerButtons";
 import RemainingGauge from "@/components/game/RemainingGauge";
 import styles from "@/components/game/game.module.css";
+import { Icon } from "@/components/brand/Icons";
 import { LocationStep } from "@/components/game/LocationStep";
 import { applyAnswer, defaultQuestionText, getMatches, questionId, rankQuestions, remaining, startGame, type GameState, type RankedQuestion } from "@/lib/engine";
 import { readLastResult } from "@/components/result/lastResult";
@@ -407,7 +408,12 @@ export default function PlayPage() {
         </Link>
       </header>
 
-      <RemainingGauge remaining={view.left} total={state.pool.length} />
+      <RemainingGauge
+        remaining={view.left}
+        total={state.pool.length}
+        question={Math.min(view.asked + 1, limit)}
+        estimate={limit}
+      />
       {missing.length > 0 && (
         <p className="rounded-xl bg-amber-50 px-3 py-2 text-center text-xs text-amber-800 break-keep">
           {missing.join("·")}은(는) 아직 연결된 공고가 없어 제외하고 찾을게요.
@@ -416,7 +422,7 @@ export default function PlayPage() {
 
       {view.stuck ? (
         <section className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-          <p className="text-4xl" aria-hidden>🙆</p>
+          <Icon name="smile" className="h-12 w-12 text-indigo-500" />
           <p className="text-lg font-bold break-keep">지금 답으로는 더 좁힐 질문이 없어요</p>
           <p className="text-sm text-slate-500 break-keep">남은 {view.left}개 공고는 지금까지 답한 조건으로 모두 판정됐어요. 결과에서 조건을 고치거나 알림을 받아 보세요.</p>
           <Link href="/result" className="rounded-2xl bg-indigo-600 px-6 py-3 font-semibold text-white">결과로 돌아가기</Link>
@@ -447,9 +453,6 @@ export default function PlayPage() {
         view.q && (
           <section key={view.q.id} className={`${styles.cardIn} flex flex-1 flex-col justify-center gap-8`}>
             <div className="app-card space-y-4 p-6 text-center text-slate-900">
-              <p className="text-sm font-medium text-indigo-500">
-                질문 {view.asked + 1} / 약 {limit}
-              </p>
               <p data-testid="question" className="text-2xl font-bold leading-snug break-keep">{view.choice ? view.choice.title : shownText}</p>
               {(aiText[view.q.id] || view.byAi) && (
                 <p className="text-xs text-slate-400">{[view.byAi && "AI가 고른 질문", aiText[view.q.id] && !view.choice && "AI 생성 문장"].filter(Boolean).join(" · ")}</p>

@@ -90,13 +90,13 @@ export default function AlertsPage() {
         </Link>
         <h1 className="text-lg font-bold">내 알림</h1>
         <Link href="/settings" className="text-sm text-indigo-700">
-          ⚙️ 설정
+          설정
         </Link>
       </header>
 
       {watch && (
         <section className="app-card space-y-2 border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-900">
-          <h2 className="font-semibold">🔎 반복 리서치 현황</h2>
+          <h2 className="font-semibold">반복 리서치 현황</h2>
           <dl className="grid grid-cols-[6.5rem_1fr] gap-y-1">
             <dt className="text-slate-500">조사 주기</dt>
             <dd>{rs?.schedule ?? "매일 오전 9시(KST) 자동 조사"}</dd>
@@ -121,7 +121,7 @@ export default function AlertsPage() {
             <dt className="text-slate-500">누적 새 공고</dt>
             <dd>{rs?.totalNew ?? 0}건</dd>
             <dt className="text-slate-500">푸시</dt>
-            <dd>{rs?.pushEnabled ? "켜짐(앱을 닫아도 도착)" : "꺼짐(앱을 열 때 🔔로 표시)"}</dd>
+            <dd>{rs?.pushEnabled ? "켜짐(앱을 닫아도 도착)" : "꺼짐(앱을 열 때 종 아이콘에 표시)"}</dd>
           </dl>
           {rs?.lastNewTitles && rs.lastNewTitles.length > 0 && (
             <ul className="list-disc pl-5 text-xs text-slate-700">
@@ -131,7 +131,7 @@ export default function AlertsPage() {
             </ul>
           )}
           <div className="border-t border-indigo-100 pt-2">
-            <h3 className="mb-1 font-semibold">📊 이번 주 리서치 리포트</h3>
+            <h3 className="mb-1 font-semibold">이번 주 리서치 리포트</h3>
             <WeeklyReport history={rs?.history ?? []} />
           </div>
           <button
@@ -159,7 +159,7 @@ export default function AlertsPage() {
             <div className="flex flex-wrap gap-1">
               {(watch.domains.length ? watch.domains : []).map((d) => (
                 <span key={d} className="rounded-full bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
-                  {DOMAIN_META[d].emoji} {DOMAIN_META[d].label}
+                  {DOMAIN_META[d].label}
                 </span>
               ))}
             </div>
@@ -198,7 +198,7 @@ export default function AlertsPage() {
         </button>
         {pushKey && (
           <button onClick={onPush} className="w-full rounded-2xl bg-slate-800 py-3 text-sm font-semibold text-white">
-            📲 서버 푸시 테스트 (Web Push)
+            서버 푸시 테스트 (Web Push)
           </button>
         )}
         {note && <p className="text-center text-xs text-slate-600">{note}</p>}

@@ -3,11 +3,12 @@
 import type { FilterStep, FunnelReport } from "@/lib/insight/types";
 import type { AnswerRecord, Domain } from "@/lib/types";
 import { DOMAIN_META } from "./domain";
+import { Icon } from "@/components/brand/Icons";
 
 const EMP: Record<string, string> = { student: "학생", jobseeker: "구직", employed: "재직", parttime: "알바" };
 const DOMAIN_SHORT: Record<string, string> = { housing: "주택", benefit: "지원금", job: "채용", parttime: "알바", training: "국비", exam: "자격증" };
 
-/** 답변 하나를 짧은 칩 문구로: "만 34세↓", "📍부산 ✕", "무주택" */
+/** 답변 하나를 짧은 칩 문구로: "만 34세↓", "부산 ✕", "무주택" */
 export function chipOf(a: AnswerRecord): string | null {
   if (a.answer === "unknown") return null;
   const { attr, op, value } = a.question;
@@ -17,7 +18,7 @@ export function chipOf(a: AnswerRecord): string | null {
     case "age":
       return op === "lte" ? (yes ? `${v}세↓` : `${Number(v) + 1}세↑`) : yes ? `${v}세↑` : `${Number(v) - 1}세↓`;
     case "region":
-      return yes ? `📍${v}` : `📍${v} ✕`;
+      return yes ? String(v) : `${v} ✕`;
     case "homeless":
       return (v === true) === yes ? "무주택" : "유주택";
     case "livingAlone":
@@ -124,7 +125,7 @@ export function AnalysisView({
               풀기
             </button>
             <button onClick={() => onKeep(b.step.questionId)} className="rounded-xl border border-slate-300 bg-white py-2.5 text-sm font-bold">
-              🔒 유지
+              <Icon name="lock" className="mr-1 inline h-4 w-4 align-[-3px]" />유지
             </button>
           </div>
         </section>
@@ -143,7 +144,7 @@ export function AnalysisView({
               className="flex w-full items-center gap-2 text-left text-sm"
             >
               <span className="w-24 shrink-0 truncate font-medium">
-                {s.hard && "🔒 "}
+                {s.hard && <Icon name="lock" className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />}
                 {stepChip(s)}
               </span>
               <span className="h-2.5 flex-1 rounded-full bg-slate-100">
@@ -163,9 +164,9 @@ export function AnalysisView({
         <section className="grid grid-cols-3 gap-2">
           {domains.map(([d, v]) => (
             <div key={d} className="rounded-2xl bg-white p-3 text-center shadow-sm">
-              <p className="text-xl" aria-hidden>
-                {DOMAIN_META[d]?.emoji}
-              </p>
+              <span className="mx-auto grid h-8 w-8 place-items-center rounded-lg text-white" style={{ backgroundColor: DOMAIN_META[d].color }} aria-hidden>
+                <Icon name={DOMAIN_META[d].icon} className="h-5 w-5" />
+              </span>
               <p className="text-lg font-black">
                 {v.passed}
                 <span className="text-xs font-semibold text-slate-400">/{v.total}</span>
@@ -176,7 +177,7 @@ export function AnalysisView({
         </section>
       )}
 
-      {sampleCount > 0 && <p className="text-center text-[11px] text-amber-700">⚠ 예시 데이터 출처 {sampleCount}곳 포함</p>}
+      {sampleCount > 0 && <p className="flex items-center justify-center gap-1 text-center text-[11px] text-amber-700"><Icon name="warning" className="h-3.5 w-3.5" />예시 데이터 출처 {sampleCount}곳 포함</p>}
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { Match } from "@/lib/types";
 import type { UserLocation } from "@/lib/geo/distance";
 import { DOMAIN_META } from "./domain";
+import { Icon, iconSvg } from "@/components/brand/Icons";
 
 export interface ResultMapHandle {
   show: (id: string) => void;
@@ -64,7 +65,7 @@ export const ResultMap = forwardRef<ResultMapHandle, {
         const org = document.createElement("div");
         org.textContent = o.org;
         const address = document.createElement("div");
-        address.textContent = `📍 ${o.place ?? o.geo?.address ?? o.region.join("·") ?? "주소 미상"}`;
+        address.textContent = o.place ?? o.geo?.address ?? o.region.join("·") ?? "주소 미상";
         const precision = document.createElement("div");
         precision.textContent = accuracy;
         const button = document.createElement("button");
@@ -93,7 +94,7 @@ export const ResultMap = forwardRef<ResultMapHandle, {
           opacity,
           icon: L.divIcon({
             className: "",
-            html: `<span class="map-pin" style="background:${meta.color}">${meta.emoji}</span>`,
+            html: `<span class="map-pin" data-domain="${match.opportunity.domain}" title="${meta.label}" style="background:${meta.color}">${iconSvg(meta.icon)}</span>`,
             iconSize: [26, 26],
           }),
         }).addTo(map).bindPopup(popup(match, geo.precision === "exact" ? "정확한 주소" : "기관·단지 위치 추정"));
@@ -108,7 +109,7 @@ export const ResultMap = forwardRef<ResultMapHandle, {
         const marker = L.marker([lat, lng], {
           icon: L.divIcon({
             className: "",
-            html: `<span class="map-pin" style="background:${meta?.color ?? "#64748b"}">${meta?.emoji ?? group.length}</span>`,
+            html: `<span class="map-pin" style="background:${meta?.color ?? "#64748b"}">${meta ? iconSvg(meta.icon) : group.length}</span>`,
             iconSize: [26, 26],
           }),
         }).addTo(map);
@@ -140,7 +141,10 @@ export const ResultMap = forwardRef<ResultMapHandle, {
       <ul aria-label="지도 분야 범례" className="flex flex-wrap gap-2 text-xs text-slate-600">
         {Object.entries(DOMAIN_META).filter(([domain]) => matches.some((match) => match.opportunity.domain === domain)).map(([domain, meta]) => (
           <li key={domain} className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1">
-            <span aria-hidden style={{ color: meta.color }}>●</span>{meta.emoji} {meta.label}
+            <span className="grid h-5 w-5 place-items-center rounded-md text-white" style={{ backgroundColor: meta.color }} aria-hidden>
+              <Icon name={meta.icon} className="h-3.5 w-3.5" />
+            </span>
+            {meta.label}
           </li>
         ))}
       </ul>

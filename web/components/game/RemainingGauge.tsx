@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import styles from "./game.module.css";
 
-/** "남은 후보 N개" 게이지. 숫자가 줄어드는 카운트다운과 "-N" 팝업. */
-export default function RemainingGauge({ remaining, total }: { remaining: number; total: number }) {
+/** 질문 진행률과 남은 후보 수. 후보 숫자가 줄어드는 카운트다운과 "-N" 팝업. */
+export default function RemainingGauge({ remaining, total, question, estimate }: { remaining: number; total: number; question: number; estimate: number }) {
   const [shown, setShown] = useState(remaining);
   const [drop, setDrop] = useState<{ n: number; key: number } | null>(null);
   const prev = useRef(remaining);
@@ -25,31 +25,29 @@ export default function RemainingGauge({ remaining, total }: { remaining: number
     return () => cancelAnimationFrame(raf);
   }, [remaining]);
 
-  const pct = total > 0 ? Math.max(4, (remaining / total) * 100) : 0;
-  const bars = Math.max(1, Math.ceil((pct / 100) * 5));
+  const progress = estimate > 0 ? Math.min(100, (question / estimate) * 100) : 0;
 
   return (
-    <div className="space-y-2" aria-live="polite">
-      <div className="flex items-end justify-between">
-        <span className="text-sm text-slate-500">남은 후보</span>
-        <span className="relative text-2xl font-bold tabular-nums">
-          {shown}
-          <span className="text-base font-medium text-slate-400">개 / {total}</span>
+    <div className="space-y-3" aria-live="polite">
+      <div className="space-y-1.5">
+        <div className="flex justify-between text-sm">
+          <span className="font-semibold text-slate-700">질문 {question}</span>
+          <span className="text-slate-500">약 {estimate}</span>
+        </div>
+        <div className="h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden>
+          <span className="block h-full rounded-full bg-indigo-600 transition-[width]" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+      <div className="flex items-baseline justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-slate-200">
+        <span className="text-sm font-medium text-slate-600">남은 후보</span>
+        <span className="relative font-bold tabular-nums text-slate-900">
+          {shown}개 <span className="font-medium text-slate-400">/ {total}</span>
           {drop && (
             <span key={drop.key} className={`${styles.dropPop} absolute -top-5 right-0 text-sm font-semibold text-rose-500`}>
               −{drop.n}
             </span>
           )}
         </span>
-      </div>
-      <div className="flex h-3 items-end gap-1" aria-hidden>
-        {[1, 2, 3, 4, 5].map((bar) => (
-          <span
-            key={bar}
-            className={`${styles.signalBar} flex-1 rounded-full ${bar <= bars ? "bg-indigo-600" : "bg-slate-200"}`}
-            style={{ height: `${35 + bar * 13}%` }}
-          />
-        ))}
       </div>
     </div>
   );

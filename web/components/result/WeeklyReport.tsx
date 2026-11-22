@@ -41,7 +41,7 @@ export function WeeklyReport({ history, now = new Date() }: { history: ScanSnaps
             .map(([d, n]) => (
               <li key={d} className="flex items-center gap-2 text-xs">
                 <span className="w-20 shrink-0">
-                  {DOMAIN_META[d]?.emoji} {DOMAIN_META[d]?.label ?? d}
+                  {DOMAIN_META[d]?.label ?? d}
                 </span>
                 <span className="h-2 rounded-full bg-indigo-400" style={{ width: `${(n / maxN) * 60}%` }} />
                 <span className="font-semibold">{n}</span>
