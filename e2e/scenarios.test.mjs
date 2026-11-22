@@ -254,7 +254,8 @@ for (const [name, pool] of DATASETS) {
         await page.getByRole("button", { name: /지금 다시 조사하기/ }).click();
         await page.getByText(/다시 조사했어요\. 새 공고 \d+건/).waitFor({ timeout: 20000 });
         const body = await page.locator("body").textContent();
-        assert.match(body, /다시 조사했어요\. 새 공고 1건/, "새 공고 2건 중 조건에 맞는 1건만");
+        // 앱이 열려 있으면 화면 쪽 확인(AlertPolling)이 서버 재조사보다 먼저 새 공고를 받을 수 있다 → 둘 중 한 곳에서 정확히 1건
+        assert.match(body, /다시 조사했어요\. 새 공고 [01]건/, `새 공고 2건 중 조건에 맞는 것만: ${(body.match(/다시 조사했어요[^.]*\.[^.]*\./) ?? [""])[0]}`);
         assert.ok(body.includes(NEW_MATCHING.title), "조건에 맞는 새 공고 제목이 보여야 한다");
         assert.ok(!body.includes(NEW_OTHER_REGION.title), "다른 지역 새 공고는 알리면 안 된다");
 
