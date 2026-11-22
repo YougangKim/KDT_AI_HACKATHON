@@ -45,13 +45,18 @@ export const qnet: SourceAdapter = {
   id: "qnet",
   domains: ["exam"],
   envKey: "DATA_GO_KR_KEY",
-  async fetch(now) {
+  async fetch(now, options = {}) {
     const key = process.env.DATA_GO_KR_KEY!;
     const year = new Date(now.getTime() + 9 * 3600_000).getUTCFullYear();
+    // 국가기술(T)·국가전문(S)·과정평가형(C)·일학습병행(W) 자격의 올해·내년 회차 전부(한 번에 50건까지라 2쪽씩)
+    const grades = ["T", "S", "C", "W"];
     const pages = await Promise.all(
-      [year, year + 1].map(async (y) =>
-        mapQnet(await fetchJson(`${ENDPOINT}?serviceKey=${encodeURIComponent(key)}&numOfRows=50&pageNo=1&dataFormat=json&implYy=${y}&qualgbCd=T`), now),
-      ),
+      [year, year + 1].flatMap((y) => grades.flatMap((g) => [1, 2].map((page) => {
+        options.onRequest?.();
+        return fetchJson(`${ENDPOINT}?serviceKey=${encodeURIComponent(key)}&numOfRows=50&pageNo=${page}&dataFormat=json&implYy=${y}&qualgbCd=${g}`)
+          .then((raw) => mapQnet(raw, now))
+          .catch(() => [] as Opportunity[]); // 내년 일정이 아직 없으면 빈 결과
+      }))),
     );
     return pages.flat();
   },

@@ -11,6 +11,8 @@ export function mapGov24(raw: unknown, now: Date): Opportunity[] {
     .filter((r) => str(r["서비스명"]))
     .map((r) => {
       const title = str(r["서비스명"]);
+      // 지자체·공공기관의 청년 아르바이트(행정인턴·대학생 아르바이트 등)는 알바로 분류
+      const domain = /아르바이트|알바|행정인턴|단기\s?일자리|일경험/.test(title) ? ("parttime" as const) : ("benefit" as const);
       const org = str(r["소관기관명"]);
       // 지자체 서비스면 소관기관명(예: "서울특별시 강남구")에서 지역을 뽑는다. 중앙부처는 전국
       const region = /(특별시|광역시|특별자치|도)$/.test(org.split(" ")[0] ?? "") ? toRegions(org.split(" ")[0]) : [];
@@ -22,13 +24,13 @@ export function mapGov24(raw: unknown, now: Date): Opportunity[] {
       const where = str(r["접수기관"]);
       const opp: Opportunity = {
         id: `gov24:${str(r["서비스ID"]) || title}`,
-        domain: "benefit" as const,
+        domain,
         title,
         org: org || "정부24",
         region,
         summary: str(r["서비스목적요약"]) || support.slice(0, 80),
         conditions: buildConditions(
-          "benefit",
+          domain,
           region,
           [str(r["지원대상"]), str(r["선정기준"])].join(" "),
           str(r["서비스분야"]) ? [{ attr: "need", op: "eq", value: str(r["서비스분야"]), rawText: `지원 분야: ${str(r["서비스분야"])}`, confidence: "high" }] : [],
@@ -57,7 +59,7 @@ export function youthRelevantGov24(r: Record<string, unknown>): boolean {
 
 export const gov24: SourceAdapter = {
   id: "gov24",
-  domains: ["benefit"],
+  domains: ["benefit", "parttime"],
   envKey: "DATA_GO_KR_KEY",
   async fetch(now, options = {}) {
     const key = process.env.DATA_GO_KR_KEY!;

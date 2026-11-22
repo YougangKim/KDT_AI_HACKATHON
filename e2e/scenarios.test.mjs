@@ -297,7 +297,7 @@ for (const [name, pool] of DATASETS) {
 
       await playAs(page, { ...seoulJobseeker });
       await page.getByTestId("result-map").waitFor();
-      assert.match(await page.locator("body").textContent(), /반경 밖 1건을 제외했어요/);
+      assert.match(await page.locator("body").textContent(), /반경 밖 [1-9]d*건을 제외했어요/); // 좌표 없는 고정 공고도 카카오로 찾아지면 늘 수 있다
 
       const mapButton = page.getByRole("button", { name: "지도에서 보기" }).first();
       await mapButton.click();
