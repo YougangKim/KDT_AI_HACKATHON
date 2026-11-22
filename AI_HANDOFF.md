@@ -30,6 +30,12 @@
 
 ## 최근 변경 파일
 
+- 2026-11-22 Claude 시나리오 보강: 소득 구간 선택, 감시 분야=고른 분야, 받은 알림 유지, 완화 안내 분리, 테스트 전용 공고 파일 경로(E2E_LOCAL=1, 배포 무시). e2e `cd e2e && LIVE_API=1 npm test`(web 빌드 후, 10/10). Codex 4차 a74·b69·c66 반려(차별성). 커밋 안 함.
+
+- 2026-11-22 Claude 사용자 흐름 점검: 지역 한 번에 선택·고른 분야 재질문 제거·홈 분야별 건수·청년 비대상 제외·결과 화면 완화안/조건 고치기·지역 근무 정렬. 변경: web/app/{page,play/page,result/page,result/analysis/page}.tsx, web/components/result/{RelaxSuggestions,ConditionEditor,sort}.tsx|ts, lastResult.ts, web/lib/insight/{funnel,types}.ts, web/lib/sources/index.ts, 새 `e2e/`(시나리오 3개, `cd e2e && npm install && npm test`, 서버 :5300 필요). Codex 2차 a67·b56·c55 반려 유지. 다음: 알림 재조사 e2e, 소득 질문 반복 줄이기. 상세 `docs/사용자흐름_점검.md`
+
+- 09:05 푸시(a7fe940)·Vercel 배포 성공, 운영 https://kdtaihackathon-web.vercel.app. 공고 0건 → 사용자가 Vercel 환경변수(docs/배포_환경변수.md) 입력 후 Redeploy 필요. 그다음 실데이터·알림 저장·푸시 실검증
+
 - 서비스 예시 데이터 제거: sources/index.ts 샘플 대체 제거, play 빈 결과·오류 화면, lastResult의 demo 파라미터 제거·기존 세션 샘플 제외, sampleResult.ts 삭제. 홈 예시 안내 제거. alerts 가상 공고 생성 제거, 실제 새 공고 확인으로 전환·과거 가상 알림 숨김. 테스트용 JSON·fixture는 보존하며 런타임 참조 없음. 회귀 테스트 97개 통과·1개 제외. 소개서는 양식 제목을 주제목으로 복원, 요약 문제/해결/구현·기술 스택 보강, 제목 명사형·설명 문어체 반영; 최종 시각 확인은 후속 필요. 운영 배포·Cron·푸시 검증은 여전히 대기.
 
 - 최신 소개서: `scripts/build_intro_designed.py`로 재생성한다(이전 build/refine 스크립트는 구판). 16:9, Noto Sans KR 임베딩, 제목 30pt·본문 중심 16~24pt, 네이비/청록, 평면 배치. `output/pdf/찾아줄게_프로젝트소개서_20261122.pdf`는 표지 1+본문 10+지정 별첨 4=15쪽. 별도 API/질문 필터 PDF와 PNG도 갱신. 15쪽 렌더 시각 확인·문자 경계 검사 통과. 공공 API 6종 원문 이용조건 및 Noto OFL 출처 추가, Anthropic SDK Apache-2.0 표기, 민간조사 50.5% 의미 정정. 웹 조사 Tavily 한도(432)로 Exa 사용. 팀 정보·공개 URL·사전 개발/출품 이력은 확인 대기. 앱 코드는 변경하지 않음.

@@ -1,5 +1,21 @@
 # 작업 로그 — 대한상공회의소 AI 해커톤
 
+## 2026-11-22 시나리오 테스트 보강 3~4차 (Claude, 사용자 "고쳐")
+- 소득 질문 반복 → 소득 구간 한 번에 선택(`web/app/play/page.tsx` incomeChoice, 지역과 같은 Choice 구조).
+- e2e가 서버를 직접 띄움(:5310). 테스트 전용 공고 파일 경로(`E2E_LOCAL=1`+`OPPORTUNITIES_FIXTURE`, VERCEL 무시, 오류 시 실제 출처)로 어댑터 응답만 대체하고 후처리는 운영과 동일. 데이터 3벌: 고정 / 실데이터 스냅샷 `e2e/live-snapshot.json`(191건) / `LIVE_API=1` 실제 공공 API.
+- 알림: 감시 분야를 "필요해요" 답한 분야로(`lib/alerts/core.ts`), 재조사로 찾은 새 공고를 받은 알림에 남김(`app/alerts/page.tsx`). e2e b에서 새 공고 2건 중 맞는 1건만 알림 → 30초 뒤 0건 → 받은 알림 유지 확인.
+- 완화 안내를 바로 신청/확인 필요로 분리(`app/result/page.tsx`).
+- Codex 3차 a71·b66·c61, 4차 a74·b69·c66(반려 유지, 사유: 주제 차별성). 4차 지적(LIVE_API 플래그, 실제 API 출처 단언, 스냅샷 재조사, 음수 안내) 반영 후 재채점은 안 받음.
+- 검증: e2e 10/10, vitest 102, tsc·eslint·build 통과. 로컬 서버 http://localhost:5300(실데이터).
+
+## 2026-11-22 사용자 흐름 점검·시나리오 e2e (Claude)
+- 페르소나 4명(상경 취준생·부산 알바생·경기 사회초년생·대전 대학생)으로 실데이터 191건 흐름 점검 → `docs/사용자흐름_점검.md`.
+- Codex 1차 평가 a55·b42·c28 반려(`.ai-sync/tasks/20261121T235217-codex/result.md`) → 수정: 지역은 버튼으로 한 번에 선택, 홈에서 고른 분야 재질문 제거, 홈 분야별 공고 수·0건 분야 비활성, 고령자·중장년 전용 주거·지원 공고 제외(`notForYouth`), 결과 ≤3건·0건이면 완화안 최대 3개(지역은 마지막, "확인 필요 포함" 표기), 결과 화면 "조건 고치기"(답별 예/아니오/모름), 0건이어도 알림 저장, 서버 저장 실패 시 재시도, 근무지가 다른 지역인 전국 채용은 뒤로(`components/result/sort.ts`).
+- Codex 2차 평가 a67·b56·c55 여전히 반려(`.ai-sync/tasks/20261121T235908-codex/result.md`). 지적된 회귀(정렬 반대 동작, 제목 필터 오탐, 빈 응답 시 홈 전체 비활성, 저장 실패 후 재시도 불가) 수정.
+- 시나리오 e2e `e2e/scenarios.test.mjs`(playwright-core + 시스템 Chrome, 고정 공고 `e2e/fixture.mjs`): a 바로 찾기 / b 조건 여러 번 고치고 알림 / c 적은 결과 완화 설명. 3/3 통과. LIVE=1 실데이터: a 통과, c는 부산 지원금이 21건이라 "적은 결과" 전제가 성립 안 함(데이터 의존).
+- 검증: vitest 101 통과(1 skip), tsc·eslint·next build 통과. 로컬 서버 http://localhost:5300 (프로덕션 빌드).
+- 남은 지적: 알림 저장 후 새 공고 주입→재조사 e2e 없음(서버 측 출처라 브라우저에서 가로챌 수 없음, 단위 테스트 `lib/server/flow.test.ts`로만 확인), "목록에 없어요"가 지역별 아니오를 여러 개 기록, 소득 질문 반복(150/140/100%).
+
 ## 2026-11-22 소개서 시각 검수 재개 (Codex)
 - 승인된 셸로 렌더 이미지를 읽어 시각 검수 성공. API 각주 겹침 수정, 공식 API→규칙/Gemini와 Tavily→Exa→Jev 검색 보충 경로 분리.
 - 서울 거주(예) → 무주택(아니오) → 나이(모름)에 따른 가상 공고 유지·제외 페이지 추가. 본문 10쪽 + 표지 + 별첨 = 총 12쪽.
@@ -302,3 +318,8 @@
 - sources 회귀 테스트 수정·lastResult 테스트 2개 추가: 97개 통과·1개 제외. 최종 빌드로 타입·린트 재검증. 배포·커밋·푸시 없음.
 - Jev는 웹 검색 후보의 개별 모집 공고 여부(p≥0.5), Gemini는 규칙 미추출 속성 보완과 질문 문장 작성에 사용. 최종 자격 필터는 규칙 엔진이며, 웹 검색 공고의 자격조건 추출은 미구현.
 - 소개서 양식 항목 복원·명사형 제목/문어체 설명 반영 완료, 최신 렌더의 시각 검수는 후속 필요.
+
+## 2026-11-22 09:05 GitHub 푸시·배포 확인 (Claude, 사용자 승인 "푸시해")
+- 커밋 a7fe940 → origin/claude/project-thread-pm1ii1. 제외: config/api_keys.csv·백업·web/.env.local(gitignore 확인), tmp/(대회 문서 사본)·output/(소개서 PDF 초안)·__pycache__ gitignore 추가, Codex의 .codex 훅 변경은 커밋 안 함. 커밋 diff 키 패턴 검사 통과
+- Vercel 자동 배포 성공(상태 success). 운영 주소 https://kdtaihackathon-web.vercel.app 비로그인 200, 화면 최신 반영. 단 /api/opportunities 0건 → Vercel에 DATA_GO_KR_KEY 등 환경변수 미입력으로 추정(현재 코드는 예시 데이터 폴백 없음). 미리보기 주소는 Vercel 로그인 보호
+- 보고서 07절·요약에 배포 링크 반영
