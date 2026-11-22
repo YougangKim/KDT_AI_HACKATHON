@@ -82,7 +82,18 @@ function requestsFor(opportunity: Opportunity): GeocodeRequest[] {
   return [];
 }
 
+/** 제목에 시·군 이름(예: "순천시", "순천출장소")이 있으면 결과 주소에도 그 시·군이 있어야 한다 */
+export function sameCity(title: string, document: KakaoDocument): boolean {
+  const address = [document.address_name, document.address?.address_name, document.road_address?.address_name].filter(Boolean).join(" ");
+  const cities = [...title.matchAll(/([가-힣]{2,4})(?:시|군)(?=[\s·(,]|$)|([가-힣]{2,3})(?:출장소|지사|지점|사업소)/g)]
+    .map((m) => m[1] ?? m[2])
+    .filter((c) => c && !/^(광역|특별|도시|청년|공공|임대|모집)/.test(c));
+  if (!cities.length || !address) return true;
+  return cities.some((c) => address.includes(c));
+}
+
 function sameRegion(opportunity: Opportunity, document: KakaoDocument): boolean {
+  if (!sameCity(opportunity.title, document)) return false;
   if (!opportunity.region.length) return true;
   const resultRegion =
     document.address?.region_1depth_name ??

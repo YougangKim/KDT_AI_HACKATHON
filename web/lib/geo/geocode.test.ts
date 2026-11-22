@@ -111,3 +111,13 @@ describe("attachGeo", () => {
     expect(result.geo).toMatchObject({ lat: 37.5665, lng: 126.978, precision: "approx" });
   });
 });
+
+describe("sameCity", () => {
+  test("제목의 시·군과 다른 결과는 버린다", async () => {
+    const { sameCity } = await import("./geocode");
+    expect(sameCity("[정정공고]순천시 국민임대주택 예비입주자 모집", { address_name: "전남광주통합특별시 보성군 벌교읍" } as never)).toBe(false);
+    expect(sameCity("대한법률구조공단 순천출장소 청년인턴", { address_name: "전남광주통합특별시 동구 지산동" } as never)).toBe(false);
+    expect(sameCity("순천시 국민임대주택", { address_name: "전남광주통합특별시 순천시 조례동" } as never)).toBe(true);
+    expect(sameCity("서울 행복주택", { address_name: "서울 중구" } as never)).toBe(true);
+  });
+});
