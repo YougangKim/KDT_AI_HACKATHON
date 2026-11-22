@@ -93,7 +93,7 @@ export default function Home() {
           onClick={start}
           className="block min-h-14 w-full rounded-2xl bg-indigo-600 py-4 text-center text-lg font-bold text-white shadow-lg shadow-indigo-200 active:scale-[0.98]"
         >
-          {picked.length ? `${picked.length}개 분야로 시작하기` : "30초 만에 시작하기"}
+          {picked.length ? `${picked.length}개 분야로 시작하기` : "질문 몇 개로 시작하기"}
         </button>
         <Link href="/alerts" className="block py-3 text-center text-sm text-slate-500 underline">
           이미 조건이 있어요 → 알림함
