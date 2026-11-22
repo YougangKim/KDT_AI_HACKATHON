@@ -42,8 +42,12 @@ after(async () => {
   server?.kill();
 });
 
-async function newPage() {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, locale: "ko-KR" });
+async function newPage(geolocation) {
+  const ctx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    locale: "ko-KR",
+    ...(geolocation ? { geolocation, permissions: ["geolocation"] } : {}),
+  });
   const page = await ctx.newPage();
   await page.route("**/play/phrase", (route) => route.fulfill({ json: { ai: false } })); // AI 문장 다듬기 끔(질문 문장 고정)
   return page;
@@ -81,8 +85,18 @@ function ageOption(labels, age) {
 async function playAs(page, profile) {
   const asked = [];
   for (let i = 0; i < 16; i++) {
+    const location = page.getByRole("heading", { name: /내 위치와 원하는 거리/ });
+    if (await location.isVisible().catch(() => false)) {
+      await page.getByRole("button", { name: "건너뛰기" }).click();
+    }
     const q = page.getByTestId("question");
-    await Promise.race([q.waitFor({ timeout: 15000 }), page.waitForURL("**/result", { timeout: 15000 })]).catch(() => {});
+    // 첫 화면의 위치 단계는 위치를 다루는 시나리오(d) 외에는 건너뛴다
+    const skip = page.getByRole("button", { name: "건너뛰기", exact: true });
+    await Promise.race([q.waitFor({ timeout: 15000 }), skip.waitFor({ timeout: 15000 }), page.waitForURL("**/result", { timeout: 15000 })]).catch(() => {});
+    if (await skip.isVisible().catch(() => false)) {
+      await skip.click();
+      continue;
+    }
     if (page.url().endsWith("/result")) break;
     const text = (await q.textContent()) ?? "";
     asked.push(text);
@@ -251,6 +265,31 @@ for (const [name, pool] of DATASETS) {
         usePool(pool);
       }
       await page.screenshot({ path: ART + `b_alert_${name}.png`, fullPage: true });
+      await page.context().close();
+    });
+
+    if (pool === FIXTURE) test("d) GPS 위치와 반경으로 결과 지도를 탐색한다", async () => {
+      const page = await newPage({ latitude: 37.5665, longitude: 126.978 });
+      await start(page, [/청년 주택/]);
+      await page.getByRole("button", { name: /현재 위치 사용/ }).click();
+      await page.getByRole("group", { name: "거리 반경" }).getByRole("button", { name: "5km", exact: true }).click();
+      await page.getByRole("button", { name: /이 위치로 계속하기/ }).click();
+
+      await playAs(page, { ...seoulJobseeker });
+      await page.getByTestId("result-map").waitFor();
+      assert.match(await page.locator("body").textContent(), /반경 밖 1건을 제외했어요/);
+
+      const mapButton = page.getByRole("button", { name: "지도에서 보기" }).first();
+      await mapButton.click();
+      await page.locator(".leaflet-popup-content").waitFor();
+      assert.ok((await page.locator(".leaflet-popup-content").textContent()).trim().length > 0, "카드에서 핀 팝업이 열려야 한다");
+
+      const card = page.locator("article").filter({ has: page.getByRole("button", { name: "지도에서 보기" }) }).first();
+      const title = (await card.getByRole("heading").first().textContent()).trim();
+      await page.locator(".leaflet-marker-icon").filter({ hasText: /●|○/ }).first().click();
+      await page.locator('article[data-highlighted="true"]').waitFor();
+      assert.ok((await page.locator('article[data-highlighted="true"]').textContent()).includes(title), "핀에 대응하는 카드가 강조돼야 한다");
+
       await page.context().close();
     });
 

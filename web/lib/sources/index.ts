@@ -2,6 +2,7 @@
 import type { Condition, Domain, Opportunity } from "../types";
 import { aiEnabled, structureConditions } from "../ai";
 import { regionsIn } from "../ai/rules";
+import { attachGeo } from "../geo/geocode";
 import type { SourceAdapter } from "./types";
 import { getEligibility, isOpen, todayKst, withEligibility } from "./util";
 import { lhNotice } from "./lh-notice";
@@ -153,7 +154,8 @@ export async function loadOpportunities(domains: Domain[] = ALL_DOMAINS, now: Da
     seen.add(o.id);
     out.push(o);
   }
-  return dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
+  const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
+  return attachGeo(deduped);
 }
 
 /**

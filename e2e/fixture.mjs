@@ -25,10 +25,10 @@ const opp = (id, domain, title, region, conds, extra = {}) => ({
 
 export const FIXTURE = [
   // 주거: 서울 6건 + 다른 지역 5건
-  opp("h1", "housing", "서울 행복주택 청년 입주자 모집", "서울", [c.homeless]),
-  opp("h2", "housing", "서울 매입임대주택 청년 예비입주자", "서울", [c.homeless]),
-  opp("h3", "housing", "서울 청년안심주택 공급", "서울", [c.homeless]),
-  opp("h4", "housing", "서울 역세권 청년주택", "서울", [c.homeless, c.age34]),
+  opp("h1", "housing", "서울 행복주택 청년 입주자 모집", "서울", [c.homeless], { geo: { lat: 37.567, lng: 126.98, precision: "exact" } }),
+  opp("h2", "housing", "서울 매입임대주택 청년 예비입주자", "서울", [c.homeless], { geo: { lat: 37.57, lng: 126.99, precision: "exact" } }),
+  opp("h3", "housing", "서울 청년안심주택 공급", "서울", [c.homeless], { geo: { lat: 37.56, lng: 126.97, precision: "approx" } }),
+  opp("h4", "housing", "서울 역세권 청년주택", "서울", [c.homeless, c.age34], { geo: { lat: 37.66, lng: 127.08, precision: "exact" } }),
   opp("h5", "housing", "서울 청년 전세임대", "서울", [c.homeless, c.inc(100)]),
   opp("h6", "housing", "서울 공공임대 잔여세대", "서울", []),
   opp("h7", "housing", "부산 행복주택 청년", "부산", [c.homeless]),

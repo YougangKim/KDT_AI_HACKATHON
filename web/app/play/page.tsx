@@ -6,11 +6,15 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import AnswerButtons from "@/components/game/AnswerButtons";
 import RemainingGauge from "@/components/game/RemainingGauge";
 import styles from "@/components/game/game.module.css";
+import { LocationStep } from "@/components/game/LocationStep";
 import { applyAnswer, defaultQuestionText, getMatches, questionId, rankQuestions, remaining, startGame, type GameState, type RankedQuestion } from "@/lib/engine";
 import { readLastResult } from "@/components/result/lastResult";
+import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
+import { nearestRegion } from "@/lib/geo/regions";
 import type { Answer, AnswerRecord, Domain, Opportunity, Question } from "@/lib/types";
 
 const DOMAIN_NAME: Record<string, string> = { housing: "청년 주택", benefit: "지원금·혜택", job: "채용·인턴", parttime: "알바·단기직", training: "국비 과정", exam: "자격증 일정" };
+type LocationStage = "location" | "questions";
 
 function makeQuestion(attr: Question["attr"], value: Question["value"], op: Question["op"] = "eq"): Question {
   const q = { attr, op, value, id: "", text: "" };
@@ -218,6 +222,8 @@ export default function PlayPage() {
   const [continuing, setContinuing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]); // 여러 개 고르기 선택 중
   const [aiPick, setAiPick] = useState<Record<number, string>>({}); // 단계별 AI가 고른 질문 id("" = 규칙 1순위)
+  const [locationStage, setLocationStage] = useState<LocationStage>("location");
+  const [location, setLocation] = useState<UserLocation>();
   const aiOff = useRef(false);
   const pickOff = useRef(false);
 
@@ -232,6 +238,8 @@ export default function PlayPage() {
           setLimit((last.answers?.length ?? 0) + MORE_QUESTIONS);
           setBase(last.answers?.length ?? 0);
           setHistory([{ pool: last.pool, answers: last.answers ?? [] }]);
+          setLocation(last.location);
+          setLocationStage("questions");
           return;
         }
       } catch {}
@@ -286,7 +294,8 @@ export default function PlayPage() {
   useEffect(() => {
     if (!state || !state.pool.length || !view?.done) return;
     setFinishing(true);
-    const result = { answers: state.answers, matches: getMatches(state), pool: state.pool };
+    const filtered = filterMatchesByRadius(getMatches(state), location);
+    const result = { answers: state.answers, matches: filtered.matches, pool: state.pool, location, radiusExcluded: filtered.excluded };
     try {
       sessionStorage.setItem("lastResult", JSON.stringify(result));
     } catch {
@@ -294,7 +303,7 @@ export default function PlayPage() {
     }
     const t = setTimeout(() => router.push("/result"), 900);
     return () => clearTimeout(t);
-  }, [state, view?.done, router]);
+  }, [state, view?.done, router, location]);
 
   // ANTHROPIC_API_KEY가 있으면 서버에서 질문 문장을 다듬는다. 없으면 기본 문장 그대로.
   const q = view?.done ? null : (view?.q ?? null);
@@ -332,6 +341,16 @@ export default function PlayPage() {
     setHistory(history.slice(0, -1));
   };
 
+  const completeLocation = (next: UserLocation) => {
+    if (!state) return;
+    setLocation(next);
+    // 시도 경계가 아닌 17개 시도 중심점 중 최단 거리로 근사한다.
+    const region = nearestRegion(next.lat, next.lng);
+    const question = makeQuestion("region", region);
+    setHistory([{ ...state, answers: [...state.answers.filter((item) => item.question.attr !== "region"), { question, answer: "yes" }] }]);
+    setLocationStage("questions");
+  };
+
   if (!state || !view) {
     return (
       <main className="flex flex-1 items-center justify-center text-slate-500">
@@ -347,6 +366,20 @@ export default function PlayPage() {
         <p className="text-sm text-slate-500">현재 연결된 출처에서 공고를 가져오지 못했습니다. 예시 데이터는 제공하지 않습니다.</p>
         <button onClick={() => window.location.reload()} className="text-indigo-600 underline">다시 조회</button>
         <Link href="/" className="text-slate-500 underline">관심 분야 다시 선택</Link>
+      </main>
+    );
+  }
+
+  if (locationStage === "location") {
+    return (
+      <main className="flex flex-1 flex-col gap-6 py-6 text-slate-900">
+        <header className="text-sm">
+          <Link href="/" className="text-slate-500">← 처음으로</Link>
+        </header>
+        <LocationStep
+          onComplete={completeLocation}
+          onSkip={() => setLocationStage("questions")}
+        />
       </main>
     );
   }

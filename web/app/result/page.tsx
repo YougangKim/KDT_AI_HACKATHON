@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Answer } from "@/lib/types";
 import { analyzeFunnel } from "@/lib/insight/funnel";
 import { rankQuestions } from "@/lib/engine";
@@ -10,19 +10,23 @@ import { buildWatch, saveWatch } from "@/lib/alerts";
 import { registerSW, requestPermission, checkAlerts, syncWatch } from "@/lib/alerts/client";
 import { MatchCard } from "@/components/result/MatchCard";
 import { readLastResult, relaxAnswer, setAnswer, type LastResult } from "@/components/result/lastResult";
+import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { myRegion, sortMatches } from "@/components/result/sort";
+import { opportunityDistance } from "@/lib/geo/distance";
 
 const FIRST = 3; // 끝나자마자 먼저 보여 줄 공고 수
 
 export default function ResultPage() {
   const [result, setResult] = useState<LastResult | null | undefined>(undefined);
+  const [highlighted, setHighlighted] = useState("");
   const [showAll, setShowAll] = useState(false);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState("");
 
   const [hard, setHard] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
+  const mapRef = useRef<ResultMapHandle>(null);
 
   useEffect(() => {
     setResult(readLastResult());
@@ -80,6 +84,15 @@ export default function ResultPage() {
     setNote(items.length ? "새 알림을 확인했습니다. 알림함에서 확인하세요." : "이번 조회에서 새로 알릴 공고가 없습니다.");
   }
 
+  const selectFromMap = useCallback((id: string) => {
+    setShowAll(true);
+    setHighlighted(id);
+    requestAnimationFrame(() => {
+      document.getElementById(`match-${encodeURIComponent(id)}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+    window.setTimeout(() => setHighlighted(""), 2500);
+  }, []);
+
   if (result === undefined) return null;
 
   const editor = result?.answers.length ? (
@@ -109,6 +122,7 @@ export default function ResultPage() {
     </div>
   ) : null;
 
+
   if (!result || result.matches.length === 0) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 py-16 text-center">
@@ -135,7 +149,16 @@ export default function ResultPage() {
     );
   }
 
-  const sorted = sortMatches(result.matches, myRegion(result.answers));
+  const sorted = sortMatches(result.matches, myRegion(result.answers)).sort((a, b) => {
+    if (!result.location) return 0;
+    if (a.status !== b.status) return a.status === "eligible" ? -1 : 1;
+    const da = opportunityDistance(result.location, a.opportunity);
+    const db = opportunityDistance(result.location, b.opportunity);
+    if (da === null && db === null) return 0;
+    if (da === null) return 1;
+    if (db === null) return -1;
+    return da - db;
+  });
   const shown = showAll ? sorted : sorted.slice(0, FIRST);
   const eligible = result.matches.filter((m) => m.status === "eligible").length;
   const rest = sorted.length - shown.length;
@@ -160,11 +183,34 @@ export default function ResultPage() {
         </p>
       </div>
 
+      {result.radiusExcluded ? (
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+          <span>반경 밖 {result.radiusExcluded}건을 제외했어요.</span>
+          <Link href="/play" className="min-h-11 shrink-0 content-center rounded-xl bg-white px-3 font-semibold ring-1 ring-amber-200">
+            반경 넓히기
+          </Link>
+        </div>
+      ) : null}
+
+      {result.matches.some((match) => match.opportunity.geo) ? (
+        <ResultMap ref={mapRef} matches={sorted} location={result.location} onSelect={selectFromMap} />
+      ) : (
+        <p className="rounded-xl bg-slate-100 p-3 text-center text-sm text-slate-600">
+          위치를 설정하면 공고를 지도로 볼 수 있어요.
+        </p>
+      )}
+
       {relax.length > 0 && <RelaxSuggestions options={relax} onRelax={onRelax} title={`${result.matches.length}개뿐이에요. 이 조건을 풀면 더 보여요`} />}
 
       <div className="space-y-3">
         {shown.map((m) => (
-          <MatchCard key={m.opportunity.id} match={m} />
+          <MatchCard
+            key={m.opportunity.id}
+            match={m}
+            location={result.location}
+            highlighted={highlighted === m.opportunity.id}
+            onShowMap={m.opportunity.geo?.precision !== "region" ? () => mapRef.current?.show(m.opportunity.id) : undefined}
+          />
         ))}
       </div>
 

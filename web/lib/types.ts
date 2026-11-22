@@ -53,6 +53,7 @@ export interface Opportunity {
   isSample: boolean; // 키가 없어 샘플 데이터면 true (화면에 표시)
   origin?: "api" | "sample" | "websearch" | "rss"; // websearch = 선택 기능(Tavily·Exa) 결과. 화면에 "웹 검색 결과" 배지
   fetchedAt: string;
+  geo?: { lat: number; lng: number; precision: "exact" | "approx" | "region" };
 }
 
 /** 사용자의 답. "unknown" = 모름 */

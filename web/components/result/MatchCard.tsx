@@ -1,6 +1,7 @@
 import type { Match } from "@/lib/types";
 import { daysLeft, ddayLabel } from "@/lib/alerts/core";
 import { DOMAIN_META } from "./domain";
+import { opportunityDistance, type UserLocation } from "@/lib/geo/distance";
 import { AI_TAG } from "@/lib/engine";
 
 /** 같은 조건 문장이 질문 근거와 함께 두 번 나오는 것을 하나로 합치고, 최대 3줄만 보여 준다 */
@@ -27,11 +28,28 @@ function ddayClass(applyEnd?: string): string {
 }
 
 /** aiExplanation: lib/ai의 explainMatch 결과(있으면 "AI 생성" 표시) */
-export function MatchCard({ match, aiExplanation }: { match: Match; aiExplanation?: string }) {
+export function MatchCard({
+  match,
+  aiExplanation,
+  location,
+  highlighted,
+  onShowMap,
+}: {
+  match: Match;
+  aiExplanation?: string;
+  location?: UserLocation;
+  highlighted?: boolean;
+  onShowMap?: () => void;
+}) {
   const o = match.opportunity;
   const meta = DOMAIN_META[o.domain];
+  const distance = location ? opportunityDistance(location, o) : null;
   return (
-    <article className="space-y-3 rounded-2xl bg-white p-4 text-slate-900 shadow-sm">
+    <article
+      id={`match-${encodeURIComponent(o.id)}`}
+      data-highlighted={highlighted ? "true" : undefined}
+      className={`space-y-3 rounded-2xl bg-white p-4 text-slate-900 shadow-sm transition ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
+    >
       <header className="flex items-start gap-3">
         <span className="text-3xl" aria-hidden>
           {meta.emoji}
@@ -57,6 +75,15 @@ export function MatchCard({ match, aiExplanation }: { match: Match; aiExplanatio
       </header>
 
       {o.summary && <p className="text-sm text-slate-700">{o.summary}</p>}
+      {distance !== null && <p className="text-sm font-semibold text-indigo-700">내 위치에서 {distance.toFixed(1)}km</p>}
+      {location && (!o.geo || o.geo.precision === "region") && (
+        <p className="text-xs text-slate-500">위치가 지역 단위라 거리 판단 불가</p>
+      )}
+      {onShowMap && o.geo?.precision !== "region" && (
+        <button type="button" onClick={onShowMap} className="min-h-11 w-full rounded-xl bg-indigo-50 text-sm font-semibold text-indigo-700">
+          지도에서 보기
+        </button>
+      )}
 
       {(match.reasons.length > 0 || aiExplanation) && (
         <section className="rounded-xl bg-emerald-50 p-3 text-sm">
