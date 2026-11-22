@@ -12,7 +12,7 @@ import { MatchCard } from "@/components/result/MatchCard";
 import { readLastResult, relaxAnswer, setAnswer, type LastResult } from "@/components/result/lastResult";
 import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
-import { myRegion, sortMatches } from "@/components/result/sort";
+import { interleaveByDomain, myRegion, sortMatches } from "@/components/result/sort";
 import { opportunityDistance } from "@/lib/geo/distance";
 import { DOMAIN_META } from "@/components/result/domain";
 import { Icon } from "@/components/brand/Icons";
@@ -145,7 +145,7 @@ export default function ResultPage() {
   );
   const sortedAll = useMemo(() => {
     if (!result) return [];
-    return sortMatches(selectedMatches, myRegion(result.answers)).sort((a, b) => {
+    const sorted = sortMatches(selectedMatches, myRegion(result.answers)).sort((a, b) => {
       if (!result.location) return 0;
       if (a.status !== b.status) return a.status === "eligible" ? -1 : 1;
       const da = opportunityDistance(result.location, a.opportunity);
@@ -155,7 +155,9 @@ export default function ResultPage() {
       if (db === null) return -1;
       return da - db;
     });
-  }, [result, selectedMatches]);
+    // 전체 탭: 고른 분야가 골고루 보이도록 분야별로 번갈아 보여 준다
+    return tab === "all" ? interleaveByDomain(sorted) : sorted;
+  }, [result, selectedMatches, tab]);
   const firstIds = sortedAll.slice(0, FIRST).map((match) => match.opportunity.id).join("|");
   useEffect(() => {
     void requestSummaries(firstIds ? firstIds.split("|") : []);

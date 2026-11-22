@@ -1,21 +1,18 @@
 import { describe, expect, it } from "vitest";
-import type { Match } from "@/lib/types";
-import { sortMatches } from "./sort";
+import type { Match, Opportunity } from "@/lib/types";
+import { interleaveByDomain } from "./sort";
 
-const m = (id: string, summary: string, region: string[] = []): Match => ({
-  opportunity: { id, domain: "job", title: id, org: "", region, summary, conditions: [], url: "", source: "t", isSample: false, fetchedAt: "", applyEnd: "2099-12-31" },
-  status: "eligible",
-  reasons: [],
-  unknowns: [],
-});
+const m = (id: string, domain: Opportunity["domain"], status: Match["status"] = "eligible"): Match =>
+  ({ opportunity: { id, domain } as Opportunity, status, reasons: [], unknowns: [] }) as Match;
 
-describe("결과 정렬", () => {
-  it("근무지가 다른 지역인 전국 공고만 뒤로, 근무지 정보 없는 전국 공고는 불이익 없음", () => {
-    const out = sortMatches([m("far", "정규직 / 근무지 전북"), m("none", "정규직"), m("near", "정규직 / 근무지 서울")], "서울");
-    expect(out.map((x) => x.opportunity.id)).toEqual(["none", "near", "far"]);
+describe("전체 탭 분야 섞기", () => {
+  it("지원금이 많아도 상위 3개에 고른 분야가 모두 보인다", () => {
+    const list = [...Array.from({ length: 50 }, (_, i) => m(`b${i}`, "benefit")), m("j1", "job"), m("h1", "housing")];
+    const top = interleaveByDomain(list).slice(0, 3).map((x) => x.opportunity.domain);
+    expect(new Set(top)).toEqual(new Set(["benefit", "job", "housing"]));
   });
-  it("지역을 모르면 순서를 바꾸지 않는다", () => {
-    const out = sortMatches([m("far", "근무지 전북"), m("near", "근무지 서울")], null);
-    expect(out.map((x) => x.opportunity.id)).toEqual(["far", "near"]);
+  it("바로 신청 공고가 확인 필요보다 먼저, 분야 하나면 순서 유지", () => {
+    const list = [m("b1", "benefit"), m("j1", "job", "needs_check"), m("b2", "benefit")];
+    expect(interleaveByDomain(list).map((x) => x.opportunity.id)).toEqual(["b1", "b2", "j1"]);
   });
 });
