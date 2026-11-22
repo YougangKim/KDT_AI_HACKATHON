@@ -2,22 +2,6 @@ import type { Match } from "@/lib/types";
 import { daysLeft, ddayLabel } from "@/lib/alerts/core";
 import { DOMAIN_META } from "./domain";
 import { opportunityDistance, type UserLocation } from "@/lib/geo/distance";
-import { AI_TAG } from "@/lib/engine";
-
-/** 같은 조건 문장이 질문 근거와 함께 두 번 나오는 것을 하나로 합치고, 최대 3줄만 보여 준다 */
-function tidyReasons(reasons: string[]): string[] {
-  const out: string[] = [];
-  for (const r of reasons) {
-    const base = r.replace(/ \(“.*$/, "");
-    const i = out.findIndex((x) => x.replace(/ \(“.*$/, "") === base);
-    if (i >= 0) {
-      if (r.length > out[i].length) out[i] = r;
-    } else out.push(r);
-  }
-  // 분야(내가 고른 분야라 당연함)보다 지역·나이·무주택 같은 자격 근거를 먼저 보여 준다
-  const isDomain = (r: string) => /^(분야|관심 분야):/.test(r.replace(/^\[AI 해석\] /, ""));
-  return [...out.filter((r) => !isDomain(r)), ...out.filter(isDomain)].slice(0, 3);
-}
 
 function ddayClass(applyEnd?: string): string {
   const d = daysLeft(applyEnd);
@@ -30,7 +14,6 @@ function ddayClass(applyEnd?: string): string {
 /** aiExplanation: lib/ai의 explainMatch 결과(있으면 "AI 생성" 표시) */
 export function MatchCard({
   match,
-  aiExplanation,
   location,
   highlighted,
   onShowMap,
@@ -38,7 +21,6 @@ export function MatchCard({
   summaryMs,
 }: {
   match: Match;
-  aiExplanation?: string;
   location?: UserLocation;
   highlighted?: boolean;
   onShowMap?: () => void;
@@ -51,9 +33,11 @@ export function MatchCard({
   return (
     <article
       id={`match-${encodeURIComponent(o.id)}`}
+      data-domain={o.domain}
       data-highlighted={highlighted ? "true" : undefined}
       data-summary-ms={summaryMs === undefined ? undefined : Math.round(summaryMs)}
-      className={`space-y-3 rounded-2xl bg-white p-4 text-slate-900 shadow-sm transition ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
+      style={{ borderLeftColor: meta.color }}
+      className={`space-y-3 rounded-2xl border-l-4 bg-white p-4 text-slate-900 shadow-sm transition ${highlighted ? "ring-2 ring-indigo-500" : ""}`}
     >
       <header className="flex items-start gap-3">
         <span className="text-3xl" aria-hidden>
@@ -102,26 +86,6 @@ export function MatchCard({
         <button type="button" onClick={onShowMap} className="min-h-11 w-full rounded-xl bg-indigo-50 text-sm font-semibold text-indigo-700">
           지도에서 보기
         </button>
-      )}
-
-      {(match.reasons.length > 0 || aiExplanation) && (
-        <section className="rounded-xl bg-emerald-50 p-3 text-sm">
-          <h3 className="mb-1 font-semibold text-emerald-800">왜 맞는지</h3>
-          {aiExplanation && (
-            <p className="mb-1 text-emerald-900">
-              <span className="mr-1 rounded bg-violet-100 px-1 text-[10px] text-violet-700">AI 생성</span>
-              {aiExplanation}
-            </p>
-          )}
-          <ul className="list-disc space-y-0.5 pl-5 text-emerald-900">
-            {tidyReasons(match.reasons).map((r, i) => (
-              <li key={i}>
-                {r.startsWith(AI_TAG) && <span className="mr-1 rounded bg-violet-100 px-1 text-[10px] text-violet-700">AI 해석</span>}
-                {r.startsWith(AI_TAG) ? r.slice(AI_TAG.length) : r}
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
 
       {match.unknowns.length > 0 && (

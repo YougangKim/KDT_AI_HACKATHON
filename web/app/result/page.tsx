@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Answer } from "@/lib/types";
+import type { Answer, Domain } from "@/lib/types";
 import { analyzeFunnel } from "@/lib/insight/funnel";
 import { rankQuestions } from "@/lib/engine";
 import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
@@ -14,8 +14,10 @@ import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { myRegion, sortMatches } from "@/components/result/sort";
 import { opportunityDistance } from "@/lib/geo/distance";
+import { DOMAIN_META } from "@/components/result/domain";
 
 type AiSummary = { id: string; summary: string; how: string };
+type ResultTab = "all" | Domain;
 
 const FIRST = 3; // 끝나자마자 먼저 보여 줄 공고 수
 
@@ -30,6 +32,7 @@ export default function ResultPage() {
 
   const [hard, setHard] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
+  const [tab, setTab] = useState<ResultTab>("all");
   const mapRef = useRef<ResultMapHandle>(null);
 
   useEffect(() => {
@@ -37,6 +40,8 @@ export default function ResultPage() {
     try {
       setHard(JSON.parse(localStorage.getItem("hardConditions") ?? "[]"));
     } catch {}
+    const requested = new URLSearchParams(window.location.search).get("tab");
+    if (requested === "all" || (requested && requested in DOMAIN_META)) setTab(requested as ResultTab);
   }, []);
 
   const requestSummaries = useCallback(async (ids: string[]) => {
@@ -125,9 +130,21 @@ export default function ResultPage() {
   }, []);
 
   // 정렬·첫 요약 요청은 훅이라 조기 return보다 위에 둔다
+  const domainCounts = useMemo(() => {
+    const counts = new Map<Domain, number>();
+    for (const match of result?.matches ?? []) {
+      const domain = match.opportunity.domain;
+      counts.set(domain, (counts.get(domain) ?? 0) + 1);
+    }
+    return counts;
+  }, [result]);
+  const selectedMatches = useMemo(
+    () => result?.matches.filter((match) => tab === "all" || match.opportunity.domain === tab) ?? [],
+    [result, tab],
+  );
   const sortedAll = useMemo(() => {
     if (!result) return [];
-    return sortMatches(result.matches, myRegion(result.answers)).sort((a, b) => {
+    return sortMatches(selectedMatches, myRegion(result.answers)).sort((a, b) => {
       if (!result.location) return 0;
       if (a.status !== b.status) return a.status === "eligible" ? -1 : 1;
       const da = opportunityDistance(result.location, a.opportunity);
@@ -137,11 +154,23 @@ export default function ResultPage() {
       if (db === null) return -1;
       return da - db;
     });
-  }, [result]);
+  }, [result, selectedMatches]);
   const firstIds = sortedAll.slice(0, FIRST).map((match) => match.opportunity.id).join("|");
   useEffect(() => {
     void requestSummaries(firstIds ? firstIds.split("|") : []);
   }, [firstIds, requestSummaries]);
+  useEffect(() => {
+    setShowAll(false);
+    setHighlighted("");
+  }, [tab]);
+
+  function selectTab(next: ResultTab) {
+    setTab(next);
+    const url = new URL(window.location.href);
+    if (next === "all") url.searchParams.delete("tab");
+    else url.searchParams.set("tab", next);
+    window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+  }
 
   if (result === undefined) return null;
 
@@ -210,8 +239,9 @@ export default function ResultPage() {
   }
 
   const shown = showAll ? sorted : sorted.slice(0, FIRST);
-  const eligible = result.matches.filter((m) => m.status === "eligible").length;
+  const eligible = selectedMatches.filter((m) => m.status === "eligible").length;
   const rest = sorted.length - shown.length;
+  const domains = [...domainCounts.entries()].filter(([, count]) => count > 0);
 
   return (
     <main className="flex flex-1 flex-col gap-4 py-6">
@@ -232,9 +262,25 @@ export default function ResultPage() {
       <div>
         <h1 className="text-2xl font-bold">📰 딱 맞는 공고예요</h1>
         <p className="text-sm text-slate-500">
-          전체 {result.matches.length}개 · 바로 신청 {eligible}개
+          전체 {selectedMatches.length}개 · 바로 신청 {eligible}개
         </p>
       </div>
+
+      {domains.length >= 2 && (
+        <nav aria-label="결과 분야" className="flex gap-2 overflow-x-auto pb-1">
+          <button type="button" aria-pressed={tab === "all"} onClick={() => selectTab("all")} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${tab === "all" ? "bg-slate-900 text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`}>
+            전체 {result.matches.length}
+          </button>
+          {domains.map(([domain, count]) => {
+            const meta = DOMAIN_META[domain];
+            return (
+              <button key={domain} type="button" aria-pressed={tab === domain} onClick={() => selectTab(domain)} className={`shrink-0 rounded-full px-3 py-2 text-sm font-semibold ${tab === domain ? "text-white" : "bg-white text-slate-700 ring-1 ring-slate-200"}`} style={tab === domain ? { backgroundColor: meta.color } : undefined}>
+                {meta.emoji} {meta.label} {count}
+              </button>
+            );
+          })}
+        </nav>
+      )}
 
       {result.radiusExcluded ? (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
@@ -245,8 +291,8 @@ export default function ResultPage() {
         </div>
       ) : null}
 
-      {result.matches.some((match) => match.opportunity.geo) ? (
-        <ResultMap ref={mapRef} matches={sorted} location={result.location} onSelect={selectFromMap} />
+      {selectedMatches.some((match) => match.opportunity.geo) ? (
+        <ResultMap ref={mapRef} matches={sortedAll} location={result.location} onSelect={selectFromMap} />
       ) : (
         <p className="rounded-xl bg-slate-100 p-3 text-center text-sm text-slate-600">
           위치를 설정하면 공고를 지도로 볼 수 있어요.

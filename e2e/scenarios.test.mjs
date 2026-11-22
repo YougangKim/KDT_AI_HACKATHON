@@ -196,9 +196,9 @@ for (const [name, pool] of DATASETS) {
       const shown = await cards.count();
       assert.ok(shown >= 1, "결과 카드가 1개 이상 보여야 한다");
       if (pool === FIXTURE) assert.ok(shown >= 3, "고정 데이터(서울 주거 6건)에서는 카드 3개");
+      assert.doesNotMatch(await page.locator("body").textContent(), /왜 맞는지/, '"왜 맞는지" 섹션이 없어야 한다');
       for (let i = 0; i < Math.min(3, shown); i++) {
         const t = (await cards.nth(i).textContent()) ?? "";
-        assert.match(t, /대상 지역: 서울/, `상위 ${i + 1}번째 카드가 서울 공고가 아니다: ${t.slice(0, 80)}`);
         assert.doesNotMatch(t, /고령자|노인/, "청년 비대상 공고가 상위에 있다");
       }
       assert.ok(await cards.first().getByText("신청 방법", { exact: true }).isVisible(), "카드에 신청 방법이 보여야 한다");
@@ -223,6 +223,23 @@ for (const [name, pool] of DATASETS) {
       const page = await newPage();
       await start(page, [/청년 주택/, /지원금/]);
       await playAs(page, { ...seoulJobseeker });
+
+      const tabs = page.getByRole("navigation", { name: "결과 분야" });
+      await tabs.waitFor();
+      assert.ok(await tabs.getByRole("button", { name: /^🏠 주거 \d+$/ }).isVisible(), "주거 탭이 보여야 한다");
+      assert.ok(await tabs.getByRole("button", { name: /^💰 지원금 \d+$/ }).isVisible(), "지원금 탭이 보여야 한다");
+      await tabs.getByRole("button", { name: /^🏠 주거 \d+$/ }).click();
+      await page.waitForFunction(() => new URL(location.href).searchParams.get("tab") === "housing");
+      for (const domain of await page.locator("article[data-domain]").evaluateAll((items) => items.map((item) => item.getAttribute("data-domain")))) {
+        assert.equal(domain, "housing", "주거 탭에는 주거 카드만 보여야 한다");
+      }
+      await tabs.getByRole("button", { name: /^💰 지원금 \d+$/ }).click();
+      await page.waitForFunction(() => new URL(location.href).searchParams.get("tab") === "benefit");
+      for (const domain of await page.locator("article[data-domain]").evaluateAll((items) => items.map((item) => item.getAttribute("data-domain")))) {
+        assert.equal(domain, "benefit", "지원금 탭에는 지원금 카드만 보여야 한다");
+      }
+      assert.doesNotMatch(await page.locator("body").textContent(), /왜 맞는지/, '"왜 맞는지" 텍스트가 없어야 한다');
+      await tabs.getByRole("button", { name: /^전체 \d+$/ }).click();
 
       await page.getByRole("button", { name: /조건 고치기/ }).click();
       const groups = page.getByRole("list", { name: "내 조건" }).getByRole("group");
@@ -289,7 +306,7 @@ for (const [name, pool] of DATASETS) {
 
       const card = page.locator("article").filter({ has: page.getByRole("button", { name: "지도에서 보기" }) }).first();
       const title = (await card.getByRole("heading").first().textContent()).trim();
-      await page.locator(".leaflet-marker-icon").filter({ hasText: /●|○/ }).first().click();
+      await page.locator(".leaflet-marker-icon").filter({ hasText: /🏠/ }).first().click();
       await page.locator('article[data-highlighted="true"]').waitFor();
       assert.ok((await page.locator('article[data-highlighted="true"]').textContent()).includes(title), "핀에 대응하는 카드가 강조돼야 한다");
 

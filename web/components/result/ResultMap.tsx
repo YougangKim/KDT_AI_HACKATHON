@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import type { Match } from "@/lib/types";
 import type { UserLocation } from "@/lib/geo/distance";
+import { DOMAIN_META } from "./domain";
 
 export interface ResultMapHandle {
   show: (id: string) => void;
@@ -54,6 +55,27 @@ export const ResultMap = forwardRef<ResultMapHandle, {
         }
       }
 
+      const popup = (match: Match, accuracy: string) => {
+        const o = match.opportunity;
+        const root = document.createElement("div");
+        root.className = "space-y-1";
+        const title = document.createElement("strong");
+        title.textContent = o.title;
+        const org = document.createElement("div");
+        org.textContent = o.org;
+        const address = document.createElement("div");
+        address.textContent = `📍 ${o.place ?? o.geo?.address ?? o.region.join("·") ?? "주소 미상"}`;
+        const precision = document.createElement("div");
+        precision.textContent = accuracy;
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "카드 보기";
+        button.className = "mt-1 rounded bg-indigo-600 px-2 py-1 font-semibold text-white";
+        button.addEventListener("click", () => onSelect(o.id));
+        root.append(title, org, address, precision, button);
+        return root;
+      };
+
       const bounds: import("leaflet").LatLngExpression[] = [];
       const regional = new Map<string, Match[]>();
       for (const match of matches) {
@@ -65,20 +87,38 @@ export const ResultMap = forwardRef<ResultMapHandle, {
           continue;
         }
         const id = match.opportunity.id;
+        const meta = DOMAIN_META[match.opportunity.domain];
         const opacity = geo.precision === "exact" ? 1 : 0.62;
         const marker = L.marker([geo.lat, geo.lng], {
           opacity,
-          icon: L.divIcon({ className: "", html: `<span class="map-pin">${geo.precision === "exact" ? "●" : "○"}</span>`, iconSize: [26, 26] }),
-        }).addTo(map).bindPopup(match.opportunity.title);
+          icon: L.divIcon({
+            className: "",
+            html: `<span class="map-pin" style="background:${meta.color}">${meta.emoji}</span>`,
+            iconSize: [26, 26],
+          }),
+        }).addTo(map).bindPopup(popup(match, geo.precision === "exact" ? "정확한 주소" : "기관·단지 위치 추정"));
         marker.on("click", () => onSelect(id));
         markers.current.set(id, marker);
         bounds.push([geo.lat, geo.lng]);
       }
       for (const [key, group] of regional) {
         const [lat, lng] = key.split(",").map(Number);
-        L.marker([lat, lng], {
-          icon: L.divIcon({ className: "", html: `<span class="map-pin">${group.length}</span>`, iconSize: [26, 26] }),
-        }).addTo(map).bindPopup(`지역 단위 공고 ${group.length}건`);
+        const domains = [...new Set(group.map((match) => match.opportunity.domain))];
+        const meta = domains.length === 1 ? DOMAIN_META[domains[0]] : null;
+        const marker = L.marker([lat, lng], {
+          icon: L.divIcon({
+            className: "",
+            html: `<span class="map-pin" style="background:${meta?.color ?? "#64748b"}">${meta?.emoji ?? group.length}</span>`,
+            iconSize: [26, 26],
+          }),
+        }).addTo(map);
+        if (group.length === 1) {
+          marker.bindPopup(popup(group[0], "시·도 단위"));
+          marker.on("click", () => onSelect(group[0].opportunity.id));
+          markers.current.set(group[0].opportunity.id, marker);
+        } else {
+          marker.bindPopup(`시·도 단위 공고 ${group.length}건`);
+        }
         bounds.push([lat, lng]);
       }
       if (bounds.length && !location) map.fitBounds(L.latLngBounds(bounds), { padding: [24, 24], maxZoom: 11 });
@@ -95,8 +135,15 @@ export const ResultMap = forwardRef<ResultMapHandle, {
     <section aria-label="결과 지도" className="space-y-2">
       <div ref={element} data-testid="result-map" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />
       <p className="text-xs text-slate-500">
-        진한 핀은 정확한 위치, 연한 핀은 근사 위치예요. 지역 단위 공고는 묶어서 표시해요.
+        진한 핀은 정확한 위치, 연한 핀은 근사 위치예요. 시·도 단위 공고는 묶어서 표시해요.
       </p>
+      <ul aria-label="지도 분야 범례" className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600">
+        {Object.entries(DOMAIN_META).filter(([domain]) => matches.some((match) => match.opportunity.domain === domain)).map(([domain, meta]) => (
+          <li key={domain} className="flex items-center gap-1">
+            <span aria-hidden style={{ color: meta.color }}>●</span>{meta.emoji} {meta.label}
+          </li>
+        ))}
+      </ul>
     </section>
   );
 });

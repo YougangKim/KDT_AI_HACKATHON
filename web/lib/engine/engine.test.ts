@@ -64,6 +64,23 @@ describe("후보 축소", () => {
     expect(nextQuestion(startGame(pool))?.attr).toBe("homeless");
   });
 
+  it("직무 분야를 묻기 전에는 경력·학력·취업 상태를 묻지 않는다", () => {
+    const pool = [
+      {
+        ...opp("experienced", [
+          cond("field", "eq", "경영·회계·사무"),
+          cond("experienced", "eq", true),
+          cond("education", "gte", 3),
+        ]),
+        domain: "job" as const,
+      },
+      { ...opp("other", [cond("field", "eq", "정보통신")]), domain: "job" as const },
+    ];
+    let state = startGame(pool);
+    state = applyAnswer(state, q("interest", "eq", "job"), "yes");
+    expect(nextQuestion(state)?.attr).toBe("field");
+  });
+
   it("같은 질문은 다시 묻지 않고, 매 답마다 후보가 늘지 않는다", () => {
     let s = startGame(FIXTURE_OPPORTUNITIES);
     const ids = new Set<string>();

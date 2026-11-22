@@ -1,14 +1,16 @@
 import { getCached, setCached } from "../ai/cache";
 import type { Opportunity } from "../types";
-import { regionCenter } from "./regions";
+import { regionAliases, regionCenter } from "./regions";
 
 type Geo = NonNullable<Opportunity["geo"]>;
 type KakaoDocument = {
   x: string;
   y: string;
-  address?: { region_1depth_name?: string };
-  road_address?: { region_1depth_name?: string };
+  address_name?: string;
+  address?: { address_name?: string; region_1depth_name?: string };
+  road_address?: { address_name?: string; region_1depth_name?: string };
 };
+type GeocodeRequest = { endpoint: "address" | "keyword"; query: string; precision: "exact" | "approx" };
 
 const cache = new Map<string, Geo | null>();
 const MAX_NEW_LOOKUPS = 150;
@@ -32,6 +34,13 @@ export function housingKeyword(title: string): string {
     .trim();
 }
 
+export function branchKeyword(title: string): string | null {
+  const cleaned = title.replace(/\[[^\]]*]|\([^)]*\)/g, " ").replace(/\s+/g, " ");
+  return cleaned.match(
+    /(?:[가-힣A-Za-z0-9·-]+\s+)?[가-힣A-Za-z0-9·-]+(?:출장소|지사|지점|사업소|본부|센터|병원|공단)/,
+  )?.[0]?.trim() ?? null;
+}
+
 function govRegion(org: string): string | null {
   const match = org.match(/([가-힣]+(?:특별시|광역시|특별자치시|도|특별자치도|시))\s+([가-힣]+(?:시|군|구))/);
   return match ? `${match[1]} ${match[2]}` : null;
@@ -42,32 +51,35 @@ function fallback(opportunity: Opportunity): Geo | undefined {
   return center ? { lat: center.lat, lng: center.lng, precision: "region" } : undefined;
 }
 
-function requestFor(opportunity: Opportunity): {
-  endpoint: "address" | "keyword";
-  query: string;
-  precision: "exact" | "approx";
-} | null {
+function requestsFor(opportunity: Opportunity): GeocodeRequest[] {
   if (opportunity.place) {
     const address = /(?:특별시|광역시|특별자치시|특별자치도|도)\s+.+(?:시|군|구)/.test(opportunity.place);
-    return {
+    return [{
       endpoint: address ? "address" : "keyword",
       query: opportunity.place,
       precision: address ? "exact" : "approx",
-    };
+    }];
   }
   if (opportunity.source === "applyhome") {
     const query = applyhomeAddress(opportunity.summary);
-    return query ? { endpoint: "address", query, precision: "exact" } : null;
+    return query ? [{ endpoint: "address", query, precision: "exact" }] : [];
   }
   if (opportunity.source === "lh-notice" || opportunity.source === "myhome") {
     const query = housingKeyword(opportunity.title);
-    return query ? { endpoint: "keyword", query, precision: "approx" } : null;
+    return query ? [{ endpoint: "keyword", query, precision: "approx" }] : [];
+  }
+  if (opportunity.source === "jobalio") {
+    const branch = branchKeyword(opportunity.title);
+    return [
+      ...(branch ? [{ endpoint: "keyword" as const, query: `${opportunity.org} ${branch}`, precision: "approx" as const }] : []),
+      { endpoint: "keyword", query: opportunity.org, precision: "approx" },
+    ];
   }
   if (opportunity.source === "gov24") {
     const query = govRegion(opportunity.org);
-    return query ? { endpoint: "address", query, precision: "approx" } : null;
+    return query ? [{ endpoint: "address", query, precision: "approx" }] : [];
   }
-  return null;
+  return [];
 }
 
 function sameRegion(opportunity: Opportunity, document: KakaoDocument): boolean {
@@ -76,9 +88,8 @@ function sameRegion(opportunity: Opportunity, document: KakaoDocument): boolean 
     document.address?.region_1depth_name ??
     document.road_address?.region_1depth_name ??
     "";
-  return opportunity.region.some((region) =>
-    resultRegion.includes(region) || region.includes(resultRegion.replace(/특별시|광역시|특별자치시|특별자치도|도$/g, "")),
-  );
+  const aliases = regionAliases(resultRegion);
+  return opportunity.region.some((region) => aliases.some((alias) => region.includes(alias) || alias.includes(region)));
 }
 
 async function kakao(
@@ -108,28 +119,32 @@ async function kakao(
 
 async function geocodeOne(opportunity: Opportunity, key: string): Promise<Geo | undefined> {
   if (opportunity.geo) return opportunity.geo;
-  const request = requestFor(opportunity);
-  if (!request) return fallback(opportunity);
-  const cacheKey = `${request.endpoint}:${request.query}`;
-  if (cache.has(cacheKey)) return cache.get(cacheKey) ?? fallback(opportunity);
-
-  const persisted = await getCached<Geo | false>(
-    "geocode",
-    `${GEOCODE_VERSION}:${cacheKey}`,
-  );
-  if (persisted !== null) {
-    const hit = persisted || null;
-    cache.set(cacheKey, hit);
-    return hit ?? fallback(opportunity);
+  for (const request of requestsFor(opportunity)) {
+    const cacheKey = `${request.endpoint}:${request.query}`;
+    if (!cache.has(cacheKey)) {
+      const persisted = await getCached<Geo | false>("geocode", `${GEOCODE_VERSION}:${cacheKey}`);
+      if (persisted !== null) cache.set(cacheKey, persisted || null);
+    }
+    if (cache.has(cacheKey)) {
+      const cached = cache.get(cacheKey);
+      if (cached) return cached;
+      continue;
+    }
+    const document = await kakao(request.endpoint, request.query, key);
+    const address = document?.road_address?.address_name ?? document?.address?.address_name ?? document?.address_name;
+    const geo = document && sameRegion(opportunity, document)
+      ? {
+          lat: Number(document.y),
+          lng: Number(document.x),
+          precision: request.precision,
+          ...(address ? { address } : {}),
+        } satisfies Geo
+      : null;
+    cache.set(cacheKey, geo);
+    await setCached("geocode", `${GEOCODE_VERSION}:${cacheKey}`, geo ?? false, geo ? 90 : 1);
+    if (geo) return geo;
   }
-
-  const document = await kakao(request.endpoint, request.query, key);
-  const geo = document && sameRegion(opportunity, document)
-    ? { lat: Number(document.y), lng: Number(document.x), precision: request.precision } satisfies Geo
-    : null;
-  cache.set(cacheKey, geo);
-  await setCached("geocode", `${GEOCODE_VERSION}:${cacheKey}`, geo ?? false, geo ? 90 : 1);
-  return geo ?? fallback(opportunity);
+  return fallback(opportunity);
 }
 
 /** 한 번의 수집 호출에서 신규 Kakao 조회를 150건까지만, 동시에 4건씩 수행한다. */
@@ -144,7 +159,8 @@ export async function attachGeo(items: Opportunity[]): Promise<Opportunity[]> {
     while (next < items.length) {
       const index = next++;
       const item = items[index];
-      const request = requestFor(item);
+      const requests = requestsFor(item);
+      const request = requests[0];
       const cacheKey = request ? `${request.endpoint}:${request.query}` : "";
       if (request && !cache.has(cacheKey)) {
         const hit = await getCached<Geo | false>("geocode", `${GEOCODE_VERSION}:${cacheKey}`);

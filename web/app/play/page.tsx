@@ -15,6 +15,7 @@ import type { Answer, AnswerRecord, Domain, Opportunity, Question } from "@/lib/
 
 const DOMAIN_NAME: Record<string, string> = { housing: "청년 주택", benefit: "지원금·혜택", job: "채용·인턴", parttime: "알바·단기직", training: "국비 과정", exam: "자격증 일정" };
 type LocationStage = "location" | "questions";
+const PICKER_ATTRS = new Set<Question["attr"]>(["interest", "education", "field", "need", "housingKind", "region", "incomePct", "age", "employment"]);
 
 function makeQuestion(attr: Question["attr"], value: Question["value"], op: Question["op"] = "eq"): Question {
   const q = { attr, op, value, id: "", text: "" };
@@ -306,7 +307,17 @@ export default function PlayPage() {
   }, [state, view?.done, router, location]);
 
   // ANTHROPIC_API_KEY가 있으면 서버에서 질문 문장을 다듬는다. 없으면 기본 문장 그대로.
-  const q = view?.done ? null : (view?.q ?? null);
+  const skippedPicker = Boolean(view?.q && PICKER_ATTRS.has(view.q.attr) && !view.choice);
+  const q = view?.done || skippedPicker ? null : (view?.q ?? null);
+  useEffect(() => {
+    if (!state || !view?.q || !skippedPicker) return;
+    const skipped = { ...view.q, text: view.q.text || defaultQuestionText(view.q) };
+    setSelected([]);
+    setHistory((current) => current
+      ? [...current, applyAnswer(current.at(-1)!, skipped, "unknown")]
+      : current);
+  }, [state, skippedPicker, view?.q]);
+
   useEffect(() => {
     if (!q || aiOff.current || aiText[q.id]) return;
     let alive = true;
@@ -407,6 +418,10 @@ export default function PlayPage() {
           <Link href="/result" className="rounded-2xl bg-indigo-600 px-6 py-3 font-semibold text-white">결과로 돌아가기</Link>
         </section>
       ) : view.done ? (
+        <section className={`${styles.cardIn} flex flex-1 items-center justify-center text-sm text-slate-500`}>
+          <span className={styles.orb}>📰</span>&nbsp;결과를 정리하는 중…
+        </section>
+      ) : skippedPicker ? (
         <section className={`${styles.cardIn} flex flex-1 flex-col items-center justify-center gap-3 text-center`}>
           <p className="text-5xl">
             <span className={styles.orb}>📰</span>

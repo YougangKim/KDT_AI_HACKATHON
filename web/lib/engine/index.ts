@@ -35,6 +35,18 @@ interface Knowledge {
 const MULTI: AttrKey[] = ["interest", "field", "need"];
 /** 자격 요건이 아니라 취향인 속성: 묻지 않았다고 "확인 필요"로 남기지 않는다(아니오면 제외) */
 const SOFT: AttrKey[] = ["interest", "field", "need", "housingKind"];
+/** 질문의 의미를 이해하기 위해 먼저 확정해야 하는 속성 */
+export const PREREQ: Partial<Record<AttrKey, AttrKey[]>> = {
+  experienced: ["field"],
+  education: ["field"],
+  employment: ["field"],
+  field: ["interest"],
+  subscription: ["interest"],
+  housingKind: ["interest"],
+  married: ["interest"],
+  welfare: ["interest"],
+  need: ["interest"],
+};
 
 const arr = (v: Condition["value"]): AttrValue[] => (Array.isArray(v) ? v : [v]);
 export const questionId = (c: Pick<Condition, "attr" | "op" | "value">) =>
@@ -268,9 +280,15 @@ export function rankQuestions(s: GameState, limit = 5): RankedQuestion[] {
   for (const r of s.answers) attrCount.set(r.question.attr, (attrCount.get(r.question.attr) ?? 0) + 1);
   const lastAttr = s.answers.at(-1)?.question.attr;
 
+  const pool = questionPool(cands);
+  const candidateAttrs = new Set(pool.map((q) => q.attr));
   const out: RankedQuestion[] = [];
-  for (const q of questionPool(cands)) {
+  for (const q of pool) {
     if (askedIds.has(q.id)) continue;
+    const unansweredPrerequisite = (PREREQ[q.attr] ?? []).some(
+      (attr) => candidateAttrs.has(attr) && !s.answers.some((answer) => answer.question.attr === attr),
+    );
+    if (unansweredPrerequisite) continue;
     const probe: Condition = { ...q, rawText: "", confidence: "high" };
     if (evaluate(kb, probe) !== null) continue; // 이미 답에서 알 수 있음
     if (trivialForYouth(q)) continue; // 청년(만 19~34세)이면 누구나 '예'인 나이 질문은 묻지 않음
