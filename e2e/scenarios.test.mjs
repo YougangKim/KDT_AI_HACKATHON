@@ -220,6 +220,28 @@ for (const [name, pool] of DATASETS) {
       await page.context().close();
     });
 
+    test("a3) 결과 분석에서 질문을 펼치고 답을 완화한다", async () => {
+      const page = await newPage();
+      await start(page, [/청년 주택/, /지원금/]);
+      await playAs(page, { ...seoulJobseeker });
+
+      await page.getByRole("link", { name: /분석 보기/ }).first().click();
+      await page.waitForURL("**/result/analysis");
+      await page.getByRole("heading", { name: "질문별로 걸러진 공고" }).waitFor();
+
+      const row = page.locator('button[aria-expanded]').first(); // 클릭 뒤에도 같은 행을 가리키게(값 조건으로 찾지 않음)
+      assert.ok(await row.isVisible(), "질문별 퍼널 행이 보여야 한다");
+      await row.click();
+      assert.equal(await row.getAttribute("aria-expanded"), "true");
+
+      const relax = page.getByRole("button", { name: /답을 풀면 .*건 늘어나요\. 적용/ }).first();
+      if (await relax.isVisible().catch(() => false)) {
+        await relax.click();
+        await page.getByRole("status").waitFor();
+      }
+      await page.context().close();
+    });
+
     test("b) 조건을 여러 번 고치고 타협한 뒤 알림 설정: 서울, 주거+지원금", async () => {
       const page = await newPage();
       await start(page, [/청년 주택/, /지원금/]);
@@ -303,7 +325,9 @@ for (const [name, pool] of DATASETS) {
           await page.getByRole("group", { name: "관심 분야" }).getByRole("button", { name: /해당 없음/ }).click();
         } else {
           // 질문 유형마다 "모르겠어요" 버튼 문구가 다르다(잘 모르겠어요·선택지에 없어요·해당 없음)
-          await page.getByRole("button", { name: /^(모르겠어요|잘 모르겠어요|선택지에 없어요|해당 없음|찾는 분야가 없어요)$/ }).first().click();
+          const dunno = page.getByRole("button", { name: /^(잘 )?모르겠어요$/ }).first();
+          if (await dunno.isVisible().catch(() => false)) await dunno.click();
+          else await page.getByRole("button", { name: /^(선택지에 없어요|해당 없음|찾는 분야가 없어요)$/ }).first().click();
         }
       }
       // 고정 데이터는 질문이 적어 두 번 답하면 바로 결과로 갈 수 있다

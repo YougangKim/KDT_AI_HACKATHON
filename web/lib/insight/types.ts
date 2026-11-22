@@ -1,19 +1,29 @@
 // 리서치 인사이트 공통 타입 (통합 스레드 소유)
 import type { AnswerRecord, AttrKey, Domain } from "@/lib/types";
 
-/** 답변 하나(=필터 하나)가 후보를 얼마나 걸러 냈는지 */
+/** 사용자가 화면에서 답한 질문 하나가 후보를 얼마나 걸러 냈는지 */
 export interface FilterStep {
   questionId: string;
-  label: string; // 사람이 읽는 조건 문구 (예: "기준중위소득 150% 이하 → 아니오")
+  relatedAnswerIds: string[];
+  question: string;
+  answerLabel: string;
+  reason: string;
+  label: string;
   attr: AttrKey;
   answer: AnswerRecord;
-  /** 이 답변 하나만 적용했을 때 탈락하는 후보 수 */
+  /** 이전 질문 단계에서 실제로 제외된 수 */
+  removedCount: number;
+  /** 이전 컴포넌트 호환용. removedCount와 같다. */
   aloneRemoved: number;
-  /** 이 답변 하나 때문에 탈락하는 공고 id(분석 화면 "질문별 탈락 공고" 탭) */
   removedIds: string[];
-  /** 이 답변만 빼고(모름 처리) 나머지 답변을 모두 적용했을 때 통과 수 */
+  examples: string[];
   passedWithout: number;
-  hard: boolean; // 사용자가 '타협 불가'로 표시한 조건
+  hard: boolean;
+}
+
+export interface PendingQuestion {
+  question: string;
+  attr: AttrKey;
 }
 
 export interface Relaxation {
@@ -27,10 +37,12 @@ export interface FunnelReport {
   passed: number; // 모든 답변을 통과한 수(eligible + needs_check)
   passRate: number; // passed / total (0~1)
   byDomain: Record<Domain, { total: number; passed: number }>;
-  steps: FilterStep[]; // aloneRemoved 내림차순
+  steps: FilterStep[]; // 사용자가 답한 질문 순서
   bottleneck: Relaxation | null; // hard 아닌 조건 중 gain 최대(0이면 null)
   /** 풀면 결과가 늘어나는 조건들(최대 3개). 바꾸기 어려운 지역 조건은 뒤로 */
   relaxOptions: Relaxation[];
+  pendingCount: number;
+  pendingQuestions: PendingQuestion[];
   scarce: boolean; // passed가 너무 적음(<= 3 또는 passRate < 5%)
 }
 

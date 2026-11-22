@@ -37,8 +37,123 @@ const EMPLOYMENT_LABEL: Record<string, string> = {
 const values = (value: Condition["value"]) =>
   (Array.isArray(value) ? value : [value]).map(String);
 
-// 소득·나이는 선택지 하나로 여러 기준(50·60·80·100%)에 한꺼번에 답하므로 완화도 한꺼번에 한다
-const GROUPED_ATTRS = new Set(["incomePct", "age"]);
+// 이 속성들은 화면에서 한 번에 고르지만 내부적으로 여러 AnswerRecord를 만든다.
+const GROUPED_ATTRS = new Set<Condition["attr"]>([
+  "region",
+  "incomePct",
+  "age",
+  "employment",
+  "education",
+  "interest",
+  "field",
+  "need",
+  "housingKind",
+]);
+
+const QUESTION_TEXT: Record<Condition["attr"], string> = {
+  age: "만 나이가 어떻게 되나요?",
+  region: "지금 어디에 살고 있나요?",
+  homeless: "본인 명의 집이 있나요?",
+  livingAlone: "현재 1인 가구인가요?",
+  incomePct: "가구 소득은 기준중위소득의 몇 % 정도인가요?",
+  employment: "지금 어떤 상태인가요?",
+  interest: "어떤 정보가 필요한가요?",
+  subscription: "청약통장이 있나요?",
+  married: "신혼부부 또는 예비 신혼부부인가요?",
+  welfare: "수급자 또는 차상위 대상인가요?",
+  experienced: "관련 경력이 있나요?",
+  education: "최종 학력이 어떻게 되나요?",
+  field: "어떤 분야의 일을 찾고 있나요?",
+  need: "어떤 지원이 필요한가요?",
+  housingKind: "어떤 집을 찾고 있나요?",
+};
+
+const REASON_TEXT: Record<Condition["attr"], string> = {
+  age: "나이 기준이 맞지 않는 공고",
+  region: "다른 지역 대상 공고",
+  homeless: "주택 보유 기준이 맞지 않는 공고",
+  livingAlone: "가구 형태 기준이 맞지 않는 공고",
+  incomePct: "소득 기준이 맞지 않는 공고",
+  employment: "취업 상태 기준이 맞지 않는 공고",
+  interest: "고르지 않은 분야",
+  subscription: "청약통장 조건이 맞지 않는 공고",
+  married: "혼인 조건이 맞지 않는 공고",
+  welfare: "복지 대상 조건이 맞지 않는 공고",
+  experienced: "경력 조건이 맞지 않는 공고",
+  education: "학력 기준이 맞지 않는 공고",
+  field: "고르지 않은 분야",
+  need: "고르지 않은 지원 종류",
+  housingKind: "원하는 주거 형태와 다른 공고",
+};
+
+const EDUCATION: Record<number, string> = {
+  1: "고졸 이하",
+  2: "전문대졸",
+  3: "대졸(4년제)",
+  4: "석사",
+  5: "박사",
+};
+
+function groupKey(record: AnswerRecord): string {
+  return GROUPED_ATTRS.has(record.question.attr)
+    ? record.question.attr
+    : record.question.id;
+}
+
+function groupedAnswers(answers: AnswerRecord[]): AnswerRecord[][] {
+  const groups = new Map<string, AnswerRecord[]>();
+  for (const record of answers) {
+    const key = groupKey(record);
+    groups.set(key, [...(groups.get(key) ?? []), record]);
+  }
+  return [...groups.values()];
+}
+
+function numericRange(records: AnswerRecord[], unit: string): string {
+  const lower = records
+    .filter((r) => r.answer === "no" && r.question.op === "lte")
+    .map((r) => Number(r.question.value) + 1);
+  const upper = records
+    .filter((r) => r.answer === "yes" && r.question.op === "lte")
+    .map((r) => Number(r.question.value));
+  const min = lower.length ? Math.max(...lower) : null;
+  const max = upper.length ? Math.min(...upper) : null;
+  if (min !== null && max !== null) return `${min}~${max}${unit}`;
+  if (max !== null) return `${max}${unit} 이하`;
+  if (min !== null) return `${min}${unit} 이상`;
+  return "잘 모르겠어요";
+}
+
+function answerText(records: AnswerRecord[]): string {
+  const attr = records[0].question.attr;
+  const selected = records
+    .filter((r) => r.answer === "yes")
+    .flatMap((r) => values(r.question.value));
+
+  if (attr === "age") return numericRange(records, "세");
+  if (attr === "incomePct") return numericRange(records, "%");
+  if (attr === "education") {
+    const level = selected.map(Number).sort((a, b) => b - a)[0];
+    return EDUCATION[level] ?? "잘 모르겠어요";
+  }
+  if (attr === "employment") {
+    return selected.map((v) => EMPLOYMENT_LABEL[v] ?? v).join("·") || "잘 모르겠어요";
+  }
+  if (attr === "interest") {
+    return selected.map((v) => DOMAIN_LABEL[v as Domain] ?? v).join("·") || "선택하지 않음";
+  }
+  if (attr === "housingKind") {
+    return selected.map((v) => v === "rent" ? "임대(월세·전세)" : "분양(내 집 마련)").join("·") || "둘 다";
+  }
+  if (GROUPED_ATTRS.has(attr)) return selected.join("·") || "선택하지 않음";
+
+  const record = records[0];
+  const effective = record.answer === "yes";
+  if (typeof record.question.value === "boolean") {
+    return effective === record.question.value ? "예" : "아니오";
+  }
+  return effective ? values(record.question.value).join("·") : "아니오";
+}
 
 /** 완화할 때 함께 "모름"으로 바꿀 답들의 id(소득·나이는 같은 속성 전부) */
 export function relatedAnswerIds(answers: AnswerRecord[], questionId: string): Set<string> {
@@ -61,7 +176,6 @@ export function analyzeFunnel(
   answers: AnswerRecord[],
   hardIds: string[] = [],
 ): FunnelReport {
-  const activeAnswers = answers.filter(({ answer }) => answer !== "unknown");
   const matches = getMatches({ pool, answers });
   const passed = matches.length;
   const hardIdSet = new Set(hardIds);
@@ -78,34 +192,44 @@ export function analyzeFunnel(
     ]),
   ) as FunnelReport["byDomain"];
 
-  const steps: FilterStep[] = activeAnswers
-    .map((answer) => {
-      const aloneIds = new Set(getMatches({ pool, answers: [answer] }).map((m) => m.opportunity.id));
-      const alonePassed = aloneIds.size;
-
+  const groups = groupedAnswers(answers);
+  const activeGroups = groups.filter((group) => group.some(({ answer }) => answer !== "unknown"));
+  const pendingGroups = groups.filter((group) => group.every(({ answer }) => answer === "unknown"));
+  let remaining = pool;
+  const steps: FilterStep[] = activeGroups.map((group) => {
+      const before = remaining;
+      const nextMatches = getMatches({ pool: before, answers: group });
+      const nextIds = new Set(nextMatches.map((match) => match.opportunity.id));
+      const removed = before.filter((opportunity) => !nextIds.has(opportunity.id));
+      remaining = nextMatches.map((match) => match.opportunity);
+      const answer = group.find((record) => record.answer !== "unknown") ?? group[0];
       const passedWithout = getMatches({
         pool,
         answers: replaceAnswer(answers, answer.question.id, "unknown"),
       }).length;
+      // 한 번에 고르는 질문(지역·소득 등)만 공통 문구, 예/아니오 질문은 실제로 물은 문장을 그대로(답의 뜻이 뒤집히지 않게)
+      const question = (GROUPED_ATTRS.has(answer.question.attr) ? QUESTION_TEXT[answer.question.attr] : "")
+        || answer.question.text
+        || defaultQuestionText(answer.question);
+      const answerLabel = answerText(group);
 
       return {
         questionId: answer.question.id,
-        label: `${answer.question.text || defaultQuestionText(answer.question)} → ${
-          answer.answer === "yes" ? "예" : "아니오"
-        }`,
+        relatedAnswerIds: group.map((record) => record.question.id),
+        question,
+        answerLabel,
+        reason: REASON_TEXT[answer.question.attr],
+        label: `${question} → ${answerLabel}`,
         attr: answer.question.attr,
         answer,
-        aloneRemoved: pool.length - alonePassed,
-        removedIds: pool.filter((o) => !aloneIds.has(o.id)).map((o) => o.id),
+        removedCount: removed.length,
+        aloneRemoved: removed.length,
+        removedIds: removed.map((opportunity) => opportunity.id),
+        examples: removed.slice(0, 3).map((opportunity) => opportunity.title),
         passedWithout,
-        hard: hardIdSet.has(answer.question.id),
+        hard: group.some((record) => hardIdSet.has(record.question.id)),
       };
-    })
-    .sort(
-      (a, b) =>
-        b.aloneRemoved - a.aloneRemoved ||
-        a.questionId.localeCompare(b.questionId),
-    );
+    });
 
   const gains = steps
     .filter(({ hard }) => !hard)
@@ -120,23 +244,19 @@ export function analyzeFunnel(
         b.step.aloneRemoved - a.step.aloneRemoved ||
         a.step.questionId.localeCompare(b.step.questionId),
     );
-  // 같은 속성(소득·나이)의 여러 답은 완화 결과가 같으므로 하나만 남긴다
-  const seenAttr = new Set<string>();
-  const uniqueGains = gains.filter(({ step }) => {
-    if (!GROUPED_ATTRS.has(step.attr)) return true;
-    if (seenAttr.has(step.attr)) return false;
-    seenAttr.add(step.attr);
-    return true;
-  });
-  const relaxed = uniqueGains[0];
+  const relaxed = gains[0];
   // 사는 곳은 쉽게 바꿀 수 없으니, 다른 조건을 먼저 제안하고 지역은 마지막에
   const relaxOptions = [
-    ...uniqueGains.filter(({ step }) => step.attr !== "region"),
-    ...uniqueGains.filter(({ step }) => step.attr === "region"),
+    ...gains.filter(({ step }) => step.attr !== "region"),
+    ...gains.filter(({ step }) => step.attr === "region"),
   ]
     .slice(0, 3)
     .map((r) => ({ ...r, suggestion: relaxationText(r.step, r.gain) }));
 
+  const pendingAttrs = new Set(pendingGroups.map((group) => group[0].question.attr));
+  const pendingCount = matches.filter(
+    (match) => match.unknowns.some((condition) => pendingAttrs.has(condition.attr)),
+  ).length;
   const passRate = pool.length === 0 ? 0 : passed / pool.length;
 
   return {
@@ -152,6 +272,13 @@ export function analyzeFunnel(
         }
       : null,
     relaxOptions,
+    pendingCount,
+    pendingQuestions: pendingGroups.map((group) => ({
+      attr: group[0].question.attr,
+      question: (GROUPED_ATTRS.has(group[0].question.attr) ? QUESTION_TEXT[group[0].question.attr] : "")
+        || group[0].question.text
+        || defaultQuestionText(group[0].question),
+    })),
     scarce: passed <= 3 || passRate < 0.05,
   };
 }

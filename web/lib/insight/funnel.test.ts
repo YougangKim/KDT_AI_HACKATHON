@@ -157,8 +157,9 @@ describe("analyzeFunnel", () => {
       aloneRemoved: 2,
       passedWithout: 2,
     });
+    // 제외 수는 앞 단계(무주택 답) 이후 남은 공고 기준으로 센다: 서울 공고 1건만 새로 빠진다
     expect(regionStep).toMatchObject({
-      aloneRemoved: 2,
+      aloneRemoved: 1,
       passedWithout: 2,
     });
     expect(homelessStep?.label).toBe(
@@ -257,6 +258,87 @@ describe("analyzeFunnel", () => {
     );
   });
 
+  it("다중선택 답을 질문 하나로 묶고 고르지 않은 값들을 별도 단계로 만들지 않는다", () => {
+    const answers = [
+      answer(question("field", "eq", "보건·의료", "보건·의료 분야인가요?"), "yes"),
+      answer(question("field", "eq", "교육", "교육 분야인가요?"), "yes"),
+      answer(question("field", "eq", "건설", "건설 분야인가요?"), "no"),
+    ];
+    const pool = [
+      opportunity("medical", "job", [condition("field", "eq", "보건·의료")]),
+      opportunity("education", "job", [condition("field", "eq", "교육")]),
+      opportunity("construction", "job", [condition("field", "eq", "건설")]),
+    ];
+
+    const report = analyzeFunnel(pool, answers);
+
+    expect(report.steps).toHaveLength(1);
+    expect(report.steps[0]).toMatchObject({
+      question: "어떤 분야의 일을 찾고 있나요?",
+      answerLabel: "보건·의료·교육",
+      reason: "고르지 않은 분야",
+    });
+    expect(report.steps[0].relatedAnswerIds).toHaveLength(3);
+  });
+
+  it("소득의 여러 내부 기준을 사람이 고른 구간 한 줄로 묶는다", () => {
+    const answers = [
+      answer(question("incomePct", "lte", 80, "소득 80% 이하인가요?"), "no"),
+      answer(question("incomePct", "lte", 100, "소득 100% 이하인가요?"), "yes"),
+      answer(question("incomePct", "lte", 120, "소득 120% 이하인가요?"), "yes"),
+    ];
+
+    const report = analyzeFunnel(FIXTURE_OPPORTUNITIES, answers);
+
+    expect(report.steps).toHaveLength(1);
+    expect(report.steps[0].answerLabel).toBe("81~100%");
+  });
+
+  it("질문 순서를 유지하고 제외 수를 앞 단계 대비 감소로 계산한다", () => {
+    const region = answer(
+      question("region", "eq", "서울", "지금 서울에 살고 있나요?"),
+      "yes",
+    );
+    const homeless = answer(
+      question("homeless", "eq", true, "무주택인가요?"),
+      "yes",
+    );
+    const pool = [
+      opportunity("seoul-home", "housing", [condition("homeless", "eq", true)], ["서울"]),
+      opportunity("seoul-owned", "housing", [], ["서울"]),
+      opportunity("busan-home", "housing", [condition("homeless", "eq", true)], ["부산"]),
+      opportunity("busan-owned", "housing", [], ["부산"]),
+    ];
+
+    const report = analyzeFunnel(pool, [region, homeless]);
+
+    expect(report.steps.map((step) => step.attr)).toEqual(["region", "homeless"]);
+    // 무주택 "예"는 무주택 조건이 없는 공고를 빼지 않는다
+    expect(report.steps.map((step) => step.removedCount)).toEqual([2, 0]);
+  });
+
+  it("모르겠어요 질문과 그 때문에 확인이 필요한 공고 수를 집계한다", () => {
+    const income = answer(
+      question("incomePct", "lte", 100, "소득을 아나요?"),
+      "unknown",
+    );
+    const pool = [
+      opportunity("income", "benefit", [condition("incomePct", "lte", 100)]),
+      opportunity("plain", "benefit", []),
+    ];
+
+    const report = analyzeFunnel(pool, [income]);
+
+    expect(report.steps).toEqual([]);
+    expect(report.pendingQuestions).toEqual([
+      {
+        attr: "incomePct",
+        question: "가구 소득은 기준중위소득의 몇 % 정도인가요?",
+      },
+    ]);
+    expect(report.pendingCount).toBe(1);
+  });
+
   it("후보 100건과 답변 10개를 즉시 분석한다", () => {
     const pool = Array.from({ length: 100 }, (_, index) => ({
       ...FIXTURE_OPPORTUNITIES[
@@ -302,11 +384,17 @@ describe("relaxationText", () => {
       relaxationText(
         {
           questionId: record.question.id,
+          relatedAnswerIds: [record.question.id],
+          question: record.question.text,
+          answerLabel: "100% 이하",
+          reason: "소득 기준이 맞지 않는 공고",
           label: `${record.question.text} → 예`,
           attr: "incomePct",
           answer: record,
+          removedCount: 2,
           aloneRemoved: 2,
           removedIds: [],
+          examples: [],
           passedWithout: 5,
           hard: false,
         },
