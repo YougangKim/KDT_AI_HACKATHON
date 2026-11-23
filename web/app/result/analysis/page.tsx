@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { analyzeFunnel } from "@/lib/insight/funnel";
 import { AnalysisView } from "@/components/result/AnalysisView";
-import { readLastResult, relaxAnswer, type LastResult } from "@/components/result/lastResult";
+import { readLastResult, relaxAnswer, saveLastResult, type LastResult } from "@/components/result/lastResult";
 import { Icon } from "@/components/brand/Icons";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { setAnswers } from "@/components/result/lastResult";
@@ -52,7 +52,7 @@ export default function AnalysisPage() {
   function undo() {
     const last = previous.at(-1);
     if (!last) return;
-    sessionStorage.setItem("lastResult", JSON.stringify(last));
+    saveLastResult(last);
     setResult(last);
     setPrevious((history) => history.slice(0, -1));
     setToast("이전 조건으로 복구했습니다.");

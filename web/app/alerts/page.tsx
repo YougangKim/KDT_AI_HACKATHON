@@ -18,10 +18,14 @@ import {
 } from "@/lib/alerts/client";
 import { DOMAIN_META } from "@/components/result/domain";
 import { WeeklyReport } from "@/components/result/WeeklyReport";
+import { PaginatedList } from "@/components/PaginatedList";
 
 const ANSWER_LABEL = { yes: "예", no: "아니오", unknown: "모름" } as const;
+const TABS = ["받은 알림", "리서치 현황", "저장 조건", "설정"] as const;
 
 export default function AlertsPage() {
+  const [tab, setTab] = useState<(typeof TABS)[number]>("받은 알림");
+  const [alertId, setAlertId] = useState<string | null>(null);
   const [watch, setWatch] = useState<Watch | null>(null);
   const [log, setLog] = useState<AlertItem[]>([]);
   const [perm, setPerm] = useState<string>("");
@@ -31,6 +35,7 @@ export default function AlertsPage() {
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
+    setAlertId(new URLSearchParams(window.location.search).get("alert"));
     const refresh = () => {
       setWatch(loadWatch());
       setLog(loadAlertLog());
@@ -89,12 +94,32 @@ export default function AlertsPage() {
           ← 처음으로
         </Link>
         <h1 className="text-lg font-bold">내 알림</h1>
-        <Link href="/settings" className="text-sm text-indigo-700">
+        <button onClick={() => setTab("설정")} className="text-sm text-indigo-700">
           설정
-        </Link>
+        </button>
       </header>
 
-      {watch && (
+      <div role="tablist" aria-label="알림함 메뉴" className="grid grid-cols-4 border-b border-slate-200">
+        {TABS.map((name, index) => (
+          <button key={name} role="tab" id={`alert-tab-${index}`} aria-selected={tab === name}
+            aria-controls="alert-panel" tabIndex={tab === name ? 0 : -1}
+            onClick={() => setTab(name)}
+            onKeyDown={(event) => {
+              const offset = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+              if (!offset && event.key !== "Home" && event.key !== "End") return;
+              event.preventDefault();
+              const next = event.key === "Home" ? 0 : event.key === "End" ? TABS.length - 1 : (index + offset + TABS.length) % TABS.length;
+              setTab(TABS[next]);
+              document.getElementById(`alert-tab-${next}`)?.focus();
+            }}
+            className={`min-h-11 border-b-2 px-1 py-3 text-sm ${tab === name ? "border-indigo-600 font-semibold text-indigo-700" : "border-transparent text-slate-600 hover:bg-indigo-50"}`}>
+            {name}
+          </button>
+        ))}
+      </div>
+      <div id="alert-panel" role="tabpanel" aria-labelledby={`alert-tab-${TABS.indexOf(tab)}`} className="space-y-4">
+      {tab === "리서치 현황" && !watch && <p className="text-sm text-slate-500">저장한 알림 조건이 없습니다. 저장 조건 탭에서 안내를 확인할 수 있습니다.</p>}
+      {tab === "리서치 현황" && watch && (
         <section className="app-card space-y-2 border-indigo-100 bg-indigo-50 p-4 text-sm text-slate-900">
           <h2 className="font-semibold">반복 리서치 현황</h2>
           <dl className="grid grid-cols-[6.5rem_1fr] gap-y-1">
@@ -124,11 +149,11 @@ export default function AlertsPage() {
             <dd>{rs?.pushEnabled ? "켜짐(앱을 닫아도 도착)" : "꺼짐(앱을 열 때 종 아이콘에 표시)"}</dd>
           </dl>
           {rs?.lastNewTitles && rs.lastNewTitles.length > 0 && (
-            <ul className="list-disc pl-5 text-xs text-slate-700">
+            <PaginatedList label="최근 조사 공고" className="list-disc pl-5 text-xs text-slate-700">
               {rs.lastNewTitles.map((t) => (
                 <li key={t}>{t}</li>
               ))}
-            </ul>
+            </PaginatedList>
           )}
           <div className="border-t border-indigo-100 pt-2">
             <h3 className="mb-1 font-semibold">이번 주 리서치 리포트</h3>
@@ -144,7 +169,7 @@ export default function AlertsPage() {
         </section>
       )}
 
-      <section className="app-card space-y-2 p-4 text-slate-900">
+      {tab === "저장 조건" && <section className="app-card space-y-2 p-4 text-slate-900">
         <h2 className="font-semibold">저장한 조건</h2>
         {!watch ? (
           <p className="text-sm text-slate-500">
@@ -163,13 +188,13 @@ export default function AlertsPage() {
                 </span>
               ))}
             </div>
-            <ul className="space-y-0.5 text-sm text-slate-700">
+            <PaginatedList label="저장 답변" className="space-y-2 text-sm text-slate-700">
               {watch.answers.map((a) => (
                 <li key={a.question.id}>
                   {a.question.text} <b className="text-slate-900">{ANSWER_LABEL[a.answer]}</b>
                 </li>
               ))}
-            </ul>
+            </PaginatedList>
             <p className="text-xs text-slate-400">
               {new Date(watch.createdAt).toLocaleString("ko-KR")} 저장 · 이미 본 공고 {watch.seenIds.length}개
             </p>
@@ -178,9 +203,13 @@ export default function AlertsPage() {
             </button>
           </>
         )}
-      </section>
+      </section>}
 
-      <section className="space-y-2">
+      {tab === "설정" && <section className="space-y-2">
+        <h2 className="font-semibold">알림 설정</h2>
+        <Link href="/settings" className="inline-block text-sm text-indigo-700 underline">전체 설정 열기</Link>
+        {perm === "granted" && <p className="text-sm text-slate-600">브라우저 알림이 켜져 있습니다.</p>}
+        {perm === "unsupported" && <p className="text-sm text-slate-600">이 브라우저는 시스템 알림을 지원하지 않습니다.</p>}
         {perm === "default" && (
           <button onClick={onPermission} className="w-full rounded-2xl bg-indigo-600 py-3 font-semibold text-white">
             브라우저 알림 켜기
@@ -201,16 +230,19 @@ export default function AlertsPage() {
             서버 푸시 테스트 (Web Push)
           </button>
         )}
-        {note && <p className="text-center text-xs text-slate-600">{note}</p>}
-      </section>
+      </section>}
 
-      <section className="space-y-2">
+      {tab === "받은 알림" && <section className="space-y-2">
         <h2 className="font-semibold">받은 알림 {log.length > 0 && <span className="text-slate-400">{log.length}</span>}</h2>
+        {alertId && <div className="text-sm text-slate-600">
+          <p>{log.some((a) => a.id === alertId) ? "선택한 알림의 공고입니다." : "선택한 알림의 보관 기간이 지나 목록에서 찾을 수 없습니다."}</p>
+          <button onClick={() => { setAlertId(null); window.history.replaceState(null, "", "/alerts"); }} className="text-indigo-700 underline">전체 알림 보기</button>
+        </div>}
         {log.length === 0 ? (
           <p className="text-sm text-slate-500">아직 받은 알림이 없습니다.</p>
         ) : (
-          <ul className="space-y-2">
-            {log.map((a) => (
+          <PaginatedList key={alertId ?? "all"} label="받은 공고">
+            {log.filter((a) => !alertId || a.id === alertId).map((a) => (
               <li key={a.id + a.createdAt} className="rounded-xl bg-white p-3 text-slate-900 shadow-sm">
                 <div className="flex items-center gap-2 text-xs">
                   <span
@@ -230,9 +262,11 @@ export default function AlertsPage() {
                 )}
               </li>
             ))}
-          </ul>
+          </PaginatedList>
         )}
-      </section>
+      </section>}
+      {note && <p role="status" className="text-center text-xs text-slate-600">{note}</p>}
+      </div>
     </main>
   );
 }

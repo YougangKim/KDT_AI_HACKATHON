@@ -51,3 +51,22 @@ describe("결과 화면이 빈 채로 끝나지 않음", () => {
     expect(nonEmptyResultState([s0])).toEqual({ state: s0 });
   });
 });
+
+describe("후보가 많아 저장 한도를 넘어도 결과가 남음", () => {
+  it("한도를 넘으면 결과 공고만 후보로 줄여 저장하고 다시 읽으면 결과가 보입니다", async () => {
+    const { saveLastResult, readLastResult } = await import("./lastResult");
+    const store: Record<string, string> = {};
+    const LIMIT = 20_000; // 저장 한도 흉내(문자 수)
+    vi.stubGlobal("sessionStorage", {
+      getItem: (k: string) => store[k] ?? null,
+      setItem: (k: string, v: string) => { if (v.length > LIMIT) throw new Error("QuotaExceededError"); store[k] = v; },
+    });
+    const mk = (id: string, region: string) => ({ id, title: id, domain: "benefit", region: [region], isSample: false, origin: "api", apply: {}, summary: "x".repeat(200), conditions: [{ attr: "region", op: "in", value: [region], rawText: `${region} 거주`, confidence: "high" }] });
+    const pool = [...Array(300)].map((_, i) => mk(`b${i}`, "부산")).concat([mk("s1", "서울"), mk("s2", "서울")]);
+    const answers = [{ question: { id: "region:eq:서울", attr: "region", op: "eq", value: "서울", text: "서울에 거주합니까?" }, answer: "yes" }];
+    const matches = pool.filter((o) => o.region[0] === "서울").map((opportunity) => ({ opportunity, status: "eligible", reasons: [] }));
+    expect(saveLastResult({ answers, matches, pool } as never)).toBe(true);
+    const r = readLastResult();
+    expect(r?.matches.map((m) => m.opportunity.id).sort()).toEqual(["s1", "s2"]);
+  });
+});

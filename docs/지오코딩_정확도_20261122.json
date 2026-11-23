@@ -1,0 +1,272 @@
+[
+ {
+  "source": "lh-notice",
+  "precision": "exact",
+  "title": "'26년 11월 인천시(남동구) 행복주택 입주자격완화 예비입주자 모집",
+  "place": "인천광역시 남동구",
+  "pin": "인천광역시 남동구 만수6동",
+  "expected": "인천",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 소사 휴먼빌",
+  "place": "경기도 부천시 소사구 소사본동 277-30번지 일원",
+  "pin": "경기도 부천시 소사구 소사본1동",
+  "expected": "경기",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "경인권역재활병원 정규직 간호사 채용 공고(2027.1.1.)",
+  "place": "대한적십자사 인천",
+  "pin": "인천광역시 연수구 연수3동",
+  "expected": "인천",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "청년 행정체험단 운영",
+  "place": "서울특별시 성동구",
+  "pin": "서울특별시 성동구 행당1동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "exact",
+  "title": "[정정공고]대전광역시 유성구(유성타워)·대덕구(주은반석) 국민임대(매입형",
+  "place": "대전광역시 유성구",
+  "pin": "대전광역시 유성구 온천2동",
+  "expected": "대전",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 연산역 수자인 센트리오",
+  "place": "부산광역시 연제구 연산동 580-4번지 일원",
+  "pin": "부산광역시 연제구 연산1동",
+  "expected": "부산",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "[대전] 충남대학교병원 2026년 11월 공무직 장애인연주단 악기연주자(",
+  "place": "충남대학교병원 대전",
+  "pin": "대전광역시 중구 대사동",
+  "expected": "대전",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "청년 행정아르바이트",
+  "place": "서울특별시 광진구",
+  "pin": "서울특별시 광진구 자양2동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "approx",
+  "title": "전주시,완주군 국민임대주택 예비입주자 모집",
+  "place": "",
+  "pin": "전북특별자치도 완주군 삼례읍",
+  "expected": "전북",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 고양 한신더휴 퍼스트원",
+  "place": "경기도 고양시 덕양구 행신동 173-1번지 일원",
+  "pin": "경기도 고양시 덕양구 행신4동",
+  "expected": "경기",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "2026-46 의사직 수시 채용 공고",
+  "place": "강원대학교병원 강원",
+  "pin": "강원특별자치도 춘천시 효자3동",
+  "expected": "강원",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "동대문구 미취업청년 자격취득 활동비 지원",
+  "place": "서울특별시 동대문구",
+  "pin": "서울특별시 동대문구 용두동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "approx",
+  "title": "[정정공고]순천시 국민임대주택 예비입주자 모집",
+  "place": "",
+  "pin": "전남광주통합특별시 보성군 벌교읍",
+  "expected": "전남",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 더샵 천안라크원",
+  "place": "충청남도 천안시 서북구 부대동 354번지 일원",
+  "pin": "충청남도 천안시 서북구 부성1동",
+  "expected": "충남",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "2027년 세종학당재단 상반기 체험형 청년인턴 채용 공고",
+  "place": "세종학당재단 서울",
+  "pin": "서울특별시 서초구 서초3동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "동대문구 1인가구 청년 건강검진",
+  "place": "서울특별시 동대문구",
+  "pin": "서울특별시 동대문구 용두동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "exact",
+  "title": "대전광역시 유성구 국민임대 예비입주자모집공고(2026.11.16)",
+  "place": "대전광역시 유성구",
+  "pin": "대전광역시 유성구 온천2동",
+  "expected": "대전",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 두산위브 트레지움 익산",
+  "place": "전북특별자치도 익산시 동산동 1057번지 일원",
+  "pin": "전북특별자치도 익산시 동산동",
+  "expected": "전북",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "[대구병원] 2026년도 하반기 청년(체험형)인턴 장애전형 채용 공고",
+  "place": "근로복지공단 대구",
+  "pin": "대구광역시 중구 삼덕동",
+  "expected": "대구",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "중랑 미취업 청년 자격증 응시료 지원",
+  "place": "서울특별시 중랑구",
+  "pin": "서울특별시 중랑구 신내2동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "approx",
+  "title": "전남광주통합특별시(남구,광산구) 국민임대주택 예비입주자 모집(2026.1",
+  "place": "",
+  "pin": "전남광주통합특별시 곡성군 곡성읍",
+  "expected": "전남",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 구미 파크원 데시앙",
+  "place": "경상북도 구미시 도량동 산40-4번지 일원",
+  "pin": "경상북도 구미시 도량동",
+  "expected": "경북",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "대한법률구조공단 순천출장소 청년인턴 공개경쟁 채용시험 공고",
+  "place": "대한법률구조공단 전남",
+  "pin": "전남광주통합특별시 동구 지산2동",
+  "expected": "전남",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "중랑청년청 운영",
+  "place": "서울특별시 중랑구",
+  "pin": "서울특별시 중랑구 신내2동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "approx",
+  "title": "음성군 국민임대 예비입주자 모집",
+  "place": "",
+  "pin": "충청북도 음성군 맹동면",
+  "expected": "충북",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 호반써밋 초량",
+  "place": "부산광역시 동구 초량3동 659번지 일원",
+  "pin": "부산광역시 동구 초량3동",
+  "expected": "부산",
+  "ok": true
+ },
+ {
+  "source": "jobalio",
+  "precision": "approx",
+  "title": "공간정보산업진흥원 청년인턴 채용 공고",
+  "place": "공간정보산업진흥원 경기",
+  "pin": "경기도 안양시 동안구 인덕원동",
+  "expected": "경기",
+  "ok": true
+ },
+ {
+  "source": "gov24",
+  "precision": "exact",
+  "title": "청년 행정체험단",
+  "place": "서울특별시 성북구",
+  "pin": "서울특별시 성북구 삼선동",
+  "expected": "서울",
+  "ok": true
+ },
+ {
+  "source": "lh-notice",
+  "precision": "approx",
+  "title": "포항블루밸리 행복주택 입주자모집(3개월분 임대료 면제, 선착순 동호지정)",
+  "place": "",
+  "pin": "경상북도 포항시 남구 동해면",
+  "expected": "경북",
+  "ok": true
+ },
+ {
+  "source": "applyhome",
+  "precision": "exact",
+  "title": "[APT 분양] 더샵 트리센트(조합원 자격상실 세대분)",
+  "place": "부산광역시 남구 문현동 334번지 일원",
+  "pin": "부산광역시 남구 문현4동",
+  "expected": "부산",
+  "ok": true
+ }
+]

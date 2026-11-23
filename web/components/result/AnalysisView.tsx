@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { FunnelReport } from "@/lib/insight/types";
 import type { AnswerRecord, Domain } from "@/lib/types";
 import { DOMAIN_META } from "./domain";
+import { PaginatedList } from "@/components/PaginatedList";
 
 const EMP: Record<string, string> = { student: "학생", jobseeker: "구직", employed: "재직", parttime: "알바" };
 const DOMAIN_SHORT: Record<string, string> = { housing: "주택", benefit: "지원금", job: "채용", parttime: "알바", training: "국비", exam: "자격증" };
@@ -96,7 +97,7 @@ export function AnalysisView({
 
       <section aria-labelledby="funnel-title">
         <h2 id="funnel-title" className="mb-2 text-sm font-bold">질문별로 걸러진 공고</h2>
-        <ol className="space-y-2">
+        <PaginatedList label="질문별 분석" ordered>
           {report.steps.map((step, index) => {
             const open = expanded === step.questionId;
             const gain = Math.max(0, step.passedWithout - report.passed);
@@ -155,7 +156,7 @@ export function AnalysisView({
               </li>
             );
           })}
-        </ol>
+        </PaginatedList>
       </section>
 
       {report.pendingQuestions.length > 0 && (
@@ -164,29 +165,12 @@ export function AnalysisView({
             확인이 더 필요한 공고 {report.pendingCount.toLocaleString()}건
           </h2>
           <p className="text-xs text-amber-900">잘 모르겠다고 답한 질문이 있어 원문 확인이 필요하다.</p>
-          <ul className="space-y-1 text-xs text-amber-950">
+          <PaginatedList label="확인 필요 질문" className="space-y-1 text-xs text-amber-950">
             {report.pendingQuestions.map((item) => <li key={item.attr}>• {item.question}</li>)}
-          </ul>
+          </PaginatedList>
           <Link href="#conditions" className="inline-block text-xs font-bold text-indigo-700 underline">
             다시 답하기
           </Link>
-        </section>
-      )}
-
-      {report.relaxOptions.length > 0 && (
-        <section className="app-card space-y-2 p-4">
-          <h2 className="text-sm font-bold">조건 수정 제안</h2>
-          {report.relaxOptions.map((option) => (
-            <button
-              key={option.step.questionId}
-              type="button"
-              onClick={() => onRelax(option.step.questionId)}
-              className="flex w-full justify-between rounded-xl bg-slate-50 px-3 py-2 text-left text-sm"
-            >
-              <span>{option.step.answerLabel} 답을 풀면</span>
-              <strong className="text-emerald-700">+{option.gain.toLocaleString()}건</strong>
-            </button>
-          ))}
         </section>
       )}
 

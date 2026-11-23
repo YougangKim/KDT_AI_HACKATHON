@@ -21,11 +21,11 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = (event.notification.data && event.notification.data.url) || "/alerts";
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (list) => {
       for (const c of list) {
         if ("focus" in c) {
-          c.navigate(url);
-          return c.focus();
+          const navigated = await c.navigate(url);
+          return (navigated || c).focus();
         }
       }
       return self.clients.openWindow(url);

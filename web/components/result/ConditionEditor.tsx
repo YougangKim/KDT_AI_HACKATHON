@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { AnswerRecord } from "@/lib/types";
 import { answerGroups, numericChanges, numericRange, type AnswerChange } from "@/lib/engine/answer-groups";
 import { DOMAIN_META } from "./domain";
+import { PaginatedList } from "@/components/PaginatedList";
 
 type Props = { answers: AnswerRecord[]; onChange: (changes: AnswerChange[]) => void };
 const LABELS: Record<string, string> = { age: "만 나이", incomePct: "기준중위소득 비율", region: "거주 지역", employment: "취업 상태", education: "최종 학력", interest: "관심 분야", field: "직무 분야", need: "필요한 지원", housingKind: "주거 형태" };
@@ -31,7 +32,7 @@ function NumericControl({ group, onChange }: { group: AnswerRecord[]; onChange: 
 }
 
 export function ConditionEditor({ answers, onChange }: Props) {
-  return <ul className="space-y-3" aria-label="내 조건">
+  return <PaginatedList label="내 조건" className="space-y-3">
     {answerGroups(answers).map((group) => {
       const attr = group[0].question.attr;
       if (attr === "topic") return <li key={group[0].question.id} className="rounded-xl bg-white p-4" role="group" aria-label={group[0].question.text.split(" — ")[0]}>
@@ -52,5 +53,5 @@ export function ConditionEditor({ answers, onChange }: Props) {
       const r = group[0];
       return <li key={r.question.id} className="rounded-xl bg-white p-4" role="group" aria-label={r.question.text}><p className="mb-2 text-sm">{r.question.text}</p><div className="flex gap-2">{(["yes", "no", "unknown"] as const).map((answer, i) => <button key={answer} type="button" aria-pressed={r.answer === answer} onClick={() => onChange([{ id: r.question.id, answer }])} className={`min-h-11 flex-1 rounded-lg border ${r.answer === answer ? "bg-indigo-600 text-white" : "bg-white"}`}>{["예", "아니오", "모름"][i]}</button>)}</div></li>;
     })}
-  </ul>;
+  </PaginatedList>;
 }

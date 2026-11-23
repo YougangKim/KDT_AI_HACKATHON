@@ -30,6 +30,7 @@ export function readLastResult(): LastResult | null {
       location: r.location,
       radiusExcluded: 0,
       narrowedFrom: r.narrowedFrom,
+      fallbackNote: r.fallbackNote,
     } : null;
   } catch {
     return null;
@@ -53,10 +54,30 @@ export function setAnswers(r: LastResult, changes: AnswerChange[]): LastResult {
   const answers = updateAnswers(r.answers, changes);
   const filtered = filterMatchesByRadius(getMatches({ pool: r.pool ?? [], answers }), r.location);
   const next = { ...r, answers, matches: filtered.matches, radiusExcluded: filtered.excluded };
-  try {
-    sessionStorage.setItem("lastResult", JSON.stringify(next));
-  } catch {}
+  saveLastResult(next);
   return next;
+}
+
+/** 결과 저장. 후보 공고가 수천 건이면 브라우저 저장 한도(약 5MB)를 넘으므로
+ *  결과는 후보(pool)+답으로 다시 계산하게 하고 matches는 저장하지 않는다.
+ *  그래도 넘치면 결과에 남은 공고만 후보로 줄여 저장한다(결과 화면이 비지 않게). */
+export function saveLastResult(r: LastResult): boolean {
+  const slim = (pool: Opportunity[]) => pool.map((o) => ({ ...o, fetchedAt: undefined }));
+  const tries: Opportunity[][] = r.pool ? [r.pool, r.matches.map((m) => m.opportunity), r.matches.slice(0, 300).map((m) => m.opportunity)] : [];
+  for (const pool of tries) {
+    try {
+      sessionStorage.setItem("lastResult", JSON.stringify({ ...r, matches: [], pool: slim(pool) }));
+      return true;
+    } catch {
+      // 다음(더 작은) 후보로 재시도
+    }
+  }
+  try {
+    sessionStorage.setItem("lastResult", JSON.stringify({ ...r, pool: undefined, matches: r.matches.slice(0, 300) }));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** 결과가 0건으로 끝나지 않게: 마지막 답(들)로 전부 걸러졌다면 공고가 남아 있던 가장 최근 단계를 보여 준다 */

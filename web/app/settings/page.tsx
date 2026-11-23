@@ -126,7 +126,9 @@ export default function SettingsPage() {
       <section className="app-card space-y-3 border-indigo-100 bg-indigo-50 p-4">
         <h2 className="font-semibold">내 조건</h2>
         <p className="text-sm font-medium leading-relaxed">{summarizeConditions(watch.answers)}</p>
-        <ConditionEditor answers={watch.answers} onChange={updateAnswer} />
+        <details><summary className="min-h-11 cursor-pointer content-center font-semibold">상세 조건 수정</summary>
+          <ConditionEditor answers={watch.answers} onChange={updateAnswer} />
+        </details>
       </section>
 
       <section className="app-card space-y-2 p-4">

@@ -9,7 +9,7 @@ import styles from "@/components/game/game.module.css";
 import { Icon } from "@/components/brand/Icons";
 import { LocationStep } from "@/components/game/LocationStep";
 import { applyAnswer, defaultQuestionText, getMatches, questionId, rankQuestions, remaining, startGame, type GameState, type RankedQuestion } from "@/lib/engine";
-import { nonEmptyResultState, readLastResult } from "@/components/result/lastResult";
+import { nonEmptyResultState, readLastResult, saveLastResult } from "@/components/result/lastResult";
 import { INCOME_THRESHOLDS, NCS_FIELDS } from "@/lib/engine/choices";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { nearestRegion } from "@/lib/geo/regions";
@@ -393,11 +393,7 @@ export default function PlayPage() {
     const { state: shown, note: fallbackNote } = nonEmptyResultState(history ?? [state]);
     const filtered = filterMatchesByRadius(getMatches(shown), location);
     const result = { answers: shown.answers, matches: filtered.matches, pool: shown.pool, location, radiusExcluded: filtered.excluded, narrowedFrom, fallbackNote };
-    try {
-      sessionStorage.setItem("lastResult", JSON.stringify(result));
-    } catch {
-      // 저장 실패해도 결과 화면으로 이동
-    }
+    saveLastResult(result);
     const t = setTimeout(() => router.push("/result"), 900);
     return () => clearTimeout(t);
   }, [state, view?.done, router, location, narrowedFrom, history]);

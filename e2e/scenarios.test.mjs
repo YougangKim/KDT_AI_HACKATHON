@@ -275,7 +275,7 @@ for (const [name, pool] of DATASETS) {
       const relax = page.getByRole("button", { name: /답을 풀면 .*건 늘어납니다\. 적용/ }).first();
       if (await relax.isVisible().catch(() => false)) {
         await relax.click();
-        await page.getByRole("status").waitFor();
+        await page.getByRole("status").filter({ hasText: /늘었습니다/ }).waitFor();
       }
       await page.context().close();
     });
@@ -324,23 +324,35 @@ for (const [name, pool] of DATASETS) {
       await page.getByText(/저장했습니다/).waitFor({ timeout: 15000 });
 
       await page.goto(`${BASE}/alerts`);
+      await page.getByRole("tab", { name: "저장 조건", exact: true }).click();
       await page.getByText("저장한 조건", { exact: true }).waitFor({ timeout: 10000 });
-      assert.match(await page.locator("body").textContent(), /지금 서울에 살고 있습니까\? ?예/, "저장한 조건에 고친 답이 남아야 합니다");
+      let savedAnswers = await page.getByRole("list", { name: "저장 답변", exact: true }).textContent();
+      const nextAnswers = page.getByRole("navigation", { name: "저장 답변 페이지" }).getByRole("button", { name: "다음", exact: true });
+      while (await nextAnswers.isVisible() && await nextAnswers.isEnabled()) {
+        await nextAnswers.click();
+        savedAnswers += await page.getByRole("list", { name: "저장 답변", exact: true }).textContent();
+      }
+      assert.match(savedAnswers, /지금 서울에 살고 있습니까\? ?예/, "저장한 조건에 고친 답이 남아야 합니다");
 
       if (pool) {
         // 새 공고가 올라온 뒤 다시 조사: 내 조건에 맞는 것만, 한 번씩만 알립니다
         usePool([...pool, NEW_MATCHING, NEW_OTHER_REGION]);
+        await page.getByRole("tab", { name: "리서치 현황", exact: true }).click();
         await page.getByRole("button", { name: /지금 다시 조사하기/ }).click();
         await page.getByText(/다시 조사했습니다\. 새 공고 \d+건/).waitFor({ timeout: 20000 });
         const body = await page.locator("body").textContent();
         // 앱이 열려 있으면 화면 쪽 확인(AlertPolling)이 서버 재조사보다 먼저 새 공고를 받을 수 있습니다 → 둘 중 한 곳에서 정확히 1건
         assert.match(body, /다시 조사했습니다\. 새 공고 [01]건/, `새 공고 2건 중 조건에 맞는 것만: ${(body.match(/다시 조사했습니다[^.]*\.[^.]*\./) ?? [""])[0]}`);
-        assert.ok(body.includes(NEW_MATCHING.title), "조건에 맞는 새 공고 제목이 보여야 합니다");
-        assert.ok(!body.includes(NEW_OTHER_REGION.title), "다른 지역 새 공고는 알리면 안 됩니다");
+        await page.getByRole("tab", { name: "받은 알림", exact: true }).click();
+        const inbox = await page.getByRole("list", { name: "받은 공고", exact: true }).textContent();
+        assert.ok(inbox.includes(NEW_MATCHING.title), "조건에 맞는 새 공고 제목이 보여야 합니다");
+        assert.ok(!inbox.includes(NEW_OTHER_REGION.title), "다른 지역 새 공고는 알리면 안 됩니다");
 
         await page.waitForTimeout(31_000); // 재조사는 30초에 한 번(남용 방지)
+        await page.getByRole("tab", { name: "리서치 현황", exact: true }).click();
         await page.getByRole("button", { name: /지금 다시 조사하기/ }).click();
         await page.getByText(/다시 조사했습니다\. 새 공고 0건/).waitFor({ timeout: 20000 });
+        await page.getByRole("tab", { name: "받은 알림", exact: true }).click();
         const log = await page.getByRole("heading", { name: /받은 알림/ }).locator("..").textContent();
         assert.ok(log.includes(NEW_MATCHING.title), "찾은 새 공고는 다음 조사 뒤에도 받은 알림에 남아야 합니다");
         assert.ok(!log.includes(NEW_OTHER_REGION.title), "다른 지역 공고는 받은 알림에 없어야 합니다");
@@ -450,6 +462,7 @@ for (const [name, pool] of DATASETS) {
       assert.match(body0, /청년/, "내 조건이 문장으로 보여야 합니다");
 
       // 조건 하나 바꾸기(첫 조건을 모름으로)
+      await page.getByText("상세 조건 수정", { exact: true }).click();
       const groups = page.getByRole("list", { name: "내 조건" }).getByRole("group").filter({ has: page.getByRole("button", { name: "아니오", exact: true }) });
       await groups.first().getByRole("button", { name: "모름", exact: true }).click();
       // 일정: 간격 30분, 모드: 정해진 시간마다
@@ -461,6 +474,7 @@ for (const [name, pool] of DATASETS) {
 
       await page.reload();
       await page.getByRole("heading", { name: /알림 설정/ }).waitFor();
+      await page.getByText("상세 조건 수정", { exact: true }).click();
       assert.equal(await page.getByRole("button", { name: "정해진 시간마다 요약 받기" }).getAttribute("aria-pressed"), "true", "모드가 유지돼야 합니다");
       assert.equal(await page.getByRole("group", { name: "알림 간격" }).getByRole("button", { name: "30분", exact: true }).getAttribute("aria-pressed"), "true", "간격이 유지돼야 합니다");
       assert.equal(await page.getByRole("list", { name: "내 조건" }).getByRole("group").filter({ has: page.getByRole("button", { name: "아니오", exact: true }) }).first().locator('[aria-pressed="true"]').textContent(), "모름", "바꾼 조건이 유지돼야 합니다");

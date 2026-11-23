@@ -4,8 +4,7 @@ import { useState } from "react";
 import type { FilterStep } from "@/lib/insight/types";
 import type { Opportunity } from "@/lib/types";
 import { chipOf } from "./AnalysisView";
-
-const SHOW = 15;
+import { PaginatedList } from "@/components/PaginatedList";
 
 /** 질문(답)마다 탭: 그 답 때문에 빠진 공고와 걸린 조건 원문 */
 export function RemovedByQuestion({ steps, pool, active: controlled, onSelect }: { steps: FilterStep[]; pool: Opportunity[]; active?: string; onSelect?: (id: string) => void }) {
@@ -13,7 +12,6 @@ export function RemovedByQuestion({ steps, pool, active: controlled, onSelect }:
   const [own, setOwn] = useState(""); // 처음엔 닫아 두고, 탭이나 위 막대를 누르면 펼친다
   const active = controlled || own;
   const setActive = (id: string) => (onSelect ? onSelect(id) : setOwn(id));
-  const [more, setMore] = useState(false);
   if (tabs.length === 0) return null;
   const step = tabs.find((t) => t.questionId === active);
   const byId = new Map(pool.map((o) => [o.id, o]));
@@ -32,7 +30,6 @@ export function RemovedByQuestion({ steps, pool, active: controlled, onSelect }:
             aria-selected={t.questionId === step?.questionId}
             onClick={() => {
               setActive(t.questionId);
-              setMore(false);
             }}
             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${t.questionId === step?.questionId ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-700"}`}
           >
@@ -47,8 +44,8 @@ export function RemovedByQuestion({ steps, pool, active: controlled, onSelect }:
       <p className="text-xs text-slate-500 break-keep" role="tabpanel">
         &ldquo;{step.answer.question.text}&rdquo; → {step.answer.answer === "yes" ? "예" : "아니오"} 때문에 {removed.length}개가 제외됐습니다.
       </p>
-      <ul className="space-y-2">
-        {(more ? removed : removed.slice(0, SHOW)).map((o) => (
+      <PaginatedList key={active} label="제외 공고">
+        {removed.map((o) => (
           <li key={o.id} className="rounded-xl bg-slate-50 px-3 py-2">
             <a href={o.url} target="_blank" rel="noreferrer" className="block text-sm font-medium text-slate-800 break-keep">
               {o.title}
@@ -56,12 +53,7 @@ export function RemovedByQuestion({ steps, pool, active: controlled, onSelect }:
             <p className="text-[11px] text-rose-600">{reason(o)}</p>
           </li>
         ))}
-      </ul>
-      {!more && removed.length > SHOW && (
-        <button onClick={() => setMore(true)} className="w-full rounded-xl border border-slate-200 py-2 text-xs font-semibold text-slate-600">
-          {removed.length - SHOW}개 더 보기
-        </button>
-      )}
+      </PaginatedList>
         </>
       )}
     </section>

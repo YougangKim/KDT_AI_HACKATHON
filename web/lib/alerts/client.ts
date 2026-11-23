@@ -26,12 +26,18 @@ export async function requestPermission(): Promise<NotificationPermission | "uns
 
 async function showNotification(a: AlertItem): Promise<void> {
   if (!notificationsSupported() || Notification.permission !== "granted") return;
-  const options: NotificationOptions = { body: a.body, tag: a.id, data: { url: "/alerts" } };
+  const url = `/alerts?alert=${encodeURIComponent(a.id)}`;
+  const options: NotificationOptions = { body: a.body, tag: a.id, data: { url } };
   const reg = await registerSW();
   if (reg) {
     await reg.showNotification(a.title, options);
   } else {
-    new Notification(a.title, options);
+    const notification = new Notification(a.title, options);
+    notification.onclick = () => {
+      notification.close();
+      window.focus();
+      window.location.assign(url);
+    };
   }
 }
 

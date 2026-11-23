@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1280, initial-scale=1">
+<title>My News | 나만의 소식통 - 프로젝트 소개서</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+@page{size:1280px 720px;margin:0}
+*{box-sizing:border-box}
+:root{
+  --navy:#10243e;
+  --navy2:#193654;
+  --mint:#19b7a5;
+  --mint2:#dff7f3;
+  --ink:#182535;
+  --muted:#637184;
+  --line:#d9e2ea;
+  --paper:#f7f9fb;
+  --white:#fff;
+}
+html,body{
+  margin:0;padding:0;background:#dce2e8;color:var(--ink);
+  font-family:"Noto Sans KR",sans-serif
+}
+.slide{
+  position:relative;width:1280px;height:720px;overflow:hidden;
+  page-break-after:always;background:var(--white);
+  padding:45px 70px 66px
+}
+.slide:last-child{page-break-after:auto}
+.slide::before{
+  content:"";position:absolute;left:0;top:0;width:9px;height:100%;
+  background:var(--mint)
+}
+h1,h2,h3,p{margin:0}
+h1{font-size:64px;line-height:1.12;letter-spacing:-2px;font-weight:900}
+h2{font-size:32px;line-height:1.2;letter-spacing:-1px;font-weight:900;color:var(--navy)}
+h3{font-size:18px;line-height:1.35;letter-spacing:-.3px;font-weight:800;color:var(--navy)}
+p,li,td,th{font-size:15px;line-height:1.48;letter-spacing:-.15px}
+.small{font-size:13px;line-height:1.4}
+.muted{color:var(--muted)}
+.eyebrow{
+  font-size:13px;font-weight:800;letter-spacing:1.7px;
+  color:var(--mint);margin-bottom:7px
+}
+.header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:20px
+}
+.header .num{font-size:15px;font-weight:900;color:var(--mint)}
+.footer{
+  position:absolute;left:70px;right:70px;bottom:17px;height:32px;
+  padding-top:9px;border-top:1px solid var(--line);
+  display:flex;justify-content:space-between;
+  color:#7a8795;font-size:11px;font-weight:600
+}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
+.card{
+  border:1px solid var(--line);border-radius:15px;background:#fff;
+  padding:16px
+}
+.card.tint{background:var(--paper)}
+.card.mint{background:var(--mint2);border-color:#a9e4dc}
+.tag{
+  display:inline-flex;padding:5px 9px;border-radius:999px;
+  background:var(--mint2);color:#087e72;font-size:12px;font-weight:800
+}
+.metric{
+  font-size:32px;font-weight:900;line-height:1;color:var(--navy);
+  letter-spacing:-1px
+}
+.metric span{color:var(--mint)}
+.kicker{font-size:18px;font-weight:800;color:var(--navy);line-height:1.45}
+.clean{margin:7px 0 0;padding-left:18px}
+.clean li{margin:3px 0}
+.table{width:100%;border-collapse:collapse}
+.table th{
+  background:var(--navy);color:#fff;font-weight:700;text-align:left;
+  padding:7px 9px
+}
+.table td{
+  border-bottom:1px solid var(--line);padding:7px 9px;vertical-align:top
+}
+.table tr:nth-child(even) td{background:#f8fafb}
+.tight td,.tight th{font-size:15px;line-height:1.34;padding:6px 8px}
+.note{
+  border-left:4px solid var(--mint);padding:9px 13px;
+  background:var(--paper);font-size:14px;line-height:1.48
+}
+.source{
+  font-size:10.5px;line-height:1.35;color:#708092;
+  margin-top:6px;word-break:keep-all
+}
+.phone{
+  border:6px solid var(--navy);border-radius:23px;background:var(--navy);
+  overflow:hidden;box-shadow:0 7px 17px rgba(16,36,62,.14)
+}
+.phone img{
+  display:block;width:100%;height:100%;object-fit:contain;background:#fff
+}
+.phone-label{
+  text-align:center;font-size:12px;font-weight:800;color:var(--navy);
+  margin-top:5px
+}
+.cover{
+  background:var(--navy);color:#fff;padding:58px 72px 66px
+}
+.cover::before{width:12px}
+.cover h1{color:#fff}
+.cover .sub{
+  font-size:28px;font-weight:700;color:#b7fff5;margin-top:7px
+}
+.cover .line{width:72px;height:5px;background:var(--mint);margin:22px 0}
+.cover .slogan{
+  font-size:23px;line-height:1.55;font-weight:600;max-width:720px
+}
+.cover .meta{
+  position:absolute;left:72px;bottom:76px;
+  display:grid;grid-template-columns:repeat(4,auto);gap:32px
+}
+.cover .meta b{
+  display:block;font-size:11px;color:#8fb0c7;
+  letter-spacing:1px;margin-bottom:4px
+}
+.cover .meta span{font-size:15px;font-weight:700}
+.cover .footer{color:#9ab0c2;border-color:#38516b}
+.cover-shot{
+  position:absolute;right:92px;top:55px;width:250px;height:540px;
+  border:8px solid #fff;border-radius:32px;background:#fff;
+  overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.28)
+}
+.cover-shot img{width:100%;height:100%;object-fit:contain;background:#fff}
+.svgtext{font-family:"Noto Sans KR",sans-serif}
+</style>
+</head>
+<body>
+
+<section class="slide cover">
+  <div class="eyebrow">2026 대한민국 청년 CAREER FAIR AI 해커톤</div>
+  <h1>My News</h1>
+  <div class="sub">나만의 소식통</div>
+  <div class="line"></div>
+  <p class="slogan">개인 조건과 위치를 짧게 설정하면<br>맞는 청년 공고를 찾고,<br>처음 보는 소식만 다시 알려주는 AI 에이전트</p>
+
+  <div class="cover-shot">
+    <img src="assets/s_home.png" alt="My News 실제 홈 화면">
+  </div>
+
+  <div class="meta">
+    <div><b>팀명</b><span>[입력 필요]</span></div>
+    <div><b>대표자</b><span>[입력 필요]</span></div>
+    <div><b>팀원</b><span>[입력 필요]</span></div>
+    <div><b>제출일</b><span>2026. 11. 23.</span></div>
+  </div>
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 1</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">PROJECT SUMMARY</div><h2>프로젝트 요약</h2></div>
+    <div class="num">SUMMARY</div>
+  </div>
+
+  <div class="card mint" style="padding:15px 20px;margin-bottom:14px">
+    <h3>한 줄 요약</h3>
+    <p class="kicker" style="margin-top:4px">
+      조건·위치 1회 설정, 여러 분야 반복 탐색, 처음 보는 공고 알림
+    </p>
+  </div>
+
+  <div class="grid3">
+    <div class="card">
+      <span class="tag">01 문제</span>
+      <h3 style="margin-top:8px">분산된 청년 공고</h3>
+      <p style="margin-top:5px">분야별 사이트의 반복 탐색<br>복잡한 자격요건과 짧은 신청 기간</p>
+    </div>
+    <div class="card">
+      <span class="tag">02 해결</span>
+      <h3 style="margin-top:8px">조건 기반 반복 리서치</h3>
+      <p style="margin-top:5px">선택형 질문과 위치 설정<br>규칙 판정·AI 구조화·변화 알림</p>
+    </div>
+    <div class="card">
+      <span class="tag">03 구현</span>
+      <h3 style="margin-top:8px">앱처럼 설치되는 웹(PWA)</h3>
+      <p style="margin-top:5px">새 공고 푸시 알림 구현<br>공공 API 11종 · 실데이터 공고 약 5,700건</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.05fr .95fr;gap:16px;margin-top:14px">
+    <div class="card tint">
+      <h3>Before → After</h3>
+      <div class="grid2" style="margin-top:9px;gap:10px">
+        <div style="padding:11px;border-radius:12px;background:#fff">
+          <b style="color:var(--navy)">Before</b>
+          <p style="margin-top:5px">분야별 사이트 방문<br>조건 재입력·수동 재검색</p>
+        </div>
+        <div style="padding:11px;border-radius:12px;background:var(--mint2)">
+          <b style="color:#087e72">After</b>
+          <p style="margin-top:5px">조건 1회 저장<br>통합 결과·신규 공고 알림</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="display:grid;grid-template-columns:1fr 150px;gap:12px;align-items:center">
+      <div>
+        <h3>결과 중심 흐름</h3>
+        <p style="margin-top:7px">분야 선택 → 조건·위치<br>→ 지도·카드 → 알림 저장</p>
+      </div>
+      <div class="phone" style="width:120px;height:255px;margin:auto">
+        <img src="assets/s_result2.png" alt="카드 요약과 신청 안내 화면">
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 2</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">01 PROBLEM</div><h2>01 문제 정의</h2></div>
+    <div class="num">01</div>
+  </div>
+
+  <div class="card tint" style="padding:14px 18px;margin-bottom:13px">
+    <h3>청년 기회의 분산</h3>
+    <p style="margin-top:5px">주거·채용·지원금 공고의 출처별 분산<br>같은 조건의 반복 입력과 수동 재검색 부담</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h3>① 청년이 필요로 한 정책 분야</h3>
+      <svg viewBox="0 0 500 235" style="width:100%;height:225px;margin-top:5px" aria-label="필요 정책 분야 응답 비율">
+        <g class="svgtext">
+          <g fill="#637184" font-size="12" font-weight="700">
+            <text x="8" y="43">주거</text>
+            <text x="8" y="91">일자리</text>
+            <text x="8" y="139">교육</text>
+            <text x="8" y="187">복지·문화</text>
+          </g>
+          <g fill="#e8eef2">
+            <rect x="95" y="22" width="355" height="27" rx="6"/>
+            <rect x="95" y="70" width="355" height="27" rx="6"/>
+            <rect x="95" y="118" width="355" height="27" rx="6"/>
+            <rect x="95" y="166" width="355" height="27" rx="6"/>
+          </g>
+          <rect x="95" y="22" width="324" height="27" rx="6" fill="#10243e"/>
+          <rect x="95" y="70" width="238" height="27" rx="6" fill="#193654"/>
+          <rect x="95" y="118" width="100" height="27" rx="6" fill="#19b7a5"/>
+          <rect x="95" y="166" width="39" height="27" rx="6" fill="#91dcd3"/>
+          <g font-size="13" font-weight="900">
+            <text x="427" y="41" fill="#10243e">45.7%</text>
+            <text x="341" y="89" fill="#10243e">33.5%</text>
+            <text x="203" y="137" fill="#087e72">14.1%</text>
+            <text x="142" y="185" fill="#087e72">5.5%</text>
+          </g>
+        </g>
+      </svg>
+      <p class="small muted">주거와 일자리 수요가 상위 응답</p>
+    </div>
+
+    <div class="card">
+      <h3>② 공공임대 거주 의향과 경험</h3>
+      <svg viewBox="0 0 500 235" style="width:100%;height:225px;margin-top:5px" aria-label="공공임대 거주 의향과 경험 비율">
+        <g class="svgtext">
+          <line x1="65" y1="184" x2="455" y2="184" stroke="#aebbc7"/>
+          <line x1="65" y1="20" x2="65" y2="184" stroke="#aebbc7"/>
+          <g stroke="#e1e7ec">
+            <line x1="65" y1="143" x2="455" y2="143"/>
+            <line x1="65" y1="102" x2="455" y2="102"/>
+            <line x1="65" y1="61" x2="455" y2="61"/>
+            <line x1="65" y1="20" x2="455" y2="20"/>
+          </g>
+          <g fill="#7b8895" font-size="10">
+            <text x="42" y="188">0</text>
+            <text x="35" y="147">20</text>
+            <text x="35" y="106">40</text>
+            <text x="35" y="65">60</text>
+            <text x="35" y="24">80%</text>
+          </g>
+          <rect x="128" y="37" width="90" height="147" rx="7" fill="#19b7a5"/>
+          <rect x="305" y="170" width="90" height="14" rx="7" fill="#91dcd3"/>
+          <g font-size="16" font-weight="900" text-anchor="middle">
+            <text x="173" y="28" fill="#087e72">71.7%</text>
+            <text x="350" y="160" fill="#087e72">7.0%</text>
+          </g>
+          <g font-size="12" font-weight="700" text-anchor="middle" fill="#45566a">
+            <text x="173" y="207">거주 의향</text>
+            <text x="350" y="207">거주 경험</text>
+          </g>
+        </g>
+      </svg>
+      <p class="small muted">서로 다른 문항의 수치이며 인과관계로 해석하지 않음</p>
+    </div>
+  </div>
+
+  <p class="source">
+    출처: 국무조정실, 「2024년 청년 삶 실태조사」, 만 19~34세 15,098명, 2025 공개.
+    필요 정책 분야와 공공임대 문항은 별도 문항임.
+  </p>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 3</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">02 USERS</div><h2>02 대상 사용자</h2></div>
+    <div class="num">02</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 300px;gap:17px">
+    <div class="card mint">
+      <span class="tag" style="background:#fff">PRIMARY</span>
+      <h3 style="margin-top:10px">독립·취업 준비 청년</h3>
+      <p style="margin-top:7px">주거와 일자리를 함께 탐색하는 만 19~34세<br>공고 사이트를 반복 확인하기 어려운 사용자</p>
+
+      <div style="margin-top:15px;padding:13px;border-radius:12px;background:#fff">
+        <h3>반복되는 질문</h3>
+        <p style="margin-top:7px">“새 공고가 있나?”<br>“내 조건에 맞나?”<br>“어떻게 신청하나?”</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="tag">SECONDARY</span>
+      <h3 style="margin-top:10px">상담·공고 제공 이해관계자</h3>
+      <p style="margin-top:7px">청년센터·대학 취업지원 상담사<br>청년 대상 모집·지원 사업 운영기관</p>
+
+      <div style="margin-top:15px;border-top:1px solid var(--line);padding-top:12px">
+        <h3>활용 가치</h3>
+        <ul class="clean">
+          <li>상담 전 사용자 조건 정리</li>
+          <li>공고 원문 도달 경로 제공</li>
+          <li>조건별 탈락 원인 설명</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card tint" style="padding:12px;text-align:center">
+      <div class="phone" style="width:180px;height:390px;margin:0 auto">
+        <img src="assets/s_result.png" alt="지도 기반 결과 화면">
+      </div>
+      <div class="phone-label">위치 기반 지도 결과</div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:15px">
+    <div class="card tint">
+      <h3>탐색 시간 절감</h3>
+      <p style="margin-top:5px">여러 사이트 반복 방문에서<br>저장 조건 기반 재조회로 전환</p>
+    </div>
+    <div class="card tint">
+      <h3>판단 근거 확보</h3>
+      <p style="margin-top:5px">일치·확인 필요·탈락 이유와<br>공고 원문의 동시 확인</p>
+    </div>
+    <div class="card tint">
+      <h3>신청 행동 연결</h3>
+      <p style="margin-top:5px">요약·신청 방법·접수 페이지의<br>결과 카드 내 통합</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 4</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">03 AI SOLUTION</div><h2>03 AI를 활용한 해결 방안</h2></div>
+    <div class="num">03</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.08fr .92fr;gap:20px">
+    <div>
+      <div class="card mint">
+        <h3>해결 방안 개요</h3>
+        <p style="margin-top:6px">
+          비정형 공고 조건 구조화 → 사용자 답변과 규칙 판정<br>
+          위치 기반 정렬 → 결과 요약·신청 안내 → 저장 조건 재조사
+        </p>
+      </div>
+
+      <div class="card" style="margin-top:13px">
+        <h3>AI 적용 지점</h3>
+        <table class="table" style="margin-top:8px">
+          <tr><th>지점</th><th>AI 역할</th><th>안전장치</th></tr>
+          <tr><td>자격요건</td><td>나이·지역·소득 조건 구조화</td><td>원문 근거 필수</td></tr>
+          <tr><td>다음 질문</td><td>정보성 높은 질문 선택</td><td>실패 시 규칙 1순위</td></tr>
+          <tr><td>카드 요약</td><td>핵심 내용·신청 방법 요약</td><td>캐시·원문 링크</td></tr>
+          <tr><td>주소 추출</td><td>규칙 미추출 주소 보완</td><td>규칙 우선 폴백</td></tr>
+        </table>
+      </div>
+
+      <div class="note" style="margin-top:13px">
+        <b>왜 AI인가</b><br>
+        “무주택 세대구성원”, “기준중위소득 100% 이하”처럼 기관마다 표현이 다른
+        원문 조건을 공통 항목으로 구조화하고 짧게 설명하기 위한 언어 이해
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>다중 AI 제공자 폴백</h3>
+      <svg viewBox="0 0 470 320" style="width:100%;height:315px;margin-top:5px">
+        <g class="svgtext">
+          <rect x="20" y="20" width="135" height="55" rx="13" fill="#10243e"/>
+          <text x="87" y="43" text-anchor="middle" fill="#fff" font-size="15" font-weight="800">AI 요청</text>
+          <text x="87" y="62" text-anchor="middle" fill="#c6d8e5" font-size="12">4초 타임아웃</text>
+
+          <path d="M155 48h43" stroke="#19b7a5" stroke-width="3"/>
+          <path d="M190 42l10 6-10 6" fill="#19b7a5"/>
+
+          <g font-size="14" font-weight="800" text-anchor="middle">
+            <rect x="204" y="14" width="230" height="42" rx="11" fill="#dff7f3"/>
+            <text x="319" y="41" fill="#10243e">1 Groq · Llama 3.1</text>
+
+            <rect x="204" y="66" width="230" height="42" rx="11" fill="#eef3f6"/>
+            <text x="319" y="93" fill="#10243e">2 OpenRouter · 무료 모델</text>
+
+            <rect x="204" y="118" width="230" height="42" rx="11" fill="#eef3f6"/>
+            <text x="319" y="145" fill="#10243e">3 Cloudflare Workers AI</text>
+
+            <rect x="204" y="170" width="230" height="42" rx="11" fill="#eef3f6"/>
+            <text x="319" y="197" fill="#10243e">4 Gemini Flash Lite</text>
+
+            <rect x="204" y="222" width="230" height="42" rx="11" fill="#eef3f6"/>
+            <text x="319" y="249" fill="#10243e">5 Anthropic Haiku</text>
+          </g>
+
+          <path d="M319 56v10M319 108v10M319 160v10M319 212v10"
+                stroke="#19b7a5" stroke-width="2" stroke-dasharray="4 4"/>
+
+          <rect x="20" y="205" width="135" height="73" rx="13" fill="#fff"
+                stroke="#10243e" stroke-width="2"/>
+          <text x="87" y="231" text-anchor="middle" fill="#10243e"
+                font-size="14" font-weight="800">규칙 기반 처리</text>
+          <text x="87" y="252" text-anchor="middle" fill="#637184" font-size="12">
+            실패·한도 초과
+          </text>
+          <text x="87" y="269" text-anchor="middle" fill="#637184" font-size="12">
+            쿨다운 후 재시도
+          </text>
+        </g>
+      </svg>
+      <p class="small muted">
+        최종 필터·거리·변화 감지는 결정적 규칙 코드 담당
+      </p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 5</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">04 ARCHITECTURE</div><h2>04 서비스 구조</h2></div>
+    <div class="num">04</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:470px 1fr;gap:20px">
+    <div>
+      <h3 style="margin-bottom:7px">기술 스택</h3>
+      <table class="table tight">
+        <tr><th style="width:138px">구분</th><th>내용</th></tr>
+        <tr><td>프론트</td><td>Next.js 15 · React 19 · Tailwind CSS 4 · PWA</td></tr>
+        <tr><td>백엔드</td><td>Next.js API Routes · Vercel Cron · web-push</td></tr>
+        <tr><td>AI 모델</td><td>Groq · OpenRouter · Cloudflare · Gemini · Anthropic</td></tr>
+        <tr><td>외부 API</td><td>LH · 마이홈 · 청약홈 · 잡알리오 · 정부24 · 온통청년 · 고용24(국비훈련·공채속보·채용행사) · 서울시 채용 · Q-Net (공공 API 11종) · 카카오 지도</td></tr>
+        <tr><td>데이터</td><td>공공데이터 API · 공식 RSS · 선택형 웹 검색</td></tr>
+        <tr><td>배포</td><td>Vercel · Upstash Redis · Web Push</td></tr>
+      </table>
+
+      <div class="note" style="margin-top:12px">
+        <b>데이터 원칙</b><br>
+        실제 조회 공고만 제공 · 출처와 원문 표시<br>
+        웹 검색 결과 별도 배지
+      </div>
+    </div>
+
+    <div class="card" style="padding:13px">
+      <h3>서비스 아키텍처</h3>
+      <svg viewBox="0 0 650 430" style="width:100%;height:405px;margin-top:2px">
+        <g class="svgtext">
+          <rect x="20" y="22" width="170" height="102" rx="15" fill="#10243e"/>
+          <text x="105" y="50" text-anchor="middle" fill="#fff" font-size="16" font-weight="900">브라우저 PWA</text>
+          <text x="105" y="76" text-anchor="middle" fill="#c6d8e5" font-size="15">선택형 질문 · 위치</text>
+          <text x="105" y="99" text-anchor="middle" fill="#c6d8e5" font-size="15">지도 · 결과 · 알림</text>
+
+          <rect x="240" y="22" width="180" height="102" rx="15" fill="#dff7f3"/>
+          <text x="330" y="50" text-anchor="middle" fill="#10243e" font-size="16" font-weight="900">Next.js 서버</text>
+          <text x="330" y="76" text-anchor="middle" fill="#41566a" font-size="15">질문·필터 엔진</text>
+          <text x="330" y="99" text-anchor="middle" fill="#41566a" font-size="15">AI 구조화·요약</text>
+
+          <rect x="470" y="22" width="160" height="102" rx="15" fill="#eef3f6"/>
+          <text x="550" y="50" text-anchor="middle" fill="#10243e" font-size="16" font-weight="900">AI 제공자</text>
+          <text x="550" y="76" text-anchor="middle" fill="#41566a" font-size="15">다중 제공자 폴백</text>
+          <text x="550" y="99" text-anchor="middle" fill="#41566a" font-size="15">실패 시 규칙 처리</text>
+
+          <path d="M190 73h50M420 73h50" stroke="#19b7a5" stroke-width="3"/>
+          <path d="M232 67l10 6-10 6M462 67l10 6-10 6" fill="#19b7a5"/>
+
+          <rect x="20" y="164" width="610" height="90" rx="15"
+                fill="#f7f9fb" stroke="#d9e2ea"/>
+          <text x="42" y="191" fill="#10243e" font-size="16" font-weight="900">
+            공고 수집·공통 모델 변환
+          </text>
+
+          <g font-size="15" font-weight="700" text-anchor="middle">
+            <rect x="40" y="205" width="98" height="35" rx="9" fill="#fff" stroke="#aebbc7"/>
+            <text x="89" y="228" fill="#10243e">주거 API</text>
+            <rect x="154" y="205" width="98" height="35" rx="9" fill="#fff" stroke="#aebbc7"/>
+            <text x="203" y="228" fill="#10243e">채용 API</text>
+            <rect x="268" y="205" width="98" height="35" rx="9" fill="#fff" stroke="#aebbc7"/>
+            <text x="317" y="228" fill="#10243e">정책 API</text>
+            <rect x="382" y="205" width="98" height="35" rx="9" fill="#fff" stroke="#aebbc7"/>
+            <text x="431" y="228" fill="#10243e">공식 RSS</text>
+            <rect x="496" y="205" width="108" height="35" rx="9" fill="#fff" stroke="#aebbc7"/>
+            <text x="550" y="228" fill="#10243e">웹 검색</text>
+          </g>
+
+          <path d="M330 124v40" stroke="#19b7a5" stroke-width="3"/>
+          <path d="M324 156l6 10 6-10" fill="#19b7a5"/>
+
+          <rect x="20" y="310" width="180" height="84" rx="15" fill="#10243e"/>
+          <text x="110" y="339" text-anchor="middle" fill="#fff" font-size="16" font-weight="900">Vercel Cron</text>
+          <text x="110" y="365" text-anchor="middle" fill="#c6d8e5" font-size="15">저장 조건 재조회</text>
+          <text x="110" y="385" text-anchor="middle" fill="#c6d8e5" font-size="15">신규·마감 감지</text>
+
+          <rect x="235" y="310" width="180" height="84" rx="15" fill="#dff7f3"/>
+          <text x="325" y="339" text-anchor="middle" fill="#10243e" font-size="16" font-weight="900">Upstash Redis</text>
+          <text x="325" y="365" text-anchor="middle" fill="#41566a" font-size="15">조건 · 구독 · 공고</text>
+          <text x="325" y="385" text-anchor="middle" fill="#41566a" font-size="15">조사 · 알림 기록</text>
+
+          <rect x="450" y="310" width="180" height="84" rx="15" fill="#19b7a5"/>
+          <text x="540" y="339" text-anchor="middle" fill="#fff" font-size="16" font-weight="900">Web Push</text>
+          <text x="540" y="365" text-anchor="middle" fill="#e6fffb" font-size="15">처음 보는 공고</text>
+          <text x="540" y="385" text-anchor="middle" fill="#e6fffb" font-size="15">설정 시간 반영</text>
+
+          <path d="M110 310v-34h215v34" fill="none" stroke="#19b7a5" stroke-width="3"/>
+          <path d="M415 352h35" stroke="#19b7a5" stroke-width="3"/>
+          <path d="M442 346l10 6-10 6" fill="#19b7a5"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 6</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">05 CORE FEATURES</div><h2>05 핵심 기능 및 사용자 흐름</h2></div>
+    <div class="num">05</div>
+  </div>
+
+  <div class="grid3">
+    <div class="card" style="height:480px">
+      <span class="tag">기능 1</span>
+      <h3 style="margin-top:7px">조건·위치 설정</h3>
+      <p style="margin-top:4px">선택형 질문<br>GPS·지도·반경 지정</p>
+
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+        <div>
+          <div class="phone" style="width:115px;height:285px">
+            <img src="assets/s_q0.png" alt="위치와 반경 설정 화면">
+          </div>
+          <div class="phone-label">위치·반경</div>
+        </div>
+        <div>
+          <div class="phone" style="width:115px;height:285px">
+            <img src="assets/s_q2.png" alt="선택형 질문 화면">
+          </div>
+          <div class="phone-label">맞춤 질문</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="height:480px">
+      <span class="tag">기능 2</span>
+      <h3 style="margin-top:7px">지도·설명형 결과</h3>
+      <p style="margin-top:4px">핀과 카드 연동<br>거리 기반 결과 확인</p>
+
+      <div class="phone" style="width:150px;height:330px;margin:10px auto 0">
+        <img src="assets/s_result.png" alt="지도 결과 화면">
+      </div>
+      <div class="phone-label">지도·핀 결과</div>
+    </div>
+
+    <div class="card" style="height:480px">
+      <span class="tag">기능 3</span>
+      <h3 style="margin-top:7px">요약·신청 연결</h3>
+      <p style="margin-top:4px">핵심 요약·신청 방법<br>접수 원문 연결</p>
+
+      <div class="phone" style="width:150px;height:330px;margin:10px auto 0">
+        <img src="assets/s_result2.png" alt="카드 요약과 신청 안내 화면">
+      </div>
+      <div class="phone-label">요약·신청 안내</div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:12px;padding:8px 13px">
+    <b>Happy Path</b> · 분야 선택 → 위치·반경 → 맞춤 질문 → 지도·카드 → 조건 저장 → 새 공고 알림
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 7</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">06 DIFFERENTIATION</div><h2>06 차별점</h2></div>
+    <div class="num">06</div>
+  </div>
+
+  <table class="table" style="margin-top:2px">
+    <tr>
+      <th style="width:165px">비교 항목</th>
+      <th>분야별 기존 서비스</th>
+      <th style="background:var(--mint)">My News</th>
+    </tr>
+    <tr>
+      <td><b>탐색 범위</b></td>
+      <td>혜택·주거·채용 등 개별 분야 중심</td>
+      <td><b>하나의 조건으로 여러 분야 동시 탐색</b></td>
+    </tr>
+    <tr>
+      <td><b>조건 입력</b></td>
+      <td>사이트별 검색 필터와 입력 양식</td>
+      <td><b>선택형 질문과 위치·반경 설정</b></td>
+    </tr>
+    <tr>
+      <td><b>결과 설명</b></td>
+      <td>추천 목록과 일반 필터 결과</td>
+      <td><b>일치 근거·확인 필요·탈락 분석</b></td>
+    </tr>
+    <tr>
+      <td><b>행동 연결</b></td>
+      <td>공고 원문 이동 중심</td>
+      <td><b>요약·신청 방법·접수 페이지 통합</b></td>
+    </tr>
+    <tr>
+      <td><b>반복 탐색</b></td>
+      <td>각 서비스의 개별 알림 조건</td>
+      <td><b>저장 조건 재사용·새 공고 선별</b></td>
+    </tr>
+    <tr>
+      <td><b>AI 신뢰성</b></td>
+      <td>추천 근거·불확실성 노출 제한</td>
+      <td><b>규칙 우선·원문 근거·실패 폴백</b></td>
+    </tr>
+  </table>
+
+  <div class="grid2" style="margin-top:13px">
+    <div class="card mint">
+      <h3>핵심 차별 조합</h3>
+      <p class="kicker" style="margin-top:6px">
+        분야 횡단 조건 1회 설정<br>
+        + 위치 기반 결과<br>
+        + 조건별 탈락 분석<br>
+        + 반복 재조회 알림
+      </p>
+    </div>
+    <div class="card">
+      <h3>사용자 효과</h3>
+      <ul class="clean">
+        <li>분야별 사이트 재방문과 재입력 감소</li>
+        <li>결과 부족 원인과 완화 조건 확인</li>
+        <li>공고 발견에서 접수 페이지까지 연결</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="source">
+    비교 근거: docs/market_research.md, 조사일 2026-11-22.
+    정부24 혜택알리미·복지로·온통청년·LH 청약플러스·마이홈·잡알리오의
+    공개 웹 화면과 안내 문서 확인 범위. “최초·유일” 주장 없음.
+  </p>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 8</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">07 PROTOTYPE</div><h2>07 구현 현황 및 프로토타입</h2></div>
+    <div class="num">07</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:20px">
+    <div>
+      <div class="grid2" style="gap:9px">
+        <div class="card tint" style="padding:12px">
+          <div class="metric">5,700<span>건</span></div>
+          <p class="small" style="margin-top:5px">실데이터(약, 11/23 로컬 수집)</p>
+        </div>
+        <div class="card tint" style="padding:12px">
+          <div class="metric">180</div>
+          <p class="small" style="margin-top:5px">자동 검사 통과</p>
+        </div>
+        <div class="card tint" style="padding:12px">
+          <div class="metric">11<span>종</span></div>
+          <p class="small" style="margin-top:5px">연결 공공 API</p>
+        </div>
+        <div class="card tint" style="padding:12px">
+          <div class="metric">1.0<span>s</span></div>
+          <p class="small" style="margin-top:5px">결과 표시 실측</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;padding:13px">
+        <h3>구현 완료</h3>
+        <ul class="clean">
+          <li>복수 분야·선택형 질문</li>
+          <li>위치·반경·지도 연동</li>
+          <li>요약·신청·탈락 분석</li>
+          <li>알림 시간·주기 저장</li>
+          <li>AI 캐시·규칙 폴백</li>
+        </ul>
+      </div>
+
+      <div class="note" style="margin-top:10px">
+        <b>미확인 항목</b><br>
+        공개 URL 최신 반영·정기 Cron·앱 종료 상태 푸시:
+        [입력 필요]
+      </div>
+    </div>
+
+    <div class="card tint">
+      <div style="display:flex;justify-content:center;gap:28px">
+        <div>
+          <div class="phone" style="width:220px;height:430px">
+            <img src="assets/s_analysis.png" alt="조건별 탈락 분석 화면">
+          </div>
+          <div class="phone-label">조건별 탈락 분석</div>
+        </div>
+
+        <div>
+          <div class="phone" style="width:220px;height:430px">
+            <img src="assets/s_alerts.png" alt="알림함과 조사 기록 화면">
+          </div>
+          <div class="phone-label">알림함·조사 기록</div>
+        </div>
+      </div>
+
+      <div class="note" style="margin-top:10px">
+        <b>검증 범위</b> · TypeScript · ESLint · Next.js production build ·
+        자동 검사(단위 테스트) 180개 · 빌드 통과 (11/23)
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 9</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div><div class="eyebrow">08 IMPACT</div><h2>08 기대효과</h2></div>
+    <div class="num">08</div>
+  </div>
+
+  <div class="grid3">
+    <div class="card mint" style="min-height:175px">
+      <div class="metric">01</div>
+      <h3 style="margin-top:12px">개인 탐색 부담 감소</h3>
+      <p style="margin-top:6px">여러 사이트의 반복 확인에서<br>조건 저장과 자동 재조회로 전환</p>
+    </div>
+    <div class="card" style="min-height:175px">
+      <div class="metric">02</div>
+      <h3 style="margin-top:12px">공고 판단 근거 확보</h3>
+      <p style="margin-top:6px">일치 근거·탈락 조건·신청 방법의<br>한 화면 확인</p>
+    </div>
+    <div class="card" style="min-height:175px">
+      <div class="metric">03</div>
+      <h3 style="margin-top:12px">청년 공고 도달 경로 확대</h3>
+      <p style="margin-top:6px">기존 공공데이터의 재구성과<br>사용자 조건 기반 발견 경로</p>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.2fr .8fr;gap:18px;margin-top:17px">
+    <div class="card tint">
+      <h3>데이터 확장 로드맵</h3>
+      <svg viewBox="0 0 700 190" style="width:100%;height:185px;margin-top:5px"><g class="svgtext"><text x="0" y="22" fill="#637184" font-size="13">현재: 공식 API·웹 검색 보충만 사용(크롤링 없음) · 고용24 목록 API는 개인 발급 불가</text><rect x="0" y="40" width="160" height="120" rx="12" fill="#fff" stroke="#19b7a5"/><text x="16" y="72" fill="#19b7a5" font-size="15" font-weight="900">1단계</text><text x="16" y="98" fill="#10243e" font-size="15" font-weight="800">고용24 기관 회원</text><foreignObject x="12" y="108" width="140" height="50"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.35;color:#637184">직업정보제공사업 신고 → 민간 채용</div></foreignObject><rect x="175" y="40" width="160" height="120" rx="12" fill="#fff" stroke="#19b7a5"/><text x="191" y="72" fill="#19b7a5" font-size="15" font-weight="900">2단계</text><text x="191" y="98" fill="#10243e" font-size="15" font-weight="800">민간 제휴</text><foreignObject x="187" y="108" width="140" height="50"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.35;color:#637184">사람인(어댑터 완료)·잡코리아·알바</div></foreignObject><rect x="350" y="40" width="160" height="120" rx="12" fill="#fff" stroke="#19b7a5"/><text x="366" y="72" fill="#19b7a5" font-size="15" font-weight="900">3단계</text><text x="366" y="98" fill="#10243e" font-size="15" font-weight="800">개방 요청</text><foreignObject x="362" y="108" width="140" height="50"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.35;color:#637184">지자체·대학 일자리센터·청년센터</div></foreignObject><rect x="525" y="40" width="160" height="120" rx="12" fill="#fff" stroke="#19b7a5"/><text x="541" y="72" fill="#19b7a5" font-size="15" font-weight="900">4단계</text><text x="541" y="98" fill="#10243e" font-size="15" font-weight="800">직접 등록</text><foreignObject x="537" y="108" width="140" height="50"><div xmlns="http://www.w3.org/1999/xhtml" style="font-size:12px;line-height:1.35;color:#637184">기업·기관 공고 등록 채널</div></foreignObject></g></svg>
+    </div>
+
+    <div class="card">
+      <h3>성과 측정 계획</h3>
+      <ul class="clean" style="margin-top:8px">
+        <li>조건 설정 완료율</li>
+        <li>결과 카드 원문 이동률</li>
+        <li>알림 저장·재방문율</li>
+        <li>신규 공고의 신청 전환</li>
+        <li>주간 반복 탐색 시간 변화</li>
+      </ul>
+      <p class="small muted" style="margin-top:10px">
+        정량 효과는 실사용 데이터 확보 후 측정
+      </p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 10</span>
+  </div>
+</section>
+
+<section class="slide">
+  <div class="header">
+    <div>
+      <div class="eyebrow">APPENDIX</div>
+      <h2>별첨. 팀 구성 및 사전 개발 내역 고지</h2>
+    </div>
+    <div class="num">별첨</div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:.78fr 1.22fr;gap:18px">
+    <div>
+      <h3>팀 구성 및 역할</h3>
+      <table class="table tight" style="margin-top:7px">
+        <tr><th>이름</th><th>역할</th><th>담당 업무</th></tr>
+        <tr><td>[입력 필요]</td><td>대표자</td><td>[입력 필요]</td></tr>
+        <tr><td>[입력 필요]</td><td>팀원</td><td>[입력 필요]</td></tr>
+      </table>
+
+      <h3 style="margin-top:16px">기존 개발물·사전 개발 내역</h3>
+      <table class="table tight" style="margin-top:7px">
+        <tr><th style="width:145px">구분</th><th>내용</th></tr>
+        <tr><td>해커톤 이전 개발</td><td>[입력 필요]</td></tr>
+        <tr><td>해커톤 기간 개발</td><td>기획·리서치·웹앱·데이터 연결·AI·테스트</td></tr>
+        <tr><td>타 공모전 출품·수상</td><td>[입력 필요]</td></tr>
+      </table>
+    </div>
+
+    <div>
+      <h3>활용한 외부 자원·출처</h3>
+      <table class="table tight" style="margin-top:7px">
+        <tr>
+          <th style="width:83px">구분</th>
+          <th style="width:150px">명칭</th>
+          <th>출처·라이선스</th>
+          <th style="width:105px">사용 위치</th>
+        </tr>
+        <tr><td>오픈소스</td><td>Next.js · React</td><td>Vercel / Meta · MIT</td><td>웹앱 전체</td></tr>
+        <tr><td>오픈소스</td><td>Tailwind CSS</td><td>MIT · 패키지 LICENSE 확인</td><td>UI</td></tr>
+        <tr><td>오픈소스</td><td>Leaflet</td><td>BSD-2-Clause · 패키지 LICENSE 확인</td><td>지도</td></tr>
+        <tr><td>오픈소스</td><td>web-push</td><td>MPL-2.0 · 패키지 LICENSE 확인</td><td>알림</td></tr>
+        <tr><td>오픈소스</td><td>Vitest</td><td>MIT</td><td>테스트</td></tr>
+        <tr><td>지도</td><td>OpenStreetMap</td><td>© OSM contributors · ODbL</td><td>결과 지도</td></tr>
+        <tr><td>외부 데이터</td><td>LH·마이홈·청약홈</td><td>공공데이터포털·제공기관 이용조건</td><td>주거 공고</td></tr>
+        <tr><td>외부 데이터</td><td>잡알리오·정부24·Q-Net</td><td>공공데이터포털·제공기관 이용조건</td><td>채용·정책</td></tr>
+        <tr><td>AI 모델</td><td>Groq 외 다중 제공자</td><td>각 제공자 API 이용약관</td><td>구조화·요약</td></tr>
+        <tr><td>개발 도구</td><td>Claude Code · Codex</td><td>Anthropic·OpenAI 이용약관</td><td>개발·검토</td></tr>
+        <tr><td>통계</td><td>2024 청년 삶 실태조사</td><td>국무조정실</td><td>문제 정의</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:13px">
+    <b>고지 원칙</b> · 공고 원문 링크와 출처 표시 · AI 해석과 확인 필요 조건 구분 ·
+    최종 신청 자격은 제공기관 원문 기준
+  </div>
+
+  <div class="footer">
+    <span>2026 대한민국 청년 CAREER FAIR AI 해커톤</span>
+    <span>프로젝트소개서 11</span>
+  </div>
+</section>
+
+</body>
+</html>
