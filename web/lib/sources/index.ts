@@ -199,7 +199,7 @@ export async function collectLiveOpportunities(
   const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
   // 일괄 수집은 시간 여유가 있으니 카카오 좌표 조회를 넉넉히(무료 한도 일 10만 회 안쪽)
   const located = await attachGeo(attachPlaces(deduped), opts.full ? 3000 : undefined);
-  return located.map(inferRegion);
+  return located.map(inferRegion).map(inferJobConditions);
 }
 
 const SIDO_TOKEN = /^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|전북특별자치도|강원특별자치도|제주특별자치도)(특별시|광역시|특별자치시|특별자치도|도|시)?$/;
@@ -240,7 +240,8 @@ export async function loadOpportunities(
   const stored = await readPool();
   // 비어 있는 풀(전 출처 실패)은 신선해도 쓰지 않는다
   const fresh = stored && stored.items.length > 0 && now.getTime() - new Date(stored.meta.collectedAt).getTime() < 6 * 60 * 60 * 1000;
-  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain));
+  // 저장된 풀이 판별 규칙 추가 이전에 모은 것이어도 경력·직무 조건을 보충한다(이미 있으면 그대로)
+  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain)).map(inferJobConditions);
 
   triggerPoolCollection(now);
   return collectLiveOpportunities(wanted, now, opts);
@@ -275,4 +276,47 @@ export function parseDomains(param: string | null | undefined): Domain[] {
   if (!param) return ALL_DOMAINS;
   const list = param.split(",").map((s) => s.trim()).filter((s): s is Domain => (ALL_DOMAINS as string[]).includes(s));
   return list.length ? [...new Set(list)] : ALL_DOMAINS;
+}
+
+/** 직무 분야 판별 키워드(NCS 대분류). 공고 제목에서 기관명을 뺀 부분으로만 판단한다 */
+const FIELD_KEYWORDS: [string, RegExp][] = [
+  ["정보통신", /(^|[^A-Za-z])IT([^A-Za-z]|$)|전산|정보보안|정보화|정보시스템|소프트웨어|SW|데이터|네트워크|서버|클라우드|Cloud|개발자|프로그래머|인공지능|AI|게임|DBA|백엔드|프론트엔드|웹개발|앱개발|빌드시스템|모바일플랫폼|보안관제/],
+  ["전기·전자", /전기|전자|반도체|계측/],
+  ["화학·바이오", /바이오|화학|약물|의약|약품|제약|임상|허가|품질관리|QC|QA|미생물|세포|제제|화장품|뷰티/],
+  ["보건·의료", /간호|의료|병원|보건|약사|방사선|물리치료|임상병리/],
+  ["문화·예술·디자인·방송", /학예|미술|박물관|예술|디자인|방송|공연|전시|콘텐츠|영상|편집|기자|UI|UX|시나리오|웹툰/],
+  ["경영·회계·사무", /사무|행정|회계|인사|총무|경영|재무|기획|서무|경리|구매|비서|HR|사업개발|PM|CS/],
+  ["건설", /건설|토목|건축|플랜트|시공|현장관리/],
+  ["기계", /기계|설비|정비|설계|생산|제조|조선|자동차|선박/],
+  ["환경·에너지·안전", /환경|에너지|안전/],
+  ["교육·자연·사회과학", /연구원|교육|강사|교사/],
+  ["사회복지·종교", /복지|상담/],
+  ["음식서비스", /조리|영양/],
+  ["경비·청소", /경비|청소|미화/],
+  ["영업판매", /영업|판매|마케팅|마케터|MD|유통|매장/],
+  ["법률·경찰·소방·교도·국방", /변호사|법무|법률|소방|경찰|군무원|부사관/],
+  ["식품가공", /식품|수산|제과|베이커리/],
+  ["금융·보험", /금융|은행|보험|증권|투자/],
+  ["운전·운송", /운전|운송|물류|배송|택배/],
+];
+
+/**
+ * 채용 공고에 빠진 경력·직무 조건을 제목으로 보충한다.
+ * - 제목에 "경력"이 있고 신입·무관·인턴 표시가 없으면 경력직 전용(경력 없음이면 탈락)
+ * - 직무 분야 조건이 없으면 제목 키워드로 분야를 붙인다(여러 개면 모두, 없으면 그대로 둬서 남긴다)
+ */
+export function inferJobConditions(o: Opportunity): Opportunity {
+  if (o.domain !== "job" && o.domain !== "parttime") return o;
+  const title = (o.org ? o.title.split(o.org).join(" ") : o.title).replace(/\s+/g, " ");
+  const conditions = [...o.conditions];
+  if (!conditions.some((c) => c.attr === "experienced") && /경력/.test(title) && !/신입|무관|경력\s*없|인턴|경력단절/.test(title)) {
+    conditions.push({ attr: "experienced", op: "eq", value: true, rawText: "경력직 채용(공고 제목으로 판별)", confidence: "high" });
+  }
+  if (!conditions.some((c) => c.attr === "field")) {
+    // 제목(기관명 제외)에서 먼저 찾고, 없으면 기관명까지 포함해 찾는다(예: ○○약품 신입 모집 → 화학·바이오)
+    const find = (t: string) => FIELD_KEYWORDS.filter(([, re]) => re.test(t)).map(([f]) => f);
+    const fields = find(title).length ? find(title) : find(`${o.org ?? ""} ${o.title}`);
+    if (fields.length) conditions.push({ attr: "field", op: "in", value: fields, rawText: `직무 분야: ${fields.join(", ")}(공고 제목으로 판별)`, confidence: "high" });
+  }
+  return conditions.length === o.conditions.length ? o : { ...o, conditions };
 }
