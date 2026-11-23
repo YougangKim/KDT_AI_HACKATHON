@@ -278,29 +278,39 @@ export function parseDomains(param: string | null | undefined): Domain[] {
   return list.length ? [...new Set(list)] : ALL_DOMAINS;
 }
 
-import { UNSPECIFIED_FIELD } from "./field";
-export { UNSPECIFIED_FIELD };
+import { OPEN_FIELD, UNSPECIFIED_FIELD } from "./field";
+export { OPEN_FIELD, UNSPECIFIED_FIELD };
+
+/** 전문직 제한 없는 일반 채용인지: 경력·자격·면허·전문 표시가 없고 신입·공채·인턴·무관 표시가 있을 때 */
+export function isOpenRecruit(text: string): boolean {
+  // 채용박람회·현장채용 행사·지원사업은 직무 제한 없이 누구나 참여
+  if (/박람회|채용행사|수요데이|만남의\s*날|채용설명회|현장채용|면접행사|지원사업|응시료|공무직|동행일자리|통합채용|참여자\s*모집|기간제노동자/.test(text)) return true;
+  if (/경력(?!\s*무관)|자격|면허|전문(?!인턴)|기술직|기능직|연구직/.test(text.replace(/신입\s*[/·및,]\s*경력|경력\s*[/·및,]\s*신입/g, ""))) return false;
+  return /신입|공개채용|공채|수시채용|인턴|학력\s*무관|경력\s*무관|직원\s*채용|채용\s*공고|일반직|사원\s*채용|직원\s*모집|수시\s*채용|지원|운영/.test(text);
+}
 
 /** 직무 분야 판별 키워드(NCS 대분류). 공고 제목에서 기관명을 뺀 부분으로만 판단한다 */
 const FIELD_KEYWORDS: [string, RegExp][] = [
-  ["정보통신", /(^|[^A-Za-z])IT([^A-Za-z]|$)|전산|정보보안|정보화|정보시스템|소프트웨어|SW|데이터|네트워크|서버|클라우드|Cloud|개발자|프로그래머|인공지능|AI|게임|DBA|백엔드|프론트엔드|웹개발|앱개발|빌드시스템|모바일플랫폼|보안관제/],
+  ["정보통신", /(^|[^A-Za-z])IT([^A-Za-z]|$)|전산|정보보안|정보화|정보시스템|소프트웨어|SW|데이터|네트워크|서버|클라우드|Cloud|개발자|프로그래머|인공지능|AI|게임|DBA|백엔드|프론트엔드|웹개발|앱개발|빌드시스템|모바일플랫폼|보안관제|보안운영|DevOps|FW|BSP|펌웨어|임베디드|시큐|정보기술|ICT/],
   ["전기·전자", /전기|전자|반도체|계측/],
-  ["화학·바이오", /바이오|화학|약물|의약|약품|제약|임상|허가|품질관리|QC|QA|미생물|세포|제제|화장품|뷰티/],
-  ["보건·의료", /간호|의료|병원|보건|약사|방사선|물리치료|임상병리/],
+  ["화학·바이오", /바이오|화학|약물|의약|약품|제약|임상|허가|품질관리|QC|QA|미생물|세포|제제|화장품|뷰티|약대|화공|수소|노믹스|팜/],
+  ["보건·의료", /간호|의료|병원|보건|약사|방사선|물리치료|임상병리|치료사|요양/],
   ["문화·예술·디자인·방송", /학예|미술|박물관|예술|디자인|방송|공연|전시|콘텐츠|영상|편집|기자|UI|UX|시나리오|웹툰/],
-  ["경영·회계·사무", /사무|행정|회계|인사|총무|경영|재무|기획|서무|경리|구매|비서|HR|사업개발|PM|CS/],
+  ["경영·회계·사무", /사무|행정|회계|인사|총무|경영|재무|기획|서무|경리|구매|비서|HR|사업개발|PM|CS|세무|노무|정산|Accounting|Reporting|관리직|일반직|행정직/],
   ["건설", /건설|토목|건축|플랜트|시공|현장관리/],
-  ["기계", /기계|설비|정비|설계|생산|제조|조선|자동차|선박/],
+  ["기계", /기계|설비|정비|설계|생산|제조|조선|자동차|선박|시트|시험부문|트랜시스/],
   ["환경·에너지·안전", /환경|에너지|안전/],
-  ["교육·자연·사회과학", /연구원|교육|강사|교사/],
+  ["교육·자연·사회과학", /연구원|연구소|연구개발|R&D|교육|강사|교사|분석|번역/],
   ["사회복지·종교", /복지|상담/],
-  ["음식서비스", /조리|영양/],
-  ["경비·청소", /경비|청소|미화/],
-  ["영업판매", /영업|판매|마케팅|마케터|MD|유통|매장/],
-  ["법률·경찰·소방·교도·국방", /변호사|법무|법률|소방|경찰|군무원|부사관/],
+  ["이용·숙박·여행·오락·스포츠", /관광|여행|호텔|레저|스포츠/],
+  ["사업관리", /테크노파크|진흥원|사업관리/],
+  ["음식서비스", /조리|영양|바리스타|카페/],
+  ["경비·청소", /경비|청소|미화|시설서비스/],
+  ["영업판매", /영업|판매|마케팅|마케터|Marketing|MD|유통|매장|광고|트레이딩|무역|카마스터|도우미/],
+  ["법률·경찰·소방·교도·국방", /변호사|노무사|법무|법률|소방|경찰|군무원|부사관|국방/],
   ["식품가공", /식품|수산|제과|베이커리/],
-  ["금융·보험", /금융|은행|보험|증권|투자/],
-  ["운전·운송", /운전|운송|물류|배송|택배/],
+  ["금융·보험", /금융|은행|보험|증권|투자|뱅크|예탁|보증|손해사정|생명|카드|캐피탈/],
+  ["운전·운송", /운전|운송|물류|배송|택배|항공|납품|탑차|주차/],
 ];
 
 /**
@@ -311,18 +321,24 @@ const FIELD_KEYWORDS: [string, RegExp][] = [
 export function inferJobConditions(o: Opportunity): Opportunity {
   if (o.domain !== "job" && o.domain !== "parttime") return o;
   const title = (o.org ? o.title.split(o.org).join(" ") : o.title).replace(/\s+/g, " ");
-  const conditions = [...o.conditions];
+  // 이전 규칙으로 붙인 추정 조건은 지우고 다시 판별한다(저장된 풀도 최신 규칙으로)
+  const inferred = (c: Condition) => (c.attr === "field" || c.attr === "experienced") && /판별\)$|적혀 있지 않음$/.test(c.rawText);
+  const base = o.conditions.filter((c) => !inferred(c));
+  const conditions = [...base];
   if (!conditions.some((c) => c.attr === "experienced") && /경력/.test(title) && !/신입|무관|경력\s*없|인턴|경력단절/.test(title)) {
     conditions.push({ attr: "experienced", op: "eq", value: true, rawText: "경력직 채용(공고 제목으로 판별)", confidence: "high" });
   }
   if (!conditions.some((c) => c.attr === "field")) {
     // 제목(기관명 제외)에서 먼저 찾고, 없으면 기관명까지 포함해 찾는다(예: ○○약품 신입 모집 → 화학·바이오)
     const find = (t: string) => FIELD_KEYWORDS.filter(([, re]) => re.test(t)).map(([f]) => f);
-    const fields = find(title).length ? find(title) : find(`${o.org ?? ""} ${o.title}`);
-    // 직무를 알 수 없는 공고는 "분야 미표기"로 표시해, 분야 질문에서 이 공고들까지 볼지 사용자가 고르게 한다
-    conditions.push(fields.length
-      ? { attr: "field", op: "in", value: fields, rawText: `직무 분야: ${fields.join(", ")}(공고 제목으로 판별)`, confidence: "high" }
-      : { attr: "field", op: "in", value: [UNSPECIFIED_FIELD], rawText: "직무 분야가 공고 제목에 적혀 있지 않음", confidence: "high" });
+    // 제목(기관명 제외) → 요약 → 기관명 순으로 찾는다
+    const fields = [title, o.summary ?? "", `${o.org ?? ""} ${o.title}`].map(find).find((f) => f.length) ?? [];
+    // 분야를 못 찾은 공고는 전문직 제한이 있는지로 나눈다:
+    //  - 경력·자격·면허·전문직 표시가 있으면 "분야 미표기"(직무를 원문에서 확인해야 함)
+    //  - 신입·공개채용·인턴·학력무관처럼 직무 제한 없는 일반 채용이면 "직무 무관"
+    if (fields.length) conditions.push({ attr: "field", op: "in", value: fields, rawText: `직무 분야: ${fields.join(", ")}(공고 제목으로 판별)`, confidence: "high" });
+    else if (isOpenRecruit(`${title} ${o.summary ?? ""}`)) conditions.push({ attr: "field", op: "in", value: [OPEN_FIELD], rawText: "직무 제한 없는 일반 채용(공고 제목으로 판별)", confidence: "high" });
+    else conditions.push({ attr: "field", op: "in", value: [UNSPECIFIED_FIELD], rawText: "직무 분야가 공고에 적혀 있지 않음", confidence: "high" });
   }
-  return conditions.length === o.conditions.length ? o : { ...o, conditions };
+  return { ...o, conditions };
 }

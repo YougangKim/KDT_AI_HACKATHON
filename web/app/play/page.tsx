@@ -11,7 +11,7 @@ import { LocationStep } from "@/components/game/LocationStep";
 import { applyAnswer, defaultQuestionText, getMatches, questionId, rankQuestions, remaining, startGame, type GameState, type RankedQuestion } from "@/lib/engine";
 import { nonEmptyResultState, readLastResult, saveLastResult } from "@/components/result/lastResult";
 import { INCOME_THRESHOLDS, NCS_FIELDS } from "@/lib/engine/choices";
-import { UNSPECIFIED_FIELD } from "@/lib/sources/field";
+import { OPEN_FIELD, UNSPECIFIED_FIELD } from "@/lib/sources/field";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { nearestRegion } from "@/lib/geo/regions";
 import type { Answer, AnswerRecord, Domain, Opportunity, Question } from "@/lib/types";
@@ -181,9 +181,10 @@ function multiChoice(s: GameState, attr: "field" | "need", title: string, group:
   const fields = attr === "field"
     ? [
         ...NCS_FIELDS,
-        ...all.filter((value) => !NCS_FIELDS.some((field) => field.value === value) && value !== UNSPECIFIED_FIELD)
+        ...all.filter((value) => !NCS_FIELDS.some((field) => field.value === value) && value !== UNSPECIFIED_FIELD && value !== OPEN_FIELD)
           .map((value) => ({ value, label: value })),
         // 직무가 적히지 않은 공고까지 볼지 직접 고른다(안 고르면 희망 분야로 확인된 공고만)
+        ...(all.includes(OPEN_FIELD) ? [{ value: OPEN_FIELD, label: "직무 무관 일반 채용도 보기" }] : []),
         ...(all.includes(UNSPECIFIED_FIELD) ? [{ value: UNSPECIFIED_FIELD, label: "직무 미표기 공고도 보기" }] : []),
       ]
     : all.map((value) => ({ value, label: value }));
