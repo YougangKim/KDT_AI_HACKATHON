@@ -34,6 +34,12 @@ afterEach(() => {
 });
 
 describe("공고 장소 추출", () => {
+  test("방문 신청은 본사 대신 실제 접수처 주소를 우선합니다", () => {
+    expect(extractPlaceRules(opportunity({ domain: "benefit", summary: "서울특별시 강남구 테헤란로 123", apply: { how: "방문 신청", where: "서울특별시 중구 세종대로 110" } }))).toEqual({ address: "서울특별시 중구 세종대로 110", place: null });
+  });
+  test("주소 대신 명시된 방문 기관은 장소명으로 추출합니다", () => {
+    expect(extractPlaceRules(opportunity({ apply: { how: "방문 접수", where: "서울청년센터 성동" } }))).toEqual({ address: null, place: "서울청년센터 성동" });
+  });
   test("시도·시군구·도로명 주소를 규칙으로 추출", () => {
     expect(extractPlaceRules(opportunity({
       summary: "근무지는 서울특별시 강남구 테헤란로 123입니다.",

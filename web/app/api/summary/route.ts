@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const missingIds = ids.filter((id) => !cachedIds.has(id));
     if (!missingIds.length) return Response.json({ ai: true, items: cached });
 
-    // 직전 공고 조회에서 채운 어댑터 캐시를 재사용하므로 원격 조회를 최소화한다.
+    // 직전 공고 조회에서 채운 어댑터 캐시를 재사용하므로 원격 조회를 최소화합니다.
     const opportunities = await loadOpportunities();
     const wanted = new Set(missingIds);
     const items = opportunities.filter((item) => wanted.has(item.id));

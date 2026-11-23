@@ -40,7 +40,7 @@ describe("후보 축소", () => {
     expect(getMatches(after).map((m) => m.opportunity.id)).toEqual(["b"]);
   });
 
-  it("숫자 조건은 함의로 판정한다(만 34세 이하=예 → 39세 이하 통과, 35세 이상 탈락)", () => {
+  it("숫자 조건은 함의로 판정합니다(만 34세 이하=예 → 39세 이하 통과, 35세 이상 탈락)", () => {
     const pool = [opp("u39", [cond("age", "lte", 39)]), opp("o35", [cond("age", "gte", 35)])];
     const s = applyAnswer(startGame(pool), q("age", "lte", 34), "yes");
     const m = getMatches(s);
@@ -48,17 +48,18 @@ describe("후보 축소", () => {
     expect(m[0].status).toBe("eligible");
   });
 
-  it("지역: 서울=예면 경기 대상 공고는 탈락, 전국 공고는 남는다", () => {
+  it("다른 지역 지원금도 표시하되 거주 자격 확인을 남깁니다", () => {
     const pool = [opp("seoul", [], ["서울"]), opp("gg", [], ["경기"]), opp("all", [])];
     const s = applyAnswer(startGame(pool), q("region", "eq", "서울"), "yes");
-    expect(getMatches(s).map((m) => m.opportunity.id).sort()).toEqual(["all", "seoul"]);
+    expect(getMatches(s).map((m) => m.opportunity.id).sort()).toEqual(["all", "gg", "seoul"]);
+    expect(getMatches(s).find((m) => m.opportunity.id === "gg")).toMatchObject({ status: "needs_check", unknowns: [expect.objectContaining({attr:"region"})] });
   });
 
-  it("지역 조건이 없는 전국 공고는 다른 지역 답 뒤에도 남는다", () => {
+  it("지역 조건이 없는 전국 공고는 다른 지역 답 뒤에도 남습니다", () => {
     const nationwide = opp("nationwide", [], []);
     const local = opp("busan", [], ["부산"]);
     const s = applyAnswer(startGame([nationwide, local]), q("region", "eq", "서울"), "yes");
-    expect(getMatches(s).map((m) => m.opportunity.id)).toEqual(["nationwide"]);
+    expect(getMatches(s).map((m) => m.opportunity.id)).toEqual(["nationwide", "busan"]);
   });
 
   it("소득 100% 초과 답은 120%·150% 이하 조건을 탈락시키지 않고 확인 필요로 남긴다", () => {

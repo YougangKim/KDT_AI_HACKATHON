@@ -92,7 +92,7 @@ function requestsFor(opportunity: Opportunity): GeocodeRequest[] {
   return [];
 }
 
-/** 제목에 시·군 이름(예: "순천시", "순천출장소")이 있으면 결과 주소에도 그 시·군이 있어야 한다 */
+/** 제목에 시·군 이름(예: "순천시", "순천출장소")이 있으면 결과 주소에도 그 시·군이 있어야 합니다 */
 export function sameCity(title: string, document: KakaoDocument): boolean {
   const address = [document.address_name, document.address?.address_name, document.road_address?.address_name].filter(Boolean).join(" ");
   const cities = [...title.matchAll(/([가-힣]{2,4})(?:시|군)(?=[\s·(,]|$)|([가-힣]{2,3})(?:출장소|지사|지점|사업소)/g)]
@@ -168,7 +168,7 @@ async function geocodeOne(opportunity: Opportunity, key: string): Promise<Geo | 
   return fallback(opportunity);
 }
 
-/** 한 번의 수집 호출에서 신규 Kakao 조회를 maxLookups건(기본 150)까지만, 동시에 4건씩 수행한다. 주택·채용을 먼저. */
+/** 한 번의 수집 호출에서 신규 Kakao 조회를 maxLookups건(기본 150)까지만, 동시에 4건씩 수행합니다. 주택·채용을 먼저. */
 export async function attachGeo(items: Opportunity[], maxLookups = MAX_NEW_LOOKUPS): Promise<Opportunity[]> {
   const key = process.env.KAKAO_REST_API_KEY;
   if (!key) return items.map((item) => ({ ...item, geo: item.geo ?? fallback(item) }));

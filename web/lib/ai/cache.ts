@@ -77,7 +77,7 @@ export async function getCached<T>(ns: string, key: string): Promise<T | null> {
       const raw = await redis(["GET", `ai:${cacheId}`]) as string | null;
       if (raw !== null) return JSON.parse(raw) as T;
     } catch {
-      // Upstash 장애 시 개발 파일 또는 메모리로 계속 진행한다.
+      // Upstash 장애 시 개발 파일 또는 메모리로 계속 진행합니다.
     }
   }
 

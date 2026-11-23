@@ -17,14 +17,12 @@ export function MatchCard({
   match,
   location,
   highlighted,
-  onShowMap,
   aiSummary,
   summaryMs,
 }: {
   match: Match;
   location?: UserLocation;
   highlighted?: boolean;
-  onShowMap?: () => void;
   aiSummary?: { summary: string; how: string };
   summaryMs?: number;
 }) {
@@ -84,14 +82,6 @@ export function MatchCard({
         {o.apply?.where && <p className="text-xs text-slate-500">접수: {o.apply.where}</p>}
       </section>
       {distance !== null && <p className="text-sm font-semibold text-indigo-700">내 위치에서 {distance.toFixed(1)}km</p>}
-      {location && (!o.geo || o.geo.precision === "region") && (
-        <p className="text-xs text-slate-500">위치가 지역 단위라 거리 판단 불가</p>
-      )}
-      {onShowMap && o.geo?.precision !== "region" && (
-        <button type="button" onClick={onShowMap} className="min-h-11 w-full rounded-xl bg-indigo-50 text-sm font-semibold text-indigo-700">
-          지도에서 보기
-        </button>
-      )}
 
       {match.unknowns.length > 0 && (
         <section className="rounded-xl bg-orange-50 p-3 text-sm">

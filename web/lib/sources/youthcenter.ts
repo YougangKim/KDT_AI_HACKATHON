@@ -1,4 +1,4 @@
-// 온통청년 청년정책 API (한국고용정보원) — 담당자 심사 후 키 발급. 응답 필드는 키 발급 후 재확인 필요
+// 온통청년 청년정책 API (한국고용정보원)
 import type { Condition, Domain, Opportunity } from "../types";
 import type { SourceAdapter } from "./types";
 import { buildConditions, withEligibility, fetchJson, parsePeriod, pickArray, str, toRegions } from "./util";
@@ -50,10 +50,29 @@ export function mapYouthcenter(raw: unknown, now: Date): Opportunity[] {
 export const youthcenter: SourceAdapter = {
   id: "youthcenter",
   domains: ["benefit", "housing", "job", "training"],
-  envKey: "YOUTHCENTER_KEY",
-  async fetch(now) {
-    const key = process.env.YOUTHCENTER_KEY!;
-    const url = `${ENDPOINT}?apiKeyNm=${encodeURIComponent(key)}&pageNum=1&pageSize=50&rtnType=json`;
-    return mapYouthcenter(await fetchJson(url), now);
+  envKey: "YOUTHCENTER_API_KEY",
+  async fetch(now, options = {}) {
+    const key = process.env.YOUTHCENTER_API_KEY!;
+    const url = (page: number, size: number) => `${ENDPOINT}?apiKeyNm=${encodeURIComponent(key)}&pageNum=${page}&pageSize=${size}&rtnType=json`;
+    if (!options.full) {
+      options.onRequest?.();
+      return mapYouthcenter(await fetchJson(url(1, 50)), now);
+    }
+    // 일괄 수집: 전체 정책(약 4천 건)을 100건씩 전부 받는다(호출 약 40회). 마감 지난 정책은 후처리에서 빠진다
+    options.onRequest?.();
+    const first = await fetchJson(url(1, 100), 15000) as { result?: { pagging?: { totCount?: number } } };
+    const total = Number(first.result?.pagging?.totCount ?? 0);
+    const pages = Math.min(60, Math.max(1, Math.ceil(total / 100)));
+    const out = mapYouthcenter(first, now);
+    for (let start = 2; start <= pages; start += 5) {
+      const batch = await Promise.all(
+        Array.from({ length: Math.min(5, pages - start + 1) }, (_, i) => {
+          options.onRequest?.();
+          return fetchJson(url(start + i, 100), 15000).then((raw) => mapYouthcenter(raw, now)).catch(() => [] as Opportunity[]);
+        }),
+      );
+      out.push(...batch.flat());
+    }
+    return out;
   },
 };

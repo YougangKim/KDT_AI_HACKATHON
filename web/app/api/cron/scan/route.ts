@@ -1,4 +1,4 @@
-// 외부 스케줄러가 매분 호출: 이번 시각에 due인 조건만 조사한다.
+// 외부 스케줄러가 매분 호출: 이번 시각에 due인 조건만 조사합니다.
 import { scanAll } from "@/lib/server/scan";
 import { getLastCronAt, setLastCronAt } from "@/lib/server/store";
 

@@ -32,7 +32,7 @@ export function sortMatches(ms: Match[], region: string | null): Match[] {
 /**
  * 전체 탭에서 분야가 여러 개면 분야별 순서를 지키며 번갈아 섞는다.
  * (지원금처럼 수가 많은 분야가 상위를 모두 차지해 다른 분야가 안 보이는 문제 방지)
- * 바로 신청 공고가 확인 필요 공고보다 먼저 오도록 상태별로 따로 섞는다.
+ * 분야 안의 순서는 보존하되 자격 확인 상태 때문에 다른 분야가 뒤로 밀리지 않게 합니다.
  */
 export function interleaveByDomain(ms: Match[]): Match[] {
   const mix = (list: Match[]) => {
@@ -50,5 +50,5 @@ export function interleaveByDomain(ms: Match[]): Match[] {
     }
     return out;
   };
-  return [...mix(ms.filter((m) => m.status === "eligible")), ...mix(ms.filter((m) => m.status !== "eligible"))];
+  return mix(ms);
 }

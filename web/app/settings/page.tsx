@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { Answer, Domain, Watch, WatchSchedule } from "@/lib/types";
+import type { Domain, Watch, WatchSchedule } from "@/lib/types";
+import { updateAnswers, type AnswerChange } from "@/lib/engine/answer-groups";
 import { loadWatch, saveWatch } from "@/lib/alerts";
 import { researchStatus, syncWatch, type ResearchStatus } from "@/lib/alerts/client";
 import { summarizeConditions } from "@/lib/insight/funnel";
@@ -65,10 +66,10 @@ export default function SettingsPage() {
     if (current) void researchStatus().then(setServer);
   }, []);
 
-  function updateAnswer(questionId: string, answer: Answer) {
+  function updateAnswer(changes: AnswerChange[]) {
     setWatch((current) => current ? {
       ...current,
-      answers: current.answers.map((item) => item.question.id === questionId ? { ...item, answer } : item),
+      answers: updateAnswers(current.answers, changes),
     } : current);
   }
 
@@ -94,15 +95,15 @@ export default function SettingsPage() {
     setServer(result);
     setSaving(false);
     setStatus(result.saved && !result.error
-      ? "저장했어요. 이 기기와 서버에 알림 설정을 반영했어요."
-      : `이 기기에는 저장했지만 서버 동기화에 실패했어요${result.error ? `: ${result.error}` : "."}`);
+      ? "저장했습니다. 이 기기와 서버에 알림 설정을 반영했습니다."
+      : `이 기기에는 저장했지만 서버 동기화에 실패했습니다${result.error ? `: ${result.error}` : "."}`);
   }
 
   if (!watch) {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
         <h1 className="flex items-center gap-2 text-xl font-bold"><Icon name="settings" className="h-5 w-5" />알림 설정</h1>
-        <p className="text-sm text-slate-600">먼저 질문에 답하고 알림 조건을 저장해 주세요.</p>
+        <p className="text-sm text-slate-600">먼저 질문에 답하고 알림 조건을 저장해야 합니다.</p>
         <Link href="/play" className="rounded-xl bg-indigo-600 px-5 py-3 font-semibold text-white">질문 시작하기</Link>
       </main>
     );
@@ -223,7 +224,7 @@ export default function SettingsPage() {
             <input aria-label="방해 금지 종료" type="time" value={schedule.quiet.end} onChange={(event) => updateSchedule({ quiet: { ...schedule.quiet!, end: event.target.value } })} className="rounded-lg p-2 ring-1 ring-slate-200" />
           </div>
         )}
-        <p className="text-xs text-slate-500">간격 알림은 외부 스케줄러(cron-job.org, 1분마다 호출)가 켜져 있어야 동작해요.</p>
+        <p className="text-xs text-slate-500">간격 알림은 외부 스케줄러(cron-job.org, 1분마다 호출)가 켜져 있어야 동작합니다.</p>
         <p className={`text-xs ${cronHealthy ? "text-emerald-700" : "text-amber-700"}`}>
           현재 상태: {cronHealthy ? "최근 30분 안에 호출됨" : "최근 호출을 확인하지 못함"}
         </p>
@@ -233,7 +234,7 @@ export default function SettingsPage() {
         <h2 className="font-semibold">알림 모드</h2>
         <button type="button" aria-pressed={(watch.mode ?? "new-only") === "new-only"} onClick={() => setWatch({ ...watch, mode: "new-only" })} className={`w-full rounded-xl p-3 text-sm font-semibold ${(watch.mode ?? "new-only") === "new-only" ? "bg-indigo-600 text-white" : "bg-slate-100"}`}>새 공고가 있을 때만</button>
         <button type="button" aria-pressed={watch.mode === "digest"} onClick={() => setWatch({ ...watch, mode: "digest" })} className={`w-full rounded-xl p-3 text-sm font-semibold ${watch.mode === "digest" ? "bg-indigo-600 text-white" : "bg-slate-100"}`}>정해진 시간마다 요약 받기</button>
-        <p className="text-xs text-slate-500">요약 모드는 새 공고가 없어도 맞는 공고 수와 마감 임박 수를 알려 드려요.</p>
+        <p className="text-xs text-slate-500">요약 모드는 새 공고가 없어도 맞는 공고 수와 마감 임박 수를 알립니다.</p>
       </section>
 
       <button type="button" disabled={saving} onClick={onSave} className="rounded-2xl bg-indigo-600 py-3 font-semibold text-white disabled:opacity-50">

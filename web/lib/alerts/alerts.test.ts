@@ -87,19 +87,19 @@ describe("findNew", () => {
     expect(findNew(watch({ domains: [] }), [opp("a", { domain: "exam" })], NOW)).toHaveLength(1);
   });
 
-  it("exact/approx 좌표가 반경 밖이면 제외하고 region 정밀도는 유지", () => {
+  it("반경 밖 공고도 결과와 동일하게 알림 후보로 유지합니다", () => {
     const w = watch({ location: { lat: 37.57, lng: 126.98, radiusKm: 2 } });
     const pool = [
       opp("near", { geo: { lat: 37.57, lng: 126.98, precision: "exact" } }),
       opp("far", { geo: { lat: 37.7, lng: 127.1, precision: "approx" } }),
       opp("region", { geo: { lat: 35.1, lng: 129.0, precision: "region" } }),
     ];
-    expect(findNew(w, pool, NOW).map((o) => o.id)).toEqual(["near", "region"]);
+    expect(findNew(w, pool, NOW).map((o) => o.id)).toEqual(["near", "far", "region"]);
     expect(findDeadlineSoon(
       w,
       pool.map((o) => ({ ...o, applyEnd: "2026-11-22" })),
       NOW,
-    ).map((o) => o.id)).toEqual(["near", "region"]);
+    ).map((o) => o.id)).toEqual(["near", "far", "region"]);
   });
 });
 

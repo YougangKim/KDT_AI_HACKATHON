@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   }
   event.waitUntil(
     self.registration.showNotification(data.title || "My News", {
-      body: data.body || "새 알림이 있어요",
+      body: data.body || "새 알림이 있습니다",
       data: { url: data.url || "/alerts" },
     }),
   );

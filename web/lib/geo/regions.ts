@@ -28,7 +28,7 @@ export interface RegionCenter {
   lng: number;
 }
 
-/** 시도청 소재지 중심 좌표. 정확한 행정 경계 판정이 아닌 근사값이다. */
+/** 시도청 소재지 중심 좌표. 정확한 행정 경계 판정이 아닌 근사값입니다. */
 export const REGION_CENTERS: RegionCenter[] = [
   { name: "서울", lat: 37.5665, lng: 126.978 },
   { name: "부산", lat: 35.1796, lng: 129.0756 },

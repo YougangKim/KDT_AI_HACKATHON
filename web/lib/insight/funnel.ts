@@ -51,24 +51,26 @@ const GROUPED_ATTRS = new Set<Condition["attr"]>([
 ]);
 
 const QUESTION_TEXT: Record<Condition["attr"], string> = {
-  age: "만 나이가 어떻게 되나요?",
-  region: "지금 어디에 살고 있나요?",
-  homeless: "본인 명의 집이 있나요?",
-  livingAlone: "현재 1인 가구인가요?",
-  incomePct: "가구 소득은 기준중위소득의 몇 % 정도인가요?",
-  employment: "지금 어떤 상태인가요?",
-  interest: "어떤 정보가 필요한가요?",
-  subscription: "청약통장이 있나요?",
-  married: "신혼부부 또는 예비 신혼부부인가요?",
-  welfare: "수급자 또는 차상위 대상인가요?",
-  experienced: "관련 경력이 있나요?",
-  education: "최종 학력이 어떻게 되나요?",
-  field: "어떤 분야의 일을 찾고 있나요?",
-  need: "어떤 지원이 필요한가요?",
-  housingKind: "어떤 집을 찾고 있나요?",
+  topic: "어떤 주제의 공고를 우선 탐색합니까?",
+  age: "만 나이가 어떻게 됩니까?",
+  region: "지금 어디에 살고 있습니까?",
+  homeless: "본인 명의 집이 있습니까?",
+  livingAlone: "현재 1인 가구입니까?",
+  incomePct: "가구 소득은 기준중위소득의 몇 % 정도입니까?",
+  employment: "지금 어떤 상태입니까?",
+  interest: "어떤 정보가 필요합니까?",
+  subscription: "청약통장이 있습니까?",
+  married: "신혼부부 또는 예비 신혼부부입니까?",
+  welfare: "수급자 또는 차상위 대상입니까?",
+  experienced: "관련 경력이 있습니까?",
+  education: "최종 학력이 어떻게 됩니까?",
+  field: "어떤 분야의 일을 찾고 있습니까?",
+  need: "어떤 지원이 필요합니까?",
+  housingKind: "어떤 집을 찾고 있습니까?",
 };
 
 const REASON_TEXT: Record<Condition["attr"], string> = {
+  topic: "선택한 탐색 주제와 다른 공고",
   age: "나이 기준이 맞지 않는 공고",
   region: "다른 지역 대상 공고",
   homeless: "주택 보유 기준이 맞지 않는 공고",
@@ -121,7 +123,7 @@ function numericRange(records: AnswerRecord[], unit: string): string {
   if (min !== null && max !== null) return `${min}~${max}${unit}`;
   if (max !== null) return `${max}${unit} 이하`;
   if (min !== null) return `${min}${unit} 이상`;
-  return "잘 모르겠어요";
+  return "모름";
 }
 
 function answerText(records: AnswerRecord[]): string {
@@ -134,10 +136,10 @@ function answerText(records: AnswerRecord[]): string {
   if (attr === "incomePct") return numericRange(records, "%");
   if (attr === "education") {
     const level = selected.map(Number).sort((a, b) => b - a)[0];
-    return EDUCATION[level] ?? "잘 모르겠어요";
+    return EDUCATION[level] ?? "모름";
   }
   if (attr === "employment") {
-    return selected.map((v) => EMPLOYMENT_LABEL[v] ?? v).join("·") || "잘 모르겠어요";
+    return selected.map((v) => EMPLOYMENT_LABEL[v] ?? v).join("·") || "모름";
   }
   if (attr === "interest") {
     return selected.map((v) => DOMAIN_LABEL[v as Domain] ?? v).join("·") || "선택하지 않음";
@@ -285,36 +287,37 @@ export function analyzeFunnel(
 
 export function relaxationText(step: FilterStep, gain: number): string {
   switch (step.attr) {
+    case "topic": return `탐색 주제를 넓히면 ${gain}건이 더 표시됩니다`;
     case "incomePct":
-      return `소득 기준을 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `소득 기준을 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "region":
-      return `다른 지역 공고도 함께 보면 ${gain}건이 더 보여요`;
+      return `다른 지역 공고도 함께 보면 ${gain}건이 더 표시됩니다`;
     case "age":
-      return `나이 기준을 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `나이 기준을 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "homeless":
-      return `주택 보유 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `주택 보유 여부를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "livingAlone":
-      return `1인 가구 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `1인 가구 여부를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "employment":
-      return `취업 상태를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `취업 상태를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "interest":
-      return `다른 분야 공고도 함께 보면 ${gain}건이 더 보여요`;
+      return `다른 분야 공고도 함께 보면 ${gain}건이 더 표시됩니다`;
     case "subscription":
-      return `청약통장 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `청약통장 여부를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "married":
-      return `신혼부부 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `신혼부부 여부를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "welfare":
-      return `수급자·차상위 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `수급자·차상위 여부를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "experienced":
-      return `경력 여부를 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `경력 여부를 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "education":
-      return `학력을 "모름"으로 두면 ${gain}건이 더 보여요`;
+      return `학력을 "모름"으로 두면 ${gain}건이 더 표시됩니다`;
     case "field":
-      return `다른 직무 분야도 함께 보면 ${gain}건이 더 보여요`;
+      return `다른 직무 분야도 함께 보면 ${gain}건이 더 표시됩니다`;
     case "need":
-      return `다른 종류의 지원도 함께 보면 ${gain}건이 더 보여요`;
+      return `다른 종류의 지원도 함께 보면 ${gain}건이 더 표시됩니다`;
     case "housingKind":
-      return `임대·분양을 모두 보면 ${gain}건이 더 보여요`;
+      return `임대·분양을 모두 보면 ${gain}건이 더 표시됩니다`;
   }
 }
 

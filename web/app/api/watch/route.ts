@@ -1,5 +1,5 @@
 // 조건·푸시 구독을 서버에 저장(POST)하고, 반복 리서치 상태를 돌려준다(GET). POST ?scan=1 은 지금 바로 1회 조사. DELETE는 삭제.
-// 인증: 처음 저장할 때 클라이언트가 만든 비밀 토큰의 해시를 저장하고, 이후 모든 요청은 같은 토큰(Bearer)이 있어야 한다.
+// 인증: 처음 저장할 때 클라이언트가 만든 비밀 토큰의 해시를 저장하고, 이후 모든 요청은 같은 토큰(Bearer)이 있어야 합니다.
 import type { Watch } from "@/lib/types";
 import { deleteRecord, getLastCronAt, getRecord, persistent, putRecord, type WatchRecord } from "@/lib/server/store";
 import { scanOne } from "@/lib/server/scan";
@@ -24,7 +24,7 @@ async function status(rec: WatchRecord | null) {
     lastSources: rec.lastSources ?? [],
     lastNewTitles: rec.lastNewTitles ?? [],
     totalNew: rec.totalNew,
-    schedule: p ? "저장한 일정에 따라 자동 조사" : "데모 모드: 서버가 재시작되면 저장한 조건이 사라져요",
+    schedule: p ? "저장한 일정에 따라 자동 조사" : "데모 모드: 서버가 재시작되면 저장한 조건이 사라집니다",
     history: rec.history ?? [],
     lastCronAt: await getLastCronAt(),
   };
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
       },
     } as WatchRecord;
   }
-  if (!rec) return Response.json({ error: "저장된 조건이 없어요" }, { status: 404 });
+  if (!rec) return Response.json({ error: "저장된 조건이 없습니다" }, { status: 404 });
   if (body.subscription !== undefined) {
     if (!validSubscription(body.subscription)) return Response.json({ error: "지원하지 않는 푸시 구독" }, { status: 400 });
     rec.subscription = body.subscription;
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
   if (url.searchParams.get("scan") === "1") {
     const now = Date.now();
     if (now - (lastManual.get(id) ?? 0) < 30_000) {
-      return Response.json({ error: "30초 후에 다시 조사할 수 있어요" }, { status: 429 });
+      return Response.json({ error: "30초 후에 다시 조사할 수 있습니다" }, { status: 429 });
     }
     lastManual.set(id, now);
     rec = await scanOne(rec);

@@ -37,7 +37,7 @@ describe("AI 영구 캐시", () => {
     expect(await getCached("test", "v2\ninput")).toBeNull();
   });
 
-  test("Upstash가 없으면 파일 캐시를 재사용한다", async () => {
+  test("Upstash가 없으면 파일 캐시를 재사용합니다", async () => {
     vi.stubEnv("AI_CACHE_DISABLE_FILE", "0");
     vi.mock("node:fs/promises", () => {
       let contents = "{}";

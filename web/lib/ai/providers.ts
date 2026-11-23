@@ -91,6 +91,7 @@ async function openAiCompatible(
       ],
       max_tokens: maxTokens,
       temperature: 0.2,
+      ...(name === "groq" && model.startsWith("openai/gpt-oss-") ? { reasoning_effort: "low" } : {}),
     }),
   });
   if (!response) return null;
@@ -217,7 +218,7 @@ export async function chat(
       "groq",
       "https://api.groq.com/openai/v1/chat/completions",
       process.env.GROQ_API_KEY!,
-      process.env.GROQ_MODEL || "llama-3.1-8b-instant",
+      process.env.GROQ_MODEL || "openai/gpt-oss-120b",
       system,
       user,
       maxTokens,

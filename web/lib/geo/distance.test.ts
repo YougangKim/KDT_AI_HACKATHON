@@ -28,13 +28,13 @@ describe("distanceKm", () => {
     expect(distanceKm(location, location)).toBe(0);
   });
 
-  test("서울시청과 약 1도 떨어진 지점의 거리를 계산한다", () => {
+  test("서울시청과 약 1도 떨어진 지점의 거리를 계산합니다", () => {
     expect(distanceKm(location, { lat: 38.5665, lng: 126.978 })).toBeCloseTo(111.2, 0);
   });
 });
 
 describe("filterMatchesByRadius", () => {
-  test("정확·근사 좌표만 반경으로 제외하고 지역 단위와 좌표 없음은 남긴다", () => {
+  test("거리와 좌표 정밀도에 관계없이 모든 공고를 표시합니다", () => {
     const result = filterMatchesByRadius([
       match("near", 37.57),
       match("far", 37.7, "approx"),
@@ -42,13 +42,13 @@ describe("filterMatchesByRadius", () => {
       match("none"),
     ], location);
 
-    expect(result.matches.map((item) => item.opportunity.id)).toEqual(["near", "region", "none"]);
-    expect(result.excluded).toBe(1);
+    expect(result.matches.map((item) => item.opportunity.id)).toEqual(["near", "far", "region", "none"]);
+    expect(result.excluded).toBe(0);
   });
 });
 
 describe("approximateLocation", () => {
-  test("서버 저장용 좌표를 소수 둘째 자리로 반올림한다", () => {
+  test("서버 저장용 좌표를 소수 둘째 자리로 반올림합니다", () => {
     expect(approximateLocation({ lat: 37.56651, lng: 126.97804, radiusKm: 2 })).toEqual({
       lat: 37.57,
       lng: 126.98,

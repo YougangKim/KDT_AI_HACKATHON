@@ -29,7 +29,7 @@ export interface PendingQuestion {
 export interface Relaxation {
   step: FilterStep;
   gain: number; // 이 조건을 풀면 늘어나는 통과 수 (passedWithout - passed)
-  suggestion: string; // 화면 문구 (예: "소득 조건을 '모름'으로 두면 12건이 더 보여요")
+  suggestion: string; // 화면 문구 (예: "소득 조건을 '모름'으로 두면 12건이 더 표시됩니다")
 }
 
 export interface FunnelReport {

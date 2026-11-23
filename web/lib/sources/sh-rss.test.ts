@@ -25,7 +25,7 @@ describe("SH 공식 RSS(선택 기능)", () => {
     expect(isRecruitment("2026년 청년안심주택 입주자 모집공고")).toBe(true);
     expect(isRecruitment("2026년 행복주택 당첨자 발표")).toBe(false);
   });
-  it("SH 도메인만 https 링크로 변환하고 RSS 출처로 표시한다", () => {
+  it("SH 도메인만 https 링크로 변환하고 RSS 출처로 표시합니다", () => {
     const now = new Date("2026-11-21T00:00:00Z");
     const [a, , c] = parseRss(XML);
     const o = toOpportunity(a, now)!;

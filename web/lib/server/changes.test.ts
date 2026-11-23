@@ -10,14 +10,14 @@ const opp = (id: string, applyEnd?: string, extra: Partial<Opportunity> = {}): O
 const now = new Date("2026-11-21T00:00:00+09:00");
 
 describe("마감 변경·임박 감지", () => {
-  it("처음 본 공고는 변경으로 치지 않고, 마감일이 바뀌면 알린다", () => {
+  it("처음 본 공고는 변경으로 치지 않고, 마감일이 바뀌면 알립니다", () => {
     const first = detectChanges([opp("a", "2026-12-31")], {}, now);
     expect(first.changed).toEqual([]);
     const second = detectChanges([opp("a", "2027-01-15")], first.known, now);
     expect(second.changed).toHaveLength(1);
     expect(second.changed[0]).toMatchObject({ from: "2026-12-31", to: "2027-01-15" });
   });
-  it("D-3 이내 임박은 공고당 한 번만 알린다", () => {
+  it("D-3 이내 임박은 공고당 한 번만 알립니다", () => {
     const r1 = detectChanges([opp("b", "2026-11-23")], {}, now);
     expect(r1.soon.map((o) => o.id)).toEqual(["b"]);
     const r2 = detectChanges([opp("b", "2026-11-23")], r1.known, now);

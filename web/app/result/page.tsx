@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Answer, Domain } from "@/lib/types";
+import type { Domain } from "@/lib/types";
+import type { AnswerChange } from "@/lib/engine/answer-groups";
 import { analyzeFunnel } from "@/lib/insight/funnel";
-import { rankQuestions } from "@/lib/engine";
 import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
 import { buildWatch, saveWatch } from "@/lib/alerts";
 import { registerSW, requestPermission, checkAlerts, syncWatch } from "@/lib/alerts/client";
 import { MatchCard } from "@/components/result/MatchCard";
-import { readLastResult, relaxAnswer, setAnswer, type LastResult } from "@/components/result/lastResult";
+import { readLastResult, relaxAnswer, setAnswers, type LastResult } from "@/components/result/lastResult";
 import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { interleaveByDomain, myRegion, sortMatches } from "@/components/result/sort";
@@ -20,12 +20,12 @@ import { Icon } from "@/components/brand/Icons";
 type AiSummary = { id: string; summary: string; how: string };
 type ResultTab = "all" | Domain;
 
-const FIRST = 3; // 끝나자마자 먼저 보여 줄 공고 수
+const FIRST = 6; // 한 페이지에 표시할 공고 수
 
 export default function ResultPage() {
   const [result, setResult] = useState<LastResult | null | undefined>(undefined);
   const [highlighted, setHighlighted] = useState("");
-  const [showAll, setShowAll] = useState(false);
+  const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState("");
   const [summaries, setSummaries] = useState<Record<string, AiSummary>>({});
@@ -72,8 +72,7 @@ export default function ResultPage() {
   // 결과가 적으면 어떤 조건을 풀면 늘어나는지 바로 보여 준다
   const report = useMemo(() => (result?.pool?.length ? analyzeFunnel(result.pool, result.answers, hard) : null), [result, hard]);
   const relax = report?.scarce ? report.relaxOptions : [];
-  // 더 물어볼 질문이 남아 있을 때만 "질문 더 해서 좁히기"를 연다(누르면 바로 "없어요"가 되는 버튼 방지)
-  const canNarrow = useMemo(() => !!result?.pool?.length && rankQuestions({ pool: result.pool, answers: result.answers }, 1).length > 0, [result]);
+  // 더 물어볼 질문이 남아 있을 때만 "질문 더 해서 좁히기"를 연다(누르면 바로 "없습니다"가 되는 버튼 방지)
 
   function onRelax(questionId: string) {
     if (!result) return;
@@ -86,14 +85,14 @@ export default function ResultPage() {
       okGain >= 0
         ? `바로 신청 +${okGain} · 확인 필요 +${gained - okGain}`
         : `모두 확인 필요, 기존 바로 신청 ${-okGain}개도 확인 필요로 바뀜`;
-    setNote(`조건을 풀어서 ${gained}개 늘었어요(${detail}).`);
+    setNote(`조건을 풀어서 ${gained}개 늘었습니다(${detail}).`);
     setResult(next);
   }
 
-  function onEdit(questionId: string, a: Answer) {
+  function onEdit(changes: AnswerChange[]) {
     if (!result) return;
-    const next = setAnswer(result, questionId, a);
-    setNote(`조건을 바꿨어요. ${result.matches.length}개 → ${next.matches.length}개`);
+    const next = setAnswers(result, changes);
+    setNote(`조건을 변경했습니다. ${result.matches.length}개 → ${next.matches.length}개`);
     setResult(next);
     setSaved(false); // 바뀐 조건으로 다시 저장할 수 있게
   }
@@ -109,26 +108,18 @@ export default function ResultPage() {
     const r = await syncWatch(); // 서버에 조건 저장 → 앱을 닫아도 매일 반복 조사
     if (r.error || !r.saved) {
       // 버튼을 그대로 둬서 다시 누르면 재시도
-      setNote(`이 기기에는 저장했지만 서버 저장에 실패했어요(${r.error ?? "알 수 없는 오류"}). 다시 눌러 재시도하세요.`);
+      setNote(`이 기기에는 저장했지만 서버 저장에 실패했습니다(${r.error ?? "알 수 없는 오류"}). 다시 눌러 재시도할 수 있습니다.`);
       return;
     }
     setSaved(true);
-    setNote(p === "granted" ? "저장했어요. 매일 다시 찾아보고 새 공고·마감 임박을 알려 드려요." : "저장했어요. 알림이 꺼져 있어 앱을 열 때 알림함에 표시해 드려요.");
+    setNote(p === "granted" ? "저장했습니다. 매일 다시 찾아보고 새 공고·마감 임박을 알립니다." : "저장했습니다. 알림이 꺼져 있어 앱을 열 때 알림함에 표시합니다.");
   }
 
   async function onCheck() {
     const items = await checkAlerts();
-    setNote(items.length ? "새 알림을 확인했습니다. 알림함에서 확인하세요." : "이번 조회에서 새로 알릴 공고가 없습니다.");
+    setNote(items.length ? "새 알림을 확인했습니다. 알림함에서 확인할 수 있습니다." : "이번 조회에서 새로 알릴 공고가 없습니다.");
   }
 
-  const selectFromMap = useCallback((id: string) => {
-    setShowAll(true);
-    setHighlighted(id);
-    requestAnimationFrame(() => {
-      document.getElementById(`match-${encodeURIComponent(id)}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-    window.setTimeout(() => setHighlighted(""), 2500);
-  }, []);
 
   // 정렬·첫 요약 요청은 훅이라 조기 return보다 위에 둔다
   const domainCounts = useMemo(() => {
@@ -158,12 +149,23 @@ export default function ResultPage() {
     // 전체 탭: 고른 분야가 골고루 보이도록 분야별로 번갈아 보여 준다
     return tab === "all" ? interleaveByDomain(sorted) : sorted;
   }, [result, selectedMatches, tab]);
-  const firstIds = sortedAll.slice(0, FIRST).map((match) => match.opportunity.id).join("|");
+  const currentPage = Math.min(page, Math.max(0, Math.ceil(sortedAll.length / FIRST) - 1));
+  const selectFromMap = useCallback((id: string) => {
+    const index = sortedAll.findIndex((m) => m.opportunity.id === id);
+    if (index < 0) return;
+    setPage(Math.floor(index / FIRST));
+    setHighlighted(id);
+  }, [sortedAll]);
+  useEffect(() => {
+    if (!highlighted) return;
+    document.getElementById(`match-${encodeURIComponent(highlighted)}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [highlighted, currentPage]);
+  const firstIds = sortedAll.slice(currentPage * FIRST, (currentPage + 1) * FIRST).map((match) => match.opportunity.id).join("|");
   useEffect(() => {
     void requestSummaries(firstIds ? firstIds.split("|") : []);
   }, [firstIds, requestSummaries]);
   useEffect(() => {
-    setShowAll(false);
+    setPage(0);
     setHighlighted("");
   }, [tab]);
 
@@ -178,15 +180,9 @@ export default function ResultPage() {
   if (result === undefined) return null;
 
   const narrowControl = result?.pool?.length ? (
-    canNarrow ? (
       <Link href="/play?continue=1" className="block w-full rounded-2xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm">
         <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />추가 질문으로 더 좁히기
       </Link>
-    ) : (
-      <p className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm text-slate-600 break-keep">
-        더 좁힐 질문이 없어요. 조건 고치기에서 관심 키워드나 지역 반경을 좁혀 보세요.
-      </p>
-    )
   ) : null;
 
   const editor = result?.answers.length ? (
@@ -228,10 +224,10 @@ export default function ResultPage() {
     return (
       <main className="flex flex-1 flex-col items-center justify-center gap-4 pb-[calc(8rem+env(safe-area-inset-bottom))] pt-16 text-center">
         <Icon name="smile" className="h-12 w-12 text-indigo-500" />
-        <p className="text-slate-600">{result ? "지금 조건에 맞는 공고가 없어요." : "아직 결과가 없어요."}</p>
+        <p className="text-slate-600">{result ? "지금 조건에 맞는 공고가 없습니다." : "아직 결과가 없습니다."}</p>
         {relax.length > 0 && (
           <div className="w-full text-left">
-            <RelaxSuggestions options={relax} onRelax={onRelax} title="이 조건을 풀면 공고가 생겨요" />
+            <RelaxSuggestions options={relax} onRelax={onRelax} title="이 조건을 풀면 공고가 추가됩니다" />
           </div>
         )}
         {result?.pool?.length ? (
@@ -251,14 +247,9 @@ export default function ResultPage() {
 
   const sorted = sortedAll;
 
-  function showMore() {
-    setShowAll(true);
-    void requestSummaries(sorted.slice(FIRST, FIRST + 5).map((match) => match.opportunity.id));
-  }
-
-  const shown = showAll ? sorted : sorted.slice(0, FIRST);
+  const shown = sorted.slice(currentPage * FIRST, (currentPage + 1) * FIRST);
   const eligible = selectedMatches.filter((m) => m.status === "eligible").length;
-  const rest = sorted.length - shown.length;
+  const pages = Math.ceil(sorted.length / FIRST);
   const domains = [...domainCounts.entries()].filter(([, count]) => count > 0);
 
   return (
@@ -280,7 +271,7 @@ export default function ResultPage() {
       </header>
 
       <div>
-        <h1 className="text-2xl font-bold">딱 맞는 공고를 찾았어요</h1>
+        <h1 className="text-2xl font-bold">맞춤 공고</h1>
         <p className="text-sm text-slate-500">
           전체 {selectedMatches.length}개 · 바로 신청 {eligible}개
         </p>
@@ -288,7 +279,7 @@ export default function ResultPage() {
 
       {result.narrowedFrom !== undefined && (
         <p role="status" className="rounded-xl bg-emerald-50 p-3 text-center text-sm font-semibold text-emerald-800">
-          {result.narrowedFrom}개 → {result.matches.length}개로 좁혔어요
+          {result.narrowedFrom}개 → {result.matches.length}개로 좁혔습니다
         </p>
       )}
 
@@ -315,7 +306,7 @@ export default function ResultPage() {
 
       {result.radiusExcluded ? (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          <span>반경 밖 {result.radiusExcluded}건을 제외했어요.</span>
+          <span>반경 밖 {result.radiusExcluded}건을 제외했습니다.</span>
           <Link href="/play" className="min-h-11 shrink-0 content-center rounded-xl bg-white px-3 font-semibold ring-1 ring-amber-200">
             반경 넓히기
           </Link>
@@ -326,11 +317,11 @@ export default function ResultPage() {
         <ResultMap ref={mapRef} matches={sortedAll} location={result.location} onSelect={selectFromMap} />
       ) : (
         <p className="rounded-xl bg-slate-100 p-3 text-center text-sm text-slate-600">
-          위치를 설정하면 공고를 지도로 볼 수 있어요.
+          위치를 설정하면 공고를 지도로 볼 수 있습니다.
         </p>
       )}
 
-      {relax.length > 0 && <RelaxSuggestions options={relax} onRelax={onRelax} title={`${result.matches.length}개뿐이에요. 이 조건을 풀면 더 보여요`} />}
+      {relax.length > 0 && <RelaxSuggestions options={relax} onRelax={onRelax} title={`현재 ${result.matches.length}건. 조건을 완화하면 더 표시됩니다`} />}
 
       <div className="space-y-3">
         {shown.map((m) => (
@@ -339,17 +330,18 @@ export default function ResultPage() {
             match={m}
             location={result.location}
             highlighted={highlighted === m.opportunity.id}
-            onShowMap={m.opportunity.geo?.precision !== "region" ? () => mapRef.current?.show(m.opportunity.id) : undefined}
             aiSummary={summaries[m.opportunity.id]}
             summaryMs={summaryMs[m.opportunity.id]}
           />
         ))}
       </div>
 
-      {!showAll && rest > 0 && (
-        <button onClick={showMore} className="w-full rounded-2xl border border-slate-300 bg-white py-3 text-sm font-semibold">
-          더보기 +{rest}
-        </button>
+      {pages > 1 && (
+        <nav aria-label="공고 페이지" className="flex items-center justify-between gap-3">
+          <button disabled={currentPage === 0} onClick={() => setPage(currentPage - 1)} className="rounded-xl border px-4 py-3 disabled:opacity-40">이전</button>
+          <span role="status">{currentPage + 1} / {pages} 페이지</span>
+          <button disabled={currentPage + 1 >= pages} onClick={() => setPage(currentPage + 1)} className="rounded-xl border px-4 py-3 disabled:opacity-40">다음</button>
+        </nav>
       )}
 
       {editor}

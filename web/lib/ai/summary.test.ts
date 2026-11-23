@@ -26,7 +26,7 @@ test("요약 영구 캐시 적중이면 AI를 호출하지 않는다", async () 
     isSample: false,
     fetchedAt: "2026-11-22T00:00:00Z",
   };
-  const input = `summary-v2\n${JSON.stringify({
+  const input = `summary-v3-formal\n${JSON.stringify({
     id: item.id,
     제목: item.title,
     기관: item.org,
@@ -36,16 +36,16 @@ test("요약 영구 캐시 적중이면 AI를 호출하지 않는다", async () 
   })}`;
   await setCached("summary", input, {
     id: item.id,
-    summary: "지원 내용을 확인하세요.",
-    how: "원문에서 신청 방법을 확인하세요.",
+    summary: "지원 내용을 확인할 수 있습니다.",
+    how: "원문에서 신청 방법을 확인할 수 있습니다.",
   }, 1);
   const fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
 
   expect(await summarizeOpportunities([item])).toEqual([{
     id: item.id,
-    summary: "지원 내용을 확인하세요.",
-    how: "원문에서 신청 방법을 확인하세요.",
+    summary: "지원 내용을 확인할 수 있습니다.",
+    how: "원문에서 신청 방법을 확인할 수 있습니다.",
   }]);
   expect(fetchMock).not.toHaveBeenCalled();
 });

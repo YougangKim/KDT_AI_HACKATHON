@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Opportunity } from "../types";
+import { collectLiveOpportunities } from "@/lib/sources";
 
 const { adapters, flags } = vi.hoisted(() => ({
   adapters: [
@@ -64,7 +65,7 @@ describe("공고 풀", () => {
     _clearPoolMemory();
   });
 
-  it("일부 출처 실패 시 이전 저장본을 유지한다", async () => {
+  it("일부 출처 실패 시 이전 저장본을 유지합니다", async () => {
     await collectPool(new Date("2026-11-23T00:00:00Z"));
     flags.failTwo = true;
     await collectPool(new Date("2026-11-23T00:16:00Z"));
@@ -78,7 +79,7 @@ describe("공고 풀", () => {
     });
   });
 
-  it("900KB를 넘는 출처 값을 조각낸 뒤 순서를 보존한다", () => {
+  it("900KB를 넘는 출처 값을 조각낸 뒤 순서를 보존합니다", () => {
     const items = [
       opportunity("one", "가".repeat(500_000)),
       { ...opportunity("one", "나".repeat(500_000)), id: "one:2" },
@@ -86,5 +87,19 @@ describe("공고 풀", () => {
     const chunks = splitPoolChunks(items);
     expect(chunks).toHaveLength(2);
     expect(chunks.flat().map((item) => item.id)).toEqual(["one:1", "one:2"]);
+  });
+
+  it("키 등록 전 건너뛴 출처는 등록 직후 다시 수집합니다", async () => {
+    vi.mocked(collectLiveOpportunities).mockImplementationOnce(async (_domains, _now, options) => {
+      options?.onSource?.({ source: "one", ok: true, count: 0, calls: 0, durationMs: 0 });
+      return [];
+    });
+    await collectPool(new Date("2026-11-23T00:00:00Z"));
+    vi.stubEnv("ONE", "test-key");
+    try {
+      await collectPool(new Date("2026-11-23T00:00:01Z"));
+      expect((await readPool())?.meta.sources.one.calls).toBe(1);
+      expect((await readPool())?.items.some((item) => item.source === "one")).toBe(true);
+    } finally { vi.unstubAllEnvs(); }
   });
 });

@@ -34,11 +34,11 @@ async function nominatim(q: string): Promise<{ lat: number; lng: number; label: 
 
 export async function GET(req: Request) {
   const q = (new URL(req.url).searchParams.get("q") ?? "").trim().slice(0, 100);
-  if (q.length < 2) return Response.json({ error: "검색어가 너무 짧아요" }, { status: 400 });
+  if (q.length < 2) return Response.json({ error: "검색어가 너무 짧습니다" }, { status: 400 });
   try {
     const key = process.env.KAKAO_REST_API_KEY;
     const hit = (key ? await kakao(q, key) : null) ?? (await nominatim(q));
-    return hit ? Response.json(hit) : Response.json({ error: "주소를 찾지 못했어요" }, { status: 404 });
+    return hit ? Response.json(hit) : Response.json({ error: "주소를 찾지 못했습니다" }, { status: 404 });
   } catch {
     return Response.json({ error: "주소 검색 실패" }, { status: 502 });
   }

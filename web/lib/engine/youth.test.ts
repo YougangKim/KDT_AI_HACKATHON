@@ -28,7 +28,7 @@ describe("청년 기본 지식", () => {
 });
 
 describe("취업 상태는 바뀔 수 있어 탈락시키지 않는다", () => {
-  it("알바 중이라고 답해도 미취업자 대상 공고는 '확인 필요'로 남는다", () => {
+  it("알바 중이라고 답해도 미취업자 대상 공고는 '확인 필요'로 남습니다", () => {
     const ms = getMatches({
       pool: [opp([{ attr: "employment", op: "in", value: ["jobseeker", "student"], rawText: "미취업 청년", confidence: "high" }])],
       answers: [{ question: q("employment", "eq", "parttime"), answer: "yes" }],
@@ -40,7 +40,7 @@ describe("취업 상태는 바뀔 수 있어 탈락시키지 않는다", () => {
 
 describe("근거 없는 탈락 방지", () => {
   const no = (attr: Question["attr"], op: Question["op"], value: Question["value"]) => ({ question: q(attr, op, value), answer: "no" as const });
-  it("'우대' 나이 조건은 넘어도 남는다", () => {
+  it("'우대' 나이 조건은 넘어도 남습니다", () => {
     const ms = getMatches({ pool: [opp([{ attr: "age", op: "lte", value: 34, rawText: "만 34세 이하 청년 우대", confidence: "high" }])], answers: [no("age", "lte", 34)] });
     expect(ms[0]?.status).toBe("needs_check");
   });
@@ -59,15 +59,15 @@ describe("근거 없는 탈락 방지", () => {
 });
 
 describe("지역을 고른 뒤 다른 지역 근무 공고", () => {
-  it("부산에 산다고 하면 전북 근무 채용은 결과에서 빠진다(검수 A7 회귀)", async () => {
+  it("부산에 살아도 이동 가능한 전북 근무 공고를 표시합니다", async () => {
     const { getMatches } = await import("./index");
     const job = (id: string, region: string[]) => ({
       id, domain: "job" as const, title: id, org: "", region, summary: "", url: "", source: "jobalio", isSample: false, fetchedAt: "",
       conditions: [{ attr: "interest" as const, op: "eq" as const, value: "job", rawText: "", confidence: "high" as const }],
     });
-    const q = { id: "region:eq:부산", attr: "region" as const, op: "eq" as const, value: "부산", text: "지금 부산에 살고 있나요?" };
+    const q = { id: "region:eq:부산", attr: "region" as const, op: "eq" as const, value: "부산", text: "지금 부산에 살고 있습니까?" };
     const ids = getMatches({ pool: [job("jeonbuk", ["전북"]), job("busan", ["부산"]), job("anywhere", [])], answers: [{ question: q, answer: "yes" }] }).map((m) => m.opportunity.id);
     expect(ids).toEqual(expect.arrayContaining(["busan", "anywhere"]));
-    expect(ids).not.toContain("jeonbuk");
+    expect(ids).toContain("jeonbuk");
   });
 });

@@ -6,7 +6,7 @@ import { chat } from "./providers";
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); _resetClient(); });
 
 describe("Gemini 경로", () => {
-  it("Claude 키가 없고 Gemini 키가 있으면 Gemini로 구조화한다", async () => {
+  it("Claude 키가 없고 Gemini 키가 있으면 Gemini로 구조화합니다", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "");
     vi.stubEnv("GEMINI_API_KEY", "g");
     _resetClient();
@@ -28,6 +28,14 @@ describe("Gemini 경로", () => {
 });
 
 describe("무료 LLM 폴백 체인", () => {
+  it("사용 가능한 Groq 기본 모델과 낮은 추론량을 사용합니다", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq");
+    vi.stubEnv("GROQ_MODEL", "");
+    const f = vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{message:{content:"ok"}}]})));
+    vi.stubGlobal("fetch", f);
+    expect(await chat("system", "user", 1800)).toBe("ok");
+    expect(JSON.parse(f.mock.calls[0][1].body)).toMatchObject({model:"openai/gpt-oss-120b",reasoning_effort:"low",max_tokens:1800});
+  });
   it("첫 공급자가 429면 다음 공급자로 넘어간다", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq");
     vi.stubEnv("OPENROUTER_API_KEY", "openrouter");
@@ -118,8 +126,8 @@ describe("AI 조건 안전장치", () => {
 
 describe("Gemini 다음 질문 선택", () => {
   const cands = [
-    { id: "region:eq:서울", text: "지금 어디에 살고 있나요?", yes: 40, no: 300, resolve: 0 },
-    { id: "homeless:eq:true", text: "본인 명의 집이 없나요?", yes: 200, no: 150, resolve: 30 },
+    { id: "region:eq:서울", text: "지금 어디에 살고 있습니까?", yes: 40, no: 300, resolve: 0 },
+    { id: "homeless:eq:true", text: "본인 명의 집이 없습니까?", yes: 200, no: 150, resolve: 30 },
   ];
   it("후보 중 Gemini가 고른 id를 돌려주고, 요청에 후보·답한 내용만 보낸다", async () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "");
@@ -128,7 +136,7 @@ describe("Gemini 다음 질문 선택", () => {
     const f = vi.fn(async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"id":"homeless:eq:true","why":"균형"}' }] } }] })));
     vi.stubGlobal("fetch", f);
     const { pickNextQuestion } = await import("./index");
-    expect(await pickNextQuestion(cands, [{ text: "청년 주택 정보가 필요한가요?", answer: "yes" }], 340)).toBe("homeless:eq:true");
+    expect(await pickNextQuestion(cands, [{ text: "청년 주택 정보가 필요합니까?", answer: "yes" }], 340)).toBe("homeless:eq:true");
     const body = String(((f.mock.calls[0] as unknown[])[1] as { body: string }).body);
     expect(body).toContain("homeless:eq:true");
     expect(String((f.mock.calls[0] as unknown[])[0])).toContain("generateContent");

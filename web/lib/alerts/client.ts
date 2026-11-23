@@ -100,7 +100,7 @@ export async function sendTestPush(publicKey: string): Promise<boolean> {
       body: JSON.stringify({
         subscription: sub.toJSON(),
         title: "새 공고 도착 (푸시 테스트)",
-        body: "저장한 조건에 맞는 공고가 올라오면 이렇게 알려 드려요.",
+        body: "저장한 조건에 맞는 공고가 올라오면 이렇게 알립니다.",
       }),
     });
     return res.ok;
@@ -173,7 +173,7 @@ export async function syncWatch(scan = false): Promise<ResearchStatus> {
     });
     return (await res.json()) as ResearchStatus;
   } catch {
-    return { saved: false, error: "서버에 연결하지 못했어요" };
+    return { saved: false, error: "서버에 연결하지 못했습니다" };
   }
 }
 
@@ -193,7 +193,7 @@ export async function deleteServerWatch(): Promise<void> {
   } catch {}
 }
 
-/** 열린 탭에서는 저장한 간격에 맞춰 새 공고를 확인한다. 숨긴 탭에서는 중지한다. */
+/** 열린 탭에서는 저장한 간격에 맞춰 새 공고를 확인합니다. 숨긴 탭에서는 중지합니다. */
 export function useAlertPolling(): void {
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;

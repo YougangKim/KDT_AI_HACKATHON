@@ -95,35 +95,36 @@ export function phraseQuestionRules(q: Pick<Question, "attr" | "op" | "value">):
   const list = Array.isArray(v) ? v : [v];
   switch (q.attr) {
     case "age":
-      if (q.op === "lte") return `혹시 만 ${v}세 이하야?`;
-      if (q.op === "gte") return `만 ${v}세 이상이야?`;
-      return `지금 만 ${v}세야?`;
+      if (q.op === "lte") return `만 ${v}세 이하입니까?`;
+      if (q.op === "gte") return `만 ${v}세 이상입니까?`;
+      return `지금 만 ${v}세입니까?`;
     case "region":
-      return `${list.join("·")}에 살고 있어?`;
+      return `${list.join("·")}에 살고 있습니까?`;
     case "homeless":
-      return v ? "지금 본인 명의 집이 없는 무주택자야?" : "본인 명의 집이 있어?";
+      return v ? "지금 본인 명의 집이 없는 무주택자입니까?" : "본인 명의 집이 있습니까?";
     case "livingAlone":
-      return v ? "부모님과 따로 혼자 살고 있어?" : "부모님과 함께 살고 있어?";
+      return v ? "부모님과 따로 혼자 살고 있습니까?" : "부모님과 함께 살고 있습니까?";
     case "incomePct":
-      return `가구 소득이 기준중위소득 ${v}% 이하일 것 같아? (잘 모르면 '모름'!)`;
+      return `가구 소득이 기준중위소득 ${v}% 이하입니까? (불확실하면 '모름' 선택)`;
     case "employment":
-      return `지금 ${list.map((e) => EMP_LABEL[String(e)] ?? String(e)).join(" 또는 ")}이야?`;
+      return `지금 ${list.map((e) => EMP_LABEL[String(e)] ?? String(e)).join(" 또는 ")}입니까?`;
     case "subscription":
       return "청약통장(주택청약종합저축) 있어?";
     case "married":
-      return "결혼했거나 곧 결혼하는 신혼부부야?";
+      return "결혼했거나 곧 결혼하는 신혼부부입니까?";
     case "welfare":
-      return "기초생활수급자나 차상위계층이야?";
+      return "기초생활수급자나 차상위계층입니까?";
     case "experienced":
-      return "그 분야 경력 있어?";
+      return "그 분야 경력이 있습니까?";
     case "education":
-      return `최종 학력이 ${v}단계 이상이야?`;
+      return `최종 학력이 ${v}단계 이상입니까?`;
     case "field":
-      return `${list.join("·")} 쪽 일자리 찾아?`;
+    case "topic":
+      return `${list.join("·")} 쪽 일자리를 찾습니까?`;
     case "need":
-      return `${list.join("·")} 지원이 필요해?`;
+      return `${list.join("·")} 지원이 필요합니까?`;
     case "housingKind":
-      return v === "sale" ? "분양으로 내 집 마련할 생각이야?" : "임대(월세·전세) 집 찾아?";
+      return v === "sale" ? "분양으로 내 집 마련할 계획입니까?" : "임대(월세·전세) 주택을 찾습니까?";
     case "interest":
       return `${list.map((d) => DOMAIN_LABEL[String(d)] ?? String(d)).join("·")} 쪽 기회를 찾고 있어?`;
   }
@@ -132,8 +133,8 @@ export function phraseQuestionRules(q: Pick<Question, "attr" | "op" | "value">):
 /** 매칭 결과 → 한두 문장 설명(템플릿) */
 export function explainMatchRules(m: Match): string {
   const o = m.opportunity;
-  const why = m.reasons.length ? `${m.reasons.slice(0, 3).join(", ")} 조건이 맞아서` : "답변과 어긋나는 조건이 없어서";
-  const end = o.applyEnd ? ` 마감은 ${o.applyEnd}이야.` : " 상시 모집이야.";
-  const check = m.unknowns.length ? ` 다만 '${m.unknowns.map((u) => u.rawText).slice(0, 2).join("', '")}'은 원문에서 꼭 확인해.` : "";
-  return `${o.org}의 「${o.title}」은 ${why} 골랐어.${end}${check}`;
+  const why = m.reasons.length ? `${m.reasons.slice(0, 3).join(", ")} 조건이 일치하므로` : "답변과 어긋나는 조건이 없으므로";
+  const end = o.applyEnd ? ` 마감은 ${o.applyEnd}입니다.` : " 상시 모집입니다.";
+  const check = m.unknowns.length ? ` 다만 '${m.unknowns.map((u) => u.rawText).slice(0, 2).join("', '")}'은 원문 확인이 필요하다.` : "";
+  return `${o.org}의 「${o.title}」은 ${why} 선정했습니다.${end}${check}`;
 }

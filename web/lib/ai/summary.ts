@@ -2,8 +2,9 @@ import { FAST_MODEL, ask } from ".";
 import { getCached, setCached } from "./cache";
 import type { Opportunity } from "../types";
 import { getEligibility } from "../sources/util";
+import { hasCasualEnding } from "../copy";
 
-const SUMMARY_PROMPT_VERSION = "summary-v2";
+const SUMMARY_PROMPT_VERSION = "summary-v3-formal";
 
 export interface OpportunitySummary {
   id: string;
@@ -37,6 +38,7 @@ export function parseSummariesJson(text: string, allowed: Set<string>): Opportun
       if (!allowed.has(String(row.id)) || typeof row.summary !== "string" || typeof row.how !== "string") return [];
       const summary = row.summary.trim();
       const how = row.how.trim();
+      if (hasCasualEnding(summary) || hasCasualEnding(how)) return [];
       return summary && summary.length <= 80 && how && how.length <= 100
         ? [{ id: String(row.id), summary, how }]
         : [];
@@ -70,7 +72,7 @@ export async function summarizeOpportunities(items: Opportunity[]): Promise<Oppo
   if (missing.length) {
     const text = await ask(
       FAST_MODEL,
-      '한국 청년 공고를 쉽게 요약한다. 각 공고마다 "무엇을 지원하는지" 한 문장(40자 이내)과 "신청할 때 할 일" 한 문장을 작성한다. 입력에 없는 금액·자격·절차는 만들지 않는다. JSON 배열만 출력한다: [{"id":"...","summary":"...","how":"..."}]',
+      '한국 청년 공고를 쉽게 요약합니다. 각 공고마다 "무엇을 지원하는지" 한 문장(40자 이내)과 "신청할 때 할 일" 한 문장을 작성합니다. 두 문장은 합니다·입니다·있습니다로 끝나는 문어체를 사용합니다. 해요체와 친근한 반말은 금지합니다. 입력에 없는 금액·자격·절차는 만들지 않는다. JSON 배열만 출력합니다: [{"id":"...","summary":"...","how":"..."}]',
       JSON.stringify(missing.map((item) => JSON.parse(input(item).split("\n").slice(1).join("\n")))),
       600,
     );

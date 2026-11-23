@@ -11,8 +11,8 @@ describe("전체 탭 분야 섞기", () => {
     const top = interleaveByDomain(list).slice(0, 3).map((x) => x.opportunity.domain);
     expect(new Set(top)).toEqual(new Set(["benefit", "job", "housing"]));
   });
-  it("바로 신청 공고가 확인 필요보다 먼저, 분야 하나면 순서 유지", () => {
+  it("자격 확인 상태가 달라도 다른 분야를 첫 페이지에서 숨기지 않는다", () => {
     const list = [m("b1", "benefit"), m("j1", "job", "needs_check"), m("b2", "benefit")];
-    expect(interleaveByDomain(list).map((x) => x.opportunity.id)).toEqual(["b1", "b2", "j1"]);
+    expect(interleaveByDomain(list).map((x) => x.opportunity.id)).toEqual(["b1", "j1", "b2"]);
   });
 });

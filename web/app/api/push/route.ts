@@ -27,9 +27,9 @@ function limited(ip: string): boolean {
 /** 받은 구독으로 고정 문구의 테스트 푸시 발송(구독은 저장하지 않음) */
 export async function POST(req: Request) {
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "local";
-  if (limited(ip)) return Response.json({ error: "잠시 후 다시 시도해 주세요" }, { status: 429 });
+  if (limited(ip)) return Response.json({ error: "잠시 후 재시도가 필요하다" }, { status: 429 });
   const k = keys();
-  if (!k) return Response.json({ error: "VAPID 키가 설정되지 않았어요" }, { status: 503 });
+  if (!k) return Response.json({ error: "VAPID 키가 설정되지 않았습니다" }, { status: 503 });
 
   let body: { subscription?: webpush.PushSubscription };
   try {
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   }
   const sub = body.subscription;
   if (!sub?.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) {
-    return Response.json({ error: "구독 정보가 없어요" }, { status: 400 });
+    return Response.json({ error: "구독 정보가 없습니다" }, { status: 400 });
   }
   let host = "";
   try {
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
       sub,
       JSON.stringify({
         title: "My News",
-        body: "조건에 맞는 새 공고가 도착했어요. 눌러서 확인해 보세요.",
+        body: "조건에 맞는 새 공고가 도착했습니다. 눌러서 확인할 수 있습니다.",
         url: "/alerts",
       }),
     );

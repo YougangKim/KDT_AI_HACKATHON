@@ -1,4 +1,4 @@
-// 공고 수집 진입점. 실제 출처만 사용하며 키 없음·실패·0건은 빈 결과로 처리한다.
+// 공고 수집 진입점. 실제 출처만 사용하며 키 없음·실패·0건은 빈 결과로 처리합니다.
 import type { Condition, Domain, Opportunity } from "../types";
 import { aiEnabled, cachedStructuredConditions, structureConditions } from "../ai";
 import { regionsIn } from "../ai/rules";
@@ -78,7 +78,7 @@ async function runAdapter(
 
 /** AI가 해석한 조건을 공고에 입힌다(규칙 조건 우선, AI는 빈 속성만 채움) */
 function applyAi(o: Opportunity, conds: Condition[]): Opportunity {
-  // 교차 평가 결과(규칙 정밀도 91% > AI 70%) 규칙 조건은 모두 유지하고, AI는 규칙이 못 찾은 속성만 보완한다
+  // 교차 평가 결과(규칙 정밀도 91% > AI 70%) 규칙 조건은 모두 유지하고, AI는 규칙이 못 찾은 속성만 보완합니다
   const keep = o.conditions;
   const add = conds
     .filter((c) => c.attr !== "interest" && !keep.some((k) => k.attr === c.attr) && plausibleAiCondition(c))
@@ -97,7 +97,7 @@ export function plausibleAiCondition(c: Condition): boolean {
   if (c.attr === "homeless" && !/무주택/.test(c.rawText)) return false;
   // "근로·사업소득이 있는 자"처럼 소득 문구를 취업 상태로 오해하는 경우 방지
   if (c.attr === "employment" && !/취업|재직|구직|실업|재학|휴학|학생|근로자|직장|졸업/.test(c.rawText)) return false;
-  // 새 조건은 원문에 근거 단어가 있어야 한다(AI가 지어낸 대상 조건으로 잘못 탈락시키지 않게)
+  // 새 조건은 원문에 근거 단어가 있어야 합니다(AI가 지어낸 대상 조건으로 잘못 탈락시키지 않게)
   if (c.attr === "subscription" && !/청약/.test(c.rawText)) return false;
   if (c.attr === "married" && !/신혼|혼인|결혼/.test(c.rawText)) return false;
   if (c.attr === "welfare" && !/수급|차상위/.test(c.rawText)) return false;
@@ -129,7 +129,7 @@ async function enrichWithAi(items: Opportunity[], wait: boolean): Promise<Opport
       if (conds) aiConditionCache.set(o.id, conds);
     }
     if (!conds) {
-      // 영구 캐시 적중은 위에서 처리하므로 신규 AI 요청만 상한을 차감한다.
+      // 영구 캐시 적중은 위에서 처리하므로 신규 AI 요청만 상한을 차감합니다.
       if (budget-- <= 0) return o;
       conds = await structureConditions(raw);
       aiConditionCache.set(o.id, conds);
@@ -200,7 +200,7 @@ export async function collectLiveOpportunities(
   return attachGeo(attachPlaces(deduped), opts.full ? 3000 : undefined);
 }
 
-/** 분야별 공고를 모은다. fixture는 기존 경로, 운영 요청은 저장된 공고 풀을 우선한다. */
+/** 분야별 공고를 모은다. fixture는 기존 경로, 운영 요청은 저장된 공고 풀을 우선합니다. */
 export async function loadOpportunities(
   domains: Domain[] = ALL_DOMAINS,
   now: Date = new Date(),

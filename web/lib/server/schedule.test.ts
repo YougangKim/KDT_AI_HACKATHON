@@ -38,13 +38,13 @@ describe("isDue", () => {
     expect(isDue(record(schedule, "2026-11-22T00:00:00Z"), new Date("2026-11-22T00:30:00Z"))).toBe(true);
   });
 
-  it("1분 간격을 지원한다", () => {
+  it("1분 간격을 지원합니다", () => {
     const schedule = { kind: "interval" as const, intervalMin: 1 };
     expect(isDue(record(schedule, "2026-11-22T00:00:00Z"), new Date("2026-11-22T00:00:59Z"))).toBe(false);
     expect(isDue(record(schedule, "2026-11-22T00:00:00Z"), new Date("2026-11-22T00:01:00Z"))).toBe(true);
   });
 
-  it("5분 간격을 지원한다", () => {
+  it("5분 간격을 지원합니다", () => {
     const schedule = { kind: "interval" as const, intervalMin: 5 };
     expect(isDue(record(schedule, "2026-11-22T00:00:00Z"), new Date("2026-11-22T00:04:59Z"))).toBe(false);
     expect(isDue(record(schedule, "2026-11-22T00:00:00Z"), new Date("2026-11-22T00:05:00Z"))).toBe(true);

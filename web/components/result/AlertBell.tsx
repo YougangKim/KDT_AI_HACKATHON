@@ -7,7 +7,7 @@ import { ALERTS_EVENT, checkAlerts, registerSW } from "@/lib/alerts/client";
 import { Icon } from "@/components/brand/Icons";
 
 /** 앱을 열 때 새 공고·마감 임박을 확인하고, 안 읽은 알림 수를 배지로 보여 준다.
- *  layout에 한 번 두면 모든 화면에서 동작한다. */
+ *  layout에 한 번 두면 모든 화면에서 동작합니다. */
 export function AlertBell() {
   const [count, setCount] = useState(0);
 

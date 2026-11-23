@@ -1,0 +1,57 @@
+import { hasCasualEnding } from "../copy";
+import type { Opportunity } from "../types";
+
+export interface RefinementEvidence { id: string; title: string; summary: string; domain: string }
+export interface Refinement { text: string; why: string; options: { label: string; ids: string[]; terms?: string[] }[] }
+
+/** 생성에는 분야별 대표 원문만 사용하고, 반환 구절은 전체 후보에 적용합니다. */
+export function refinementContext(evidence: RefinementEvidence[], answered: {text: string; answer: string}[]) {
+  const domains = [...new Set(evidence.map((e) => e.domain))];
+  const buckets = domains.map((d) => evidence.filter((e) => e.domain === d));
+  const sample: {title: string; summary: string; domain: string}[] = [];
+  const seen = new Set<string>();
+  for (let round = 0; round < 24 && sample.length < 24; round++) {
+    for (const bucket of buckets) {
+      const e = bucket[Math.floor(round * bucket.length / 24)];
+      if (!e || seen.has(e.title)) continue;
+      seen.add(e.title);
+      const item = {title:e.title.slice(0,100),summary:e.summary.slice(0,100),domain:e.domain};
+      if (JSON.stringify([...sample,item]).length > 3600 || sample.length >= 24) continue;
+      sample.push(item);
+    }
+  }
+  const history: {text:string;answer:string}[] = [];
+  for (const a of [...answered].reverse()) {
+    const item = {text:a.text.slice(0,140),answer:a.answer};
+    if (JSON.stringify([...history,item]).length > 1600) break;
+    history.push(item);
+  }
+  return {evidence:sample,answered:history.reverse()};
+}
+
+/** AI가 새로 만든 탐색 기준은 원문에 있는 검색 근거와 실제 후보 감소를 검증한다. */
+export function validateRefinement(value: unknown, evidence: RefinementEvidence[], answered: { text: string }[]): Refinement | null {
+  if (!value || typeof value !== "object") return null;
+  const q = value as { text: string; why: string; options: { label: string; terms: string[] }[] };
+  if (typeof q.text !== "string" || q.text.length < 8 || q.text.length > 140 || typeof q.why !== "string" || q.why.length > 180) return null;
+  if (!Array.isArray(q.options) || q.options.length < 2 || q.options.length > 5) return null;
+  if (q.options.some((o) => !o || typeof o.label !== "string" || !o.label || o.label.length > 60 || !Array.isArray(o.terms) || !o.terms.length || o.terms.length > 12 || o.terms.some((t) => typeof t !== "string" || t.trim().length < 2 || t.length > 50))) return null;
+  if ([q.text, q.why, ...q.options.map((o) => o.label)].some(hasCasualEnding)) return null;
+  const normalize = (s: string) => s.replace(/[\s?？.!]/g, "");
+  if (answered.some((a) => normalize(a.text.split(" — ")[0]) === normalize(q.text))) return null;
+  if (new Set(q.options.map((o) => o.label)).size !== q.options.length) return null;
+  const options = q.options.map((o) => ({ label: o.label, terms: o.terms.map((t) => t.trim()), ids: evidence.filter((e) => o.terms.some((term) => `${e.title} ${e.summary}`.toLowerCase().includes(term.trim().toLowerCase()))).map((e) => e.id) }));
+  if (options.some((o) => o.ids.length === 0)) return null;
+  const classified = new Set(options.flatMap((o) => o.ids));
+  // 선택지마다 적어도 하나 이상의 다른 후보가 빠져야 한다. 미분류 후보는 유지한다.
+  if (options.some((o) => o.ids.length >= classified.size)) return null;
+  return { text: q.text, why: q.why, options };
+}
+
+export function refinementValue(q: Refinement, label: string): string { return `${q.text} — ${label}`; }
+export function attachRefinement(pool: Opportunity[], q: Refinement): Opportunity[] {
+  return pool.map((o) => {
+    const groups = q.options.filter((option) => option.terms?.length ? option.terms.some((term) => `${o.title} ${o.summary}`.toLowerCase().includes(term.toLowerCase())) : option.ids.includes(o.id)).map((option) => refinementValue(q, option.label));
+    return groups.length ? { ...o, conditions: [...o.conditions, { attr: "topic" as const, op: "in" as const, value: groups, confidence: "high" as const, rawText: `탐색 선호: ${q.text}` }] } : o;
+  });
+}

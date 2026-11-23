@@ -33,11 +33,11 @@ describe("공고 풀 신선도", () => {
     trigger.mockClear();
     delete process.env.OPPORTUNITIES_FIXTURE;
     delete process.env.DATA_GO_KR_KEY;
-    delete process.env.YOUTHCENTER_KEY;
+    delete process.env.YOUTHCENTER_API_KEY;
     delete process.env.WORK24_TRAINING_KEY;
   });
 
-  it("6시간 이내 저장본을 반환한다", async () => {
+  it("6시간 이내 저장본을 반환합니다", async () => {
     collectedAt = "2026-11-23T00:00:00.000Z";
     const result = await loadOpportunities(
       ["benefit"],
@@ -47,7 +47,7 @@ describe("공고 풀 신선도", () => {
     expect(trigger).not.toHaveBeenCalled();
   });
 
-  it("오래된 저장본이면 라이브 폴백과 백그라운드 수집을 사용한다", async () => {
+  it("오래된 저장본이면 라이브 폴백과 백그라운드 수집을 사용합니다", async () => {
     collectedAt = "2026-11-22T00:00:00.000Z";
     const result = await loadOpportunities(
       ["benefit"],

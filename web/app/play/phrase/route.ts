@@ -1,5 +1,5 @@
 // 질문 문장 다듬기(서버에서만 Claude 호출). 키가 없으면 ai=false → 화면은 기본 문장을 쓴다.
-// 외부로 보내는 것은 질문 조건(범주값)뿐이다.
+// 외부로 보내는 것은 질문 조건(범주값)뿐입니다.
 import { aiEnabled, phraseQuestion } from "@/lib/ai";
 import type { Question } from "@/lib/types";
 

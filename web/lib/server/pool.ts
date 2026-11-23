@@ -89,7 +89,7 @@ async function writeFileSnapshot(snapshot: FileSnapshot): Promise<void> {
     await mkdir(dirname(path), { recursive: true });
     await writeFile(path, JSON.stringify(snapshot), "utf8");
   } catch {
-    // Vercel 또는 읽기 전용 파일시스템에서는 메모리 저장본을 사용한다.
+    // Vercel 또는 읽기 전용 파일시스템에서는 메모리 저장본을 사용합니다.
   }
 }
 
@@ -204,6 +204,8 @@ async function writeSnapshot(
 export async function collectPool(now = new Date()): Promise<PoolMeta> {
   const previous = await readSnapshot();
   const due = ADAPTERS.filter((adapter) => {
+    // 키 등록 전 건너뛴 출처는 새 키가 있으면 주기와 무관하게 첫 수집합니다.
+    if (previous?.meta.sources[adapter.id]?.calls === 0 && process.env[adapter.envKey]) return true;
     const collectedAt = previous?.meta.sources[adapter.id]?.collectedAt;
     if (!collectedAt) return true;
     const interval = SOURCE_INTERVAL_MS[adapter.id] ?? DEFAULT_INTERVAL_MS;

@@ -1,6 +1,7 @@
 "use client";
 
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { KakaoMap } from "@/components/KakaoMap";
 import type { Match } from "@/lib/types";
 import type { UserLocation } from "@/lib/geo/distance";
 import { DOMAIN_META } from "./domain";
@@ -18,6 +19,9 @@ export const ResultMap = forwardRef<ResultMapHandle, {
   const element = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markers = useRef(new Map<string, import("leaflet").Marker>());
+  const [kakaoFailed, setKakaoFailed] = useState(false);
+  const useKakao = !kakaoFailed;
+  const fallback = useCallback(() => setKakaoFailed(true), []);
 
   useImperativeHandle(ref, () => ({
     show(id) {
@@ -30,7 +34,7 @@ export const ResultMap = forwardRef<ResultMapHandle, {
 
   useEffect(() => {
     const pins = markers.current;
-    if (!element.current) return;
+    if (useKakao || !element.current) return;
     let disposed = false;
     void import("leaflet").then((L) => {
       if (disposed || !element.current) return;
@@ -45,6 +49,9 @@ export const ResultMap = forwardRef<ResultMapHandle, {
 
       if (location) {
         L.marker([location.lat, location.lng], {
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: -1000,
           icon: L.divIcon({ className: "", html: '<span class="map-pin">나</span>', iconSize: [26, 26] }),
         }).addTo(map).bindPopup("내 위치");
         if (typeof location.radiusKm === "number") {
@@ -118,11 +125,23 @@ export const ResultMap = forwardRef<ResultMapHandle, {
           marker.on("click", () => onSelect(group[0].opportunity.id));
           markers.current.set(group[0].opportunity.id, marker);
         } else {
-          marker.bindPopup(`시·도 단위 공고 ${group.length}건`);
+          const list = document.createElement("div");
+          list.style.maxHeight = "200px";
+          list.style.overflowY = "auto";
+          for (const match of group) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "block w-full border-b py-3 text-left";
+            button.textContent = match.opportunity.title;
+            button.addEventListener("click", () => onSelect(match.opportunity.id));
+            list.append(button);
+          }
+          marker.bindPopup(list);
         }
         bounds.push([lat, lng]);
       }
-      if (bounds.length && !location) map.fitBounds(L.latLngBounds(bounds), { padding: [24, 24], maxZoom: 11 });
+      if (location) bounds.push([location.lat, location.lng]);
+      if (bounds.length) map.fitBounds(L.latLngBounds(bounds), { padding: [24, 24], maxZoom: 11 });
     });
     return () => {
       disposed = true;
@@ -130,13 +149,14 @@ export const ResultMap = forwardRef<ResultMapHandle, {
       mapRef.current = null;
       pins.clear();
     };
-  }, [matches, location, onSelect]);
+  }, [matches, location, onSelect, useKakao]);
 
   return (
     <section aria-label="결과 지도" className="app-card space-y-3 overflow-hidden p-3">
-      <div ref={element} data-testid="result-map" className="h-[280px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />
+      {useKakao ? <KakaoMap matches={matches} point={location} radiusKm={location?.radiusKm} onSelect={onSelect} onError={fallback} testId="result-map" /> : <div ref={element} data-testid="result-map" data-map-provider="openstreetmap" className="h-[280px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />}
+      {kakaoFailed && <p className="text-xs text-amber-800">Kakao 지도 연결 실패로 대체 지도를 표시합니다.</p>}
       <p className="text-xs text-slate-500">
-        진한 핀은 정확한 위치, 연한 핀은 근사 위치예요. 시·도 단위 공고는 묶어서 표시해요.
+        진한 핀은 주소, 연한 핀은 추정 위치입니다. 묶인 핀에서 공고를 선택할 수 있습니다.
       </p>
       <ul aria-label="지도 분야 범례" className="flex flex-wrap gap-2 text-xs text-slate-600">
         {Object.entries(DOMAIN_META).filter(([domain]) => matches.some((match) => match.opportunity.domain === domain)).map(([domain, meta]) => (

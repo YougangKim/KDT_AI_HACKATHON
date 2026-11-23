@@ -1,5 +1,5 @@
 // 제목·자격요건에 드러난 대상 조건(청약통장·신혼부부·수급자)을 조건으로 붙인다.
-// 질문을 더 풍부하게 만들고, 해당 없는 사람에게 "바로 신청"으로 잘못 보이지 않게 한다.
+// 질문을 더 풍부하게 만들고, 해당 없는 사람에게 "바로 신청"으로 잘못 보이지 않게 합니다.
 import type { Condition, Opportunity } from "../types";
 
 const has = (o: Opportunity, attr: Condition["attr"]) => o.conditions.some((c) => c.attr === attr);

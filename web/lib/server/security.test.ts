@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hashToken, tokenMatches, validSubscription } from "./security";
 
 describe("서버 보안 유틸", () => {
-  it("토큰은 해시로만 비교한다", () => {
+  it("토큰은 해시로만 비교합니다", () => {
     const h = hashToken("a".repeat(32));
     expect(tokenMatches("a".repeat(32), h)).toBe(true);
     expect(tokenMatches("b".repeat(32), h)).toBe(false);

@@ -1,7 +1,7 @@
-// 선택 기능: Tavily·Exa 웹 검색으로 공고를 보충한다. 기본값 OFF.
+// 선택 기능: Tavily·Exa 웹 검색으로 공고를 보충합니다. 기본값 OFF.
 // 켜는 법: WEB_SEARCH_ENABLED=1 + TAVILY_API_KEY 또는 EXA_API_KEY.
 // 대회 규정(이용약관 위반 데이터 금지) 때문에 기본 검색 범위는 공공기관 도메인으로 제한하고,
-// 본문은 저장하지 않고 제목·링크·짧은 요약(200자)만 쓴다. 화면에는 "웹 검색 결과" 배지로 공식 API와 구분한다.
+// 본문은 저장하지 않고 제목·링크·짧은 요약(200자)만 쓴다. 화면에는 "웹 검색 결과" 배지로 공식 API와 구분합니다.
 import { createHash } from "node:crypto";
 import type { Domain, Opportunity } from "../types";
 import { judgeYes } from "../ai/jev";
@@ -46,7 +46,7 @@ function allowedDomains(): string[] {
   return env?.length ? env : DEFAULT_DOMAINS;
 }
 
-interface Hit {
+export interface Hit {
   title: string;
   url: string;
   snippet: string;
@@ -58,6 +58,7 @@ async function tavily(query: string, domains: string[]): Promise<Hit[]> {
     headers: { "content-type": "application/json", authorization: `Bearer ${process.env.TAVILY_API_KEY}` },
     body: JSON.stringify({ query, max_results: 5, include_domains: domains, search_depth: "basic" }),
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`tavily ${res.status}`);
   const data = (await res.json()) as { results?: { title?: string; url?: string; content?: string }[] };
@@ -70,6 +71,7 @@ async function exa(query: string, domains: string[]): Promise<Hit[]> {
     headers: { "content-type": "application/json", "x-api-key": process.env.EXA_API_KEY! },
     body: JSON.stringify({ query, numResults: 5, includeDomains: domains, contents: { highlights: { numSentences: 2 } } }),
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
   if (!res.ok) throw new Error(`exa ${res.status}`);
   const data = (await res.json()) as { results?: { title?: string; url?: string; highlights?: string[] }[] };
@@ -131,7 +133,25 @@ function providers(): WebProvider[] {
   return out;
 }
 
-/** 켜져 있을 때만 분야별로 웹 검색해 공고 후보를 보충한다. 한 제공자가 실패(한도 초과 등)하면 다음 제공자, 모두 실패하면 빈 배열 */
+const contextCache = new Map<Domain, { until: number; result: Promise<{ items: Hit[]; provider: WebProvider | null }> }>();
+/** 질문 답변·개인정보 대신 분야명만 전송합니다. 동일 분야 조회는 1시간 병합합니다. */
+export function searchContext(domain: Domain): Promise<{ items: Hit[]; provider: WebProvider | null }> {
+  const cached = contextCache.get(domain);
+  if (cached && cached.until > Date.now()) return cached.result;
+  const result = (async () => {
+    for (const provider of providers()) {
+      try {
+        const items = await (provider === "tavily" ? tavily : exa)(`${QUERIES[domain]} 청년 통계 정책 동향 ${new Date().getFullYear()}`, ["kosis.kr", "kostat.go.kr", "moel.go.kr", "korea.kr", "molit.go.kr"]);
+        return { provider, items: items.filter((item) => /^https?:\/\//.test(item.url)).slice(0, 4).map((item) => ({ ...item, snippet: item.snippet.slice(0, 200) })) };
+      } catch { /* 다음 제공자로 폴백 */ }
+    }
+    return { provider: null, items: [] };
+  })();
+  contextCache.set(domain, { until: Date.now() + 60 * 60 * 1000, result });
+  return result;
+}
+
+/** 켜져 있을 때만 분야별로 웹 검색해 공고 후보를 보충합니다. 한 제공자가 실패(한도 초과 등)하면 다음 제공자, 모두 실패하면 빈 배열 */
 export async function searchWeb(domains: Domain[], now: Date = new Date()): Promise<Opportunity[]> {
   const list = providers();
   if (list.length === 0) return [];

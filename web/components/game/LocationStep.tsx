@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { KakaoMap } from "@/components/KakaoMap";
 import type { UserLocation } from "@/lib/geo/distance";
 import { Icon } from "@/components/brand/Icons";
 
@@ -25,9 +26,12 @@ export function LocationStep({
   const [radiusKm, setRadiusKm] = useState<number | null | undefined>(initial?.radiusKm);
   const [error, setError] = useState("");
   const [found, setFound] = useState(""); // 주소 검색으로 찾은 장소 이름(카카오 결과)
+  const [kakaoFailed, setKakaoFailed] = useState(false);
+  const useKakao = !kakaoFailed;
+  const fallback = useCallback(() => setKakaoFailed(true), []);
 
   useEffect(() => {
-    if (!mapElement.current || mapRef.current) return;
+    if (useKakao || !mapElement.current || mapRef.current) return;
     let disposed = false;
     void import("leaflet").then((L) => {
       if (disposed || !mapElement.current) return;
@@ -46,7 +50,7 @@ export function LocationStep({
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [useKakao]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -66,7 +70,7 @@ export function LocationStep({
       }
       map.setView(point, 13);
     });
-  }, [point, radiusKm]);
+  }, [point, radiusKm, useKakao]);
 
   // 주소 검색: 서버 /api/geocode(카카오 키가 있으면 카카오, 없으면 오픈스트리트맵 Nominatim)
   async function searchAddress() {
@@ -78,9 +82,9 @@ export function LocationStep({
       if (typeof d.lat === "number" && typeof d.lng === "number") {
         setPoint({ lat: d.lat, lng: d.lng });
         setFound(d.label || query.trim());
-      } else setError("주소를 찾지 못했어요. 시·구·동까지 넣거나 지도에서 직접 찍어 주세요.");
+      } else setError("주소를 찾지 못했습니다. 시·구·동을 입력하거나 지도에서 위치를 선택할 수 있습니다.");
     } catch {
-      setError("주소 검색에 실패했어요. 지도에서 직접 찍어 주세요.");
+      setError("주소 검색에 실패했습니다. 지도에서 위치를 선택할 수 있습니다.");
     } finally {
       setSearching(false);
     }
@@ -88,13 +92,13 @@ export function LocationStep({
 
   function useGps() {
     if (!navigator.geolocation) {
-      setError("이 브라우저에서는 현재 위치를 사용할 수 없어요. 지도에서 직접 찍어 주세요.");
+      setError("이 브라우저에서는 현재 위치를 사용할 수 없습니다. 지도에서 위치를 선택할 수 있습니다.");
       return;
     }
     setError("");
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => setPoint({ lat: coords.latitude, lng: coords.longitude }),
-      () => setError("현재 위치를 가져오지 못했어요. 위치 권한을 확인하거나 지도에서 직접 찍어 주세요."),
+      () => setError("현재 위치를 가져오지 못했습니다. 위치 권한을 확인하거나 지도에서 위치를 선택할 수 있습니다."),
       { enableHighAccuracy: true, timeout: 8000 },
     );
   }
@@ -103,8 +107,8 @@ export function LocationStep({
     <section className="flex flex-1 flex-col gap-4" aria-labelledby="location-title">
       <div className="space-y-2 text-center">
         <p className="text-sm font-medium text-indigo-500">{settings ? "알림 위치" : "시작하기 전에"}</p>
-        <h1 id="location-title" className={settings ? "text-lg font-bold" : "text-2xl font-bold"}>내 위치와 원하는 거리를 알려 주세요</h1>
-        <p className="text-xs text-slate-500">{settings ? "알림용으로 대략적인 위치(약 1km 단위)가 서버에 저장돼요." : "결과 탐색 위치는 이 기기에 저장돼요."}</p>
+        <h1 id="location-title" className={settings ? "text-lg font-bold" : "text-2xl font-bold"}>탐색 위치와 거리 설정</h1>
+        <p className="text-xs text-slate-500">{settings ? "알림용으로 대략적인 위치(약 1km 단위)가 서버에 저장됩니다." : "결과 탐색 위치는 이 기기에 저장됩니다."}</p>
       </div>
 
       <button type="button" onClick={useGps} className="min-h-11 rounded-xl bg-indigo-600 px-4 font-semibold text-white">
@@ -130,14 +134,15 @@ export function LocationStep({
         </button>
       </form>
 
-      <div ref={mapElement} data-testid="location-map" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />
-      <p className="text-center text-sm text-slate-600">또는 지도에서 원하는 위치를 직접 눌러 주세요.</p>
+      {useKakao ? <KakaoMap point={point} radiusKm={radiusKm} onPoint={setPoint} onError={fallback} testId="location-map" /> : <div ref={mapElement} data-testid="location-map" data-map-provider="openstreetmap" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />}
+      {kakaoFailed && <p className="text-xs text-amber-800">Kakao 지도 연결 실패로 대체 지도를 표시합니다.</p>}
+      <p className="text-center text-sm text-slate-600">지도에서도 원하는 위치를 선택할 수 있습니다.</p>
       {found && !error && <p className="rounded-xl bg-indigo-50 px-3 py-2 text-sm text-indigo-800 break-keep">검색 위치: {found}</p>}
       {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
 
       {point && (
         <div className="space-y-2" role="group" aria-label="거리 반경">
-          <p className="text-sm font-semibold">얼마나 가까운 곳을 찾을까요?</p>
+          <p className="text-sm font-semibold">희망 탐색 거리</p>
           <div className="grid grid-cols-3 gap-2">
             {[1, 2, 5, 10].map((radius) => (
               <button
@@ -151,7 +156,7 @@ export function LocationStep({
               </button>
             ))}
             <button type="button" onClick={() => setRadiusKm(null)} aria-pressed={radiusKm === null} className={`min-h-11 rounded-xl px-2 font-semibold ${radiusKm === null ? "bg-indigo-600 text-white" : "bg-white ring-1 ring-slate-200"}`}>
-              상관없어요
+              거리 제한 없음
             </button>
           </div>
           {radiusKm !== undefined && (

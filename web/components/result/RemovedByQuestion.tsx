@@ -41,11 +41,11 @@ export function RemovedByQuestion({ steps, pool, active: controlled, onSelect }:
         ))}
       </div>
       {!step ? (
-        <p className="text-xs text-slate-400">조건을 누르면 그 답 때문에 빠진 공고가 보여요.</p>
+        <p className="text-xs text-slate-400">조건을 누르면 그 답 때문에 빠진 공고가 표시됩니다.</p>
       ) : (
         <>
       <p className="text-xs text-slate-500 break-keep" role="tabpanel">
-        &ldquo;{step.answer.question.text}&rdquo; → {step.answer.answer === "yes" ? "예" : "아니오"} 때문에 {removed.length}개가 빠졌어요.
+        &ldquo;{step.answer.question.text}&rdquo; → {step.answer.answer === "yes" ? "예" : "아니오"} 때문에 {removed.length}개가 제외됐습니다.
       </p>
       <ul className="space-y-2">
         {(more ? removed : removed.slice(0, SHOW)).map((o) => (

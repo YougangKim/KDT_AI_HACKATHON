@@ -10,7 +10,7 @@ const WEEK = 7 * 86_400_000;
 export function WeeklyReport({ history, now = new Date() }: { history: ScanSnapshot[]; now?: Date }) {
   const week = history.filter((h) => now.getTime() - new Date(h.at).getTime() <= WEEK);
   if (week.length === 0) {
-    return <p className="text-xs text-slate-500">아직 조사 기록이 없어요. 첫 자동 조사 후 이번 주 리포트가 만들어져요.</p>;
+    return <p className="text-xs text-slate-500">아직 조사 기록이 없습니다. 첫 자동 조사 후 이번 주 리포트가 생성됩니다.</p>;
   }
   const byDomain: Partial<Record<Domain, number>> = {};
   for (const h of week)
@@ -26,8 +26,8 @@ export function WeeklyReport({ history, now = new Date() }: { history: ScanSnaps
   return (
     <div className="space-y-2 text-sm">
       <p>
-        이번 주 <b>{week.length}회</b> 조사해서 새 공고 <b>{newTotal}건</b>을 찾았어요. 최근 조사에서는 전체 {last.total}건 중{" "}
-        <b>{last.passed}건({rate}%)</b>이 내 조건을 통과했어요.
+        이번 주 <b>{week.length}회</b> 조사해서 새 공고 <b>{newTotal}건</b>을 찾았습니다. 최근 조사에서는 전체 {last.total}건 중{" "}
+        <b>{last.passed}건({rate}%)</b>이 내 조건을 통과했습니다.
       </p>
       {(changedTotal > 0 || soonTotal > 0) && (
         <p className="text-xs text-slate-600">
@@ -51,7 +51,7 @@ export function WeeklyReport({ history, now = new Date() }: { history: ScanSnaps
       )}
       {failed.length > 0 && (
         <p className="text-xs text-amber-700">
-          연결이 안 된 출처({failed.join(", ")})는 샘플 데이터로 대신 보여 줬어요.
+          연결이 안 된 출처({failed.join(", ")})는 샘플 데이터로 대신 표시했습니다.
         </p>
       )}
     </div>

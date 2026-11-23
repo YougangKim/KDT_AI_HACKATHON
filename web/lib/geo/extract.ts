@@ -36,6 +36,12 @@ export function parsePlaceJson(text: string): ExtractedPlace | null {
 }
 
 export function extractPlaceRules(opportunity: Opportunity): ExtractedPlace | null {
+  const application = [opportunity.apply?.how, opportunity.apply?.where].filter(Boolean).join(" ");
+  if (/방문|현장|내방/.test(application) && opportunity.apply?.where) {
+    const address = opportunity.apply.where.match(ADDRESS_RE)?.[0]?.trim();
+    if (address) return { address, place: null };
+    if (/(?:센터|청|사무소|회관|공단|지사)/.test(opportunity.apply.where)) return { address: null, place: opportunity.apply.where };
+  }
   const text = [opportunity.title, opportunity.summary, opportunity.org, getEligibility(opportunity)].filter(Boolean).join(" ");
   // 청약홈은 요약 첫 부분이 공급 위치 주소 그대로라 가장 정확하다
   if (opportunity.source === "applyhome") {
@@ -72,7 +78,7 @@ export async function extractPlace(opportunity: Opportunity): Promise<ExtractedP
 
   const text = await ask(
     FAST_MODEL,
-    '한국 공고에서 실제 근무지 또는 주택 소재지를 찾는다. 추측하지 말고 JSON 한 줄 {"address":string|null,"place":string|null}만 출력한다. 도로명·지번 주소는 address, 기관·단지·역 등 장소명은 place에 둔다.',
+    '한국 공고에서 실제 근무지 또는 주택 소재지를 찾는다. 추측하지 말고 JSON 한 줄 {"address":string|null,"place":string|null}만 출력합니다. 도로명·지번 주소는 address, 기관·단지·역 등 장소명은 place에 둔다.',
     JSON.stringify({
       제목: opportunity.title,
       기관: opportunity.org,
@@ -88,7 +94,7 @@ export async function extractPlace(opportunity: Opportunity): Promise<ExtractedP
 }
 
 /**
- * 규칙 결과와 기존 AI 캐시는 즉시 반영하고, 새 AI 추출은 뒤에서 최대 30건·동시 2건만 수행한다.
+ * 규칙 결과와 기존 AI 캐시는 즉시 반영하고, 새 AI 추출은 뒤에서 최대 30건·동시 2건만 수행합니다.
  * 따라서 공고 목록 응답은 AI를 기다리지 않는다.
  */
 export function attachPlaces(items: Opportunity[]): Opportunity[] {

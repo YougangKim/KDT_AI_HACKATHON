@@ -39,7 +39,7 @@ describe("parseConditionsJson", () => {
     expect(parseConditionsJson(text)).toEqual([{ attr: "age", op: "lte", value: 34, rawText: "만 34세 이하", confidence: "high" }]);
   });
   it("JSON 아니면 null", () => {
-    expect(parseConditionsJson("모르겠어요")).toBeNull();
+    expect(parseConditionsJson("모름")).toBeNull();
   });
 });
 
@@ -49,8 +49,8 @@ describe("키 없이 규칙 기반 폴백", () => {
     expect(await structureConditions("만 19세 이상 39세 이하 무주택자")).toHaveLength(3);
   });
   it("phraseQuestion", async () => {
-    expect(await phraseQuestion({ attr: "age", op: "lte", value: 34 })).toBe("만 34세 이하인가요?");
-    expect(await phraseQuestion({ attr: "region", op: "in", value: ["서울", "경기"] })).toBe("서울·경기 중 한 곳에 살고 있나요?");
+    expect(await phraseQuestion({ attr: "age", op: "lte", value: 34 })).toBe("만 34세 이하입니까?");
+    expect(await phraseQuestion({ attr: "region", op: "in", value: ["서울", "경기"] })).toBe("서울·경기 중 한 곳에 살고 있습니까?");
     expect(await phraseQuestion({ attr: "interest", op: "eq", value: "housing" })).toContain("주택");
   });
   it("explainMatch", async () => {

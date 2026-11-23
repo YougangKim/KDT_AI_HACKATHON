@@ -59,7 +59,7 @@ export default function AlertsPage() {
 
   async function onPush() {
     if (!pushKey) return;
-    setNote((await sendTestPush(pushKey)) ? "푸시를 보냈어요. 잠시 후 도착해요." : "푸시 발송에 실패했어요.");
+    setNote((await sendTestPush(pushKey)) ? "푸시를 발송했습니다. 잠시 후 도착합니다." : "푸시 발송에 실패했습니다.");
   }
 
   async function onScan() {
@@ -72,14 +72,14 @@ export default function AlertsPage() {
     }
     setScanning(false);
     setRs(r);
-    setNote(r.error ?? `다시 조사했어요. 새 공고 ${r.lastNewTitles?.length ?? 0}건.`);
+    setNote(r.error ?? `다시 조사했습니다. 새 공고 ${r.lastNewTitles?.length ?? 0}건.`);
   }
 
   function onClear() {
     void deleteServerWatch(); // 서버에 저장된 조건·구독도 함께 삭제
     clearWatch();
     setWatch(null);
-    setNote("알림 조건을 지웠어요. 서버에 저장된 내용도 삭제했어요.");
+    setNote("알림 조건을 삭제했습니다. 서버에 저장된 내용도 삭제했습니다.");
   }
 
   return (
@@ -148,11 +148,11 @@ export default function AlertsPage() {
         <h2 className="font-semibold">저장한 조건</h2>
         {!watch ? (
           <p className="text-sm text-slate-500">
-            아직 없어요.{" "}
+            아직 없습니다.{" "}
             <Link href="/play" className="text-indigo-700 underline">
               게임
             </Link>
-            을 하고 결과 화면에서 &quot;이 조건으로 알림 받기&quot;를 눌러 주세요.
+            을 하고 결과 화면에서 &quot;이 조건으로 알림 받기&quot;를 선택하면 됩니다.
           </p>
         ) : (
           <>
@@ -187,7 +187,7 @@ export default function AlertsPage() {
           </button>
         )}
         {perm === "denied" && (
-          <p className="text-center text-xs text-slate-500">브라우저 알림이 차단돼 있어요. 앱을 열 때 이 화면에 모아 드려요.</p>
+          <p className="text-center text-xs text-slate-500">브라우저 알림이 차단돼 있습니다. 앱을 열 때 이 화면에 모아 표시합니다.</p>
         )}
         <button
           onClick={onCheck}
@@ -207,7 +207,7 @@ export default function AlertsPage() {
       <section className="space-y-2">
         <h2 className="font-semibold">받은 알림 {log.length > 0 && <span className="text-slate-400">{log.length}</span>}</h2>
         {log.length === 0 ? (
-          <p className="text-sm text-slate-500">아직 받은 알림이 없어요.</p>
+          <p className="text-sm text-slate-500">아직 받은 알림이 없습니다.</p>
         ) : (
           <ul className="space-y-2">
             {log.map((a) => (

@@ -21,7 +21,7 @@ describe("웹 검색 보충(선택 기능)", () => {
     process.env.TAVILY_API_KEY = "x";
     expect(webSearchProvider()).toBe("tavily");
   });
-  it("결과는 제목·링크·짧은 요약만 남기고 웹 검색 결과로 표시한다", () => {
+  it("결과는 제목·링크·짧은 요약만 남기고 웹 검색 결과로 표시합니다", () => {
     const o = toOpportunity(
       { title: "청년 행복주택 모집", url: "https://www.lh.or.kr/a?b=1", snippet: "가".repeat(500) },
       "housing",

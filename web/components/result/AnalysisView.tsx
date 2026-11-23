@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import type { FilterStep, FunnelReport } from "@/lib/insight/types";
+import type { FunnelReport } from "@/lib/insight/types";
 import type { AnswerRecord, Domain } from "@/lib/types";
 import { DOMAIN_META } from "./domain";
 
@@ -70,7 +70,7 @@ export function AnalysisView({
       <section className="app-card space-y-3 p-4">
         <p className="text-base font-bold break-keep">
           전체 {report.total.toLocaleString()}건 중{" "}
-          <strong className="text-indigo-700">{report.passed.toLocaleString()}건</strong>이 남았어요
+          <strong className="text-indigo-700">{report.passed.toLocaleString()}건</strong>이 남았습니다
           <span className="ml-1 text-sm font-semibold text-slate-500">({pct}%)</span>
         </p>
         <div className="grid grid-cols-3 gap-x-3 gap-y-2">
@@ -138,14 +138,14 @@ export function AnalysisView({
                         {step.examples.map((title) => <li key={title}>• {title}</li>)}
                       </ul>
                     ) : (
-                      <p className="text-xs text-slate-500">이 단계에서 제외된 공고가 없어요.</p>
+                      <p className="text-xs text-slate-500">이 단계에서 제외된 공고가 없습니다.</p>
                     )}
                     {gain > 0 && (
                       <button
                         type="button"
                         onClick={() => onRelax(step.questionId)}
                         className="w-full rounded-xl bg-slate-900 py-2.5 text-sm font-bold text-white"
-                        aria-label={`${step.question} 답을 풀면 ${gain}건 늘어나요. 적용`}
+                        aria-label={`${step.question} 답을 풀면 ${gain}건 늘어납니다. 적용`}
                       >
                         이 답 풀어 보기 · +{gain.toLocaleString()}건
                       </button>
@@ -163,11 +163,11 @@ export function AnalysisView({
           <h2 className="text-sm font-bold text-amber-950">
             확인이 더 필요한 공고 {report.pendingCount.toLocaleString()}건
           </h2>
-          <p className="text-xs text-amber-900">잘 모르겠다고 답한 질문이 있어 원문 확인이 필요해요.</p>
+          <p className="text-xs text-amber-900">잘 모르겠다고 답한 질문이 있어 원문 확인이 필요하다.</p>
           <ul className="space-y-1 text-xs text-amber-950">
             {report.pendingQuestions.map((item) => <li key={item.attr}>• {item.question}</li>)}
           </ul>
-          <Link href="/play?continue=1" className="inline-block text-xs font-bold text-indigo-700 underline">
+          <Link href="#conditions" className="inline-block text-xs font-bold text-indigo-700 underline">
             다시 답하기
           </Link>
         </section>
@@ -175,7 +175,7 @@ export function AnalysisView({
 
       {report.relaxOptions.length > 0 && (
         <section className="app-card space-y-2 p-4">
-          <h2 className="text-sm font-bold">결과를 더 보고 싶다면</h2>
+          <h2 className="text-sm font-bold">조건 수정 제안</h2>
           {report.relaxOptions.map((option) => (
             <button
               key={option.step.questionId}

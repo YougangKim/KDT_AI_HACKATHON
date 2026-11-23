@@ -48,12 +48,12 @@ export default function Home() {
           <br />
           연결된 출처를 매일 다시 조회해서
           <br />
-          처음 보는 공고만 알려 줄게요.
+          새로 확인된 공고만 알립니다.
         </p>
       </div>
 
       <section className="app-card space-y-3 p-4">
-        <p className="text-center text-sm font-semibold text-slate-600">무엇을 찾고 있나요? (여러 개 선택)</p>
+        <p className="text-center text-sm font-semibold text-slate-600">무엇을 찾고 있습니까? (여러 개 선택)</p>
         <ul className="grid grid-cols-3 gap-2 text-center text-sm">
           {DOMAINS.map((d) => {
             const on = picked.includes(d.id);
@@ -84,7 +84,7 @@ export default function Home() {
             );
           })}
         </ul>
-        <p className="text-center text-xs text-slate-400">고르지 않으면 전체에서 찾아요</p>
+        <p className="text-center text-xs text-slate-400">선택하지 않으면 전체 분야에서 검색합니다.</p>
       </section>
 
       <div className="space-y-3">
@@ -96,7 +96,7 @@ export default function Home() {
           {picked.length ? `${picked.length}개 분야로 시작하기` : "질문 몇 개로 시작하기"}
         </button>
         <Link href="/alerts" className="block py-3 text-center text-sm text-slate-500 underline">
-          이미 조건이 있어요 → 알림함
+          저장한 조건 → 알림함
         </Link>
         <Link href="/settings" className="block text-center text-sm text-slate-500 underline">
           <Icon name="settings" className="mr-1 inline h-4 w-4 align-[-2px]" />알림 설정
@@ -104,9 +104,9 @@ export default function Home() {
       </div>
 
       <p className="text-center text-[13px] leading-5 text-slate-600 break-keep">
-        LH·마이홈·청약홈·잡알리오·정부24·Q-Net 등 연결 출처에서 실제 조회된 공고만 제공하며, 분야에 따라 결과가 없을 수 있어요.
+        LH·마이홈·청약홈·잡알리오·정부24·Q-Net 등 연결 출처에서 실제 조회된 공고만 제공하며, 분야에 따라 결과가 없을 수 있습니다.
         <br />
-        최종 자격은 원문에서 확인하고, 알림을 켜면 예·아니오 답변만 서버에 저장돼요.
+        최종 자격은 원문에서 확인하고, 알림을 켜면 예·아니오 답변만 서버에 저장됩니다.
       </p>
     </main>
   );

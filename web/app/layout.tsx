@@ -5,7 +5,7 @@ import { AlertPolling } from "@/components/AlertPolling";
 
 export const metadata: Metadata = {
   title: "My News | 나만의 소식통",
-  description: "질문에 답하면 나에게 맞는 주택·지원금·일자리 공고를 찾고, 새로운 소식을 알려 드려요.",
+  description: "질문에 답하면 나에게 맞는 주택·지원금·일자리 공고를 찾고, 새로운 소식을 알립니다.",
   manifest: "/manifest.json",
 };
 

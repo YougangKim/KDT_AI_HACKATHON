@@ -6,7 +6,7 @@ import type { Relaxation } from "@/lib/insight/types";
 export function RelaxSuggestions({
   options,
   onRelax,
-  title = "이 조건을 풀면 더 보여요",
+  title = "이 조건을 풀면 더 표시됩니다",
 }: {
   options: Relaxation[];
   onRelax: (questionId: string) => void;
@@ -33,7 +33,7 @@ export function RelaxSuggestions({
           </li>
         ))}
       </ul>
-      <p className="text-[11px] text-amber-800">누르면 그 답을 &lsquo;모름&rsquo;으로 바꿔 확인 필요 공고까지 보여 줘요.</p>
+      <p className="text-[11px] text-amber-800">누르면 그 답을 &lsquo;모름&rsquo;으로 바꿔 확인 필요 공고까지 표시합니다.</p>
     </section>
   );
 }

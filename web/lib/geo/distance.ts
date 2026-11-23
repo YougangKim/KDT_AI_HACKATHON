@@ -27,12 +27,13 @@ export function opportunityDistance(location: UserLocation, opportunity: Opportu
 
 /** 결과 화면과 알림 서버가 공유하는 반경 판정 규칙 */
 export function opportunityWithinRadius(opportunity: Opportunity, location?: UserLocation): boolean {
-  if (!location || location.radiusKm === null) return true;
-  const distance = opportunityDistance(location, opportunity);
-  return distance === null || distance <= location.radiusKm;
+  // 위치와 반경은 지도·거리 정렬용입니다. 온라인 신청과 방문 공고 모두 숨기지 않습니다.
+  void opportunity;
+  void location;
+  return true;
 }
 
-/** 서버 저장 전 약 1km 단위로 좌표를 최소화한다. */
+/** 서버 저장 전 약 1km 단위로 좌표를 최소화합니다. */
 export function approximateLocation(location?: UserLocation): UserLocation | undefined {
   if (!location) return undefined;
   return {
@@ -46,7 +47,6 @@ export function filterMatchesByRadius(matches: Match[], location?: UserLocation)
   matches: Match[];
   excluded: number;
 } {
-  if (!location || location.radiusKm === null) return { matches, excluded: 0 };
-  const filtered = matches.filter((match) => opportunityWithinRadius(match.opportunity, location));
-  return { matches: filtered, excluded: matches.length - filtered.length };
+  void location;
+  return { matches, excluded: 0 };
 }

@@ -44,7 +44,7 @@ export function mapJobalio(raw: unknown, now: Date): Opportunity[] {
         title,
         org: str(r.instNm) || "공공기관",
         // 근무지를 지역 조건으로 둔다: "부산에 살아요"라고 한 사람에게 전북 근무 공고를 1위로 보이지 않게.
-        // 이사·출퇴근 의향이 있으면 결과 화면의 "다른 지역도 보기" 완화로 다시 볼 수 있다.
+        // 이사·출퇴근 의향이 있으면 결과 화면의 "다른 지역도 보기" 완화로 다시 볼 수 있습니다.
         region: toRegions(r.workRgnNmLst),
         summary: [str(r.hireTypeNmLst), str(r.recrutSeNm), work && `근무지 ${work}`, str(r.recrutNope) && `${str(r.recrutNope)}명`].filter(Boolean).join(" / "),
         conditions: buildConditions(domain, toRegions(r.workRgnNmLst), eligibility, jobConditions(r)),

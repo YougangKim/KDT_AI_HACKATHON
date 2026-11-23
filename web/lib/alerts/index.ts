@@ -1,5 +1,6 @@
 // 공개 인터페이스(CONTRACT.md): saveWatch, loadWatch, findNew
 import type { Watch } from "@/lib/types";
+import { formalQuestion } from "@/lib/copy";
 import type { AlertItem } from "./core";
 
 export * from "./core";
@@ -38,7 +39,8 @@ export function saveWatch(w: Watch): void {
 }
 
 export function loadWatch(): Watch | null {
-  return readJson<Watch | null>(WATCH_KEY, null);
+  const watch = readJson<Watch | null>(WATCH_KEY, null);
+  return watch ? { ...watch, answers: watch.answers.map((a) => ({ ...a, question: { ...a.question, text: formalQuestion(a.question.text) } })) } : null;
 }
 
 export function clearWatch(): void {

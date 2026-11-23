@@ -32,9 +32,9 @@ interface Knowledge {
   unknownIds: Set<string>;
 }
 
-const MULTI: AttrKey[] = ["interest", "field", "need"];
+const MULTI: AttrKey[] = ["interest", "field", "need", "topic"];
 /** 자격 요건이 아니라 취향인 속성: 묻지 않았다고 "확인 필요"로 남기지 않는다(아니오면 제외) */
-const SOFT: AttrKey[] = ["interest", "field", "need", "housingKind"];
+const SOFT: AttrKey[] = ["interest", "field", "need", "housingKind", "topic"];
 /** 질문의 의미를 이해하기 위해 먼저 확정해야 하는 속성 */
 export const PREREQ: Partial<Record<AttrKey, AttrKey[]>> = {
   experienced: ["field"],
@@ -148,12 +148,14 @@ function decide(k: Knowledge, c: Condition): "pass" | "fail" | null {
 
 /**
  * 맞지 않아도 탈락시키지 않고 "확인 필요"로 남길 조건(맞으면 통과 근거로는 쓴다).
- * - 취업 상태: 알바 중이어도 그만두고 구직하거나 이직할 수 있어 지금 상태로 자르면 안 된다.
+ * - 취업 상태: 알바 중이어도 그만두고 구직하거나 이직할 수 있어 지금 상태로 자르면 안 됩니다.
  * - 우대·우선·예외("가능", "무관")가 붙은 조건: 자격 요건이 아니다.
  * - 자동 해석이 불확실한 조건(confidence low).
- * - 기준중위소득이 아닌 소득 기준(연소득, 도시근로자 월평균소득, 학자금 구간): 질문은 기준중위소득으로 묻기 때문에 답으로 판정할 수 없다.
+ * - 기준중위소득이 아닌 소득 기준(연소득, 도시근로자 월평균소득, 학자금 구간): 질문은 기준중위소득으로 묻기 때문에 답으로 판정할 수 없습니다.
  */
 export function lenient(c: Condition): boolean {
+  if (c.attr === "region") return true; // 지역은 제외하지 않고 거주 자격·이동 가능성을 확인하도록 남깁니다.
+  if (c.attr === "topic") return false; // 생성된 탐색 선호는 자격요건의 우대·예외 문구가 아닙니다.
   if (c.attr === "employment" || c.confidence === "low") return true;
   if (/우대|우선|가능|무관|다름/.test(c.rawText)) return true;
   return c.attr === "incomePct" && !/중위/.test(c.rawText);

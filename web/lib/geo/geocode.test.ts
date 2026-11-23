@@ -41,7 +41,7 @@ describe("attachGeo", () => {
     expect(applyhomeAddress("서울특별시 중구 세종대로 110 · 공급 20세대")).toBe("서울특별시 중구 세종대로 110");
   });
 
-  test("같은 주소는 Kakao 응답을 캐시한다", async () => {
+  test("같은 주소는 Kakao 응답을 캐시합니다", async () => {
     process.env.KAKAO_REST_API_KEY = "test";
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -62,7 +62,7 @@ describe("attachGeo", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  test("카카오 주소명을 geo.address에 저장한다", async () => {
+  test("카카오 주소명을 geo.address에 저장합니다", async () => {
     process.env.KAKAO_REST_API_KEY = "test";
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
@@ -79,7 +79,7 @@ describe("attachGeo", () => {
     expect(result.geo?.address).toBe("서울특별시 중구 세종대로 110");
   });
 
-  test("채용 제목에서 지점명을 뽑고 다른 시도 결과는 버린 뒤 기관명으로 재검색한다", async () => {
+  test("채용 제목에서 지점명을 뽑고 다른 시도 결과는 버린 뒤 기관명으로 재검색합니다", async () => {
     process.env.KAKAO_REST_API_KEY = "test";
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({

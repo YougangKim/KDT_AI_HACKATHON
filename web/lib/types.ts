@@ -1,4 +1,4 @@
-// 공통 계약(모든 스레드가 공유). 변경은 통합 스레드만 한다. 필요하면 통합 스레드에 요청.
+// 공통 계약(모든 스레드가 공유). 변경은 통합 스레드만 합니다. 필요하면 통합 스레드에 요청.
 
 /** 기회 분야. 새 분야는 여기 추가 + 어댑터 + 샘플 JSON */
 export type Domain =
@@ -25,7 +25,8 @@ export type AttrKey =
   | "education" // 최종 학력 단계(number: 1 고졸, 2 전문대졸, 3 대졸, 4 석사, 5 박사)
   | "field" // 관심 직무 분야(NCS 대분류 문자열, 여러 개 가능). 취향 조건
   | "need" // 필요한 지원 종류(정부24 서비스분야, 여러 개 가능). 취향 조건
-  | "housingKind"; // 원하는 주거 형태("rent" 임대 | "sale" 분양). 취향 조건
+  | "housingKind" // 원하는 주거 형태("rent" 임대 | "sale" 분양). 취향 조건
+  | "topic"; // 남은 공고의 실제 제목에서 도출한 추가 탐색 주제. 자격 조건이 아님
 
 export type AttrValue = number | string | boolean;
 

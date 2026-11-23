@@ -30,43 +30,45 @@ export function defaultQuestionText(q: Pick<Question, "attr" | "op" | "value">):
   const many = Array.isArray(value) && value.length > 1;
   switch (attr) {
     case "age":
-      if (op === "lte") return `만 ${value}세 이하인가요?`;
-      if (op === "gte") return `만 ${value}세 이상인가요?`;
-      return `만 ${join(value)}세인가요?`;
+      if (op === "lte") return `만 ${value}세 이하입니까?`;
+      if (op === "gte") return `만 ${value}세 이상입니까?`;
+      return `만 ${join(value)}세입니까?`;
     case "region":
-      return many ? `${join(value)} 중 한 곳에 살고 있나요?` : `지금 ${join(value)}에 살고 있나요?`;
+      return many ? `${join(value)} 중 한 곳에 살고 있습니까?` : `지금 ${join(value)}에 살고 있습니까?`;
     case "homeless":
-      return value === false ? "본인 명의 집이 있나요?" : "본인 명의 집이 없나요? (무주택)";
+      return value === false ? "본인 명의 집이 있습니까?" : "본인 명의 집이 없습니까? (무주택)";
     case "livingAlone":
-      return value === false ? "가족과 함께 살고 있나요?" : "혼자 살고 있나요? (1인 가구)";
+      return value === false ? "가족과 함께 살고 있습니까?" : "혼자 살고 있습니까? (1인 가구)";
     case "incomePct":
-      if (op === "lte") return `가구 소득이 기준중위소득 ${value}% 이하인가요?`;
-      if (op === "gte") return `가구 소득이 기준중위소득 ${value}% 이상인가요?`;
-      return `가구 소득이 기준중위소득 ${join(value)}% 수준인가요?`;
+      if (op === "lte") return `가구 소득이 기준중위소득 ${value}% 이하입니까?`;
+      if (op === "gte") return `가구 소득이 기준중위소득 ${value}% 이상입니까?`;
+      return `가구 소득이 기준중위소득 ${join(value)}% 수준입니까?`;
     case "employment":
       return many
-        ? `지금 ${join(value, EMPLOYMENT_LABEL)} 중 하나인가요?`
-        : `지금 ${join(value, EMPLOYMENT_LABEL)}인가요?`;
+        ? `지금 ${join(value, EMPLOYMENT_LABEL)} 중 하나입니까?`
+        : `지금 ${join(value, EMPLOYMENT_LABEL)}입니까?`;
     case "subscription":
-      return "주택청약종합저축(청약통장)에 가입돼 있나요?";
+      return "주택청약종합저축(청약통장)에 가입돼 있습니까?";
     case "married":
-      return "결혼했거나 결혼 예정인 신혼부부인가요?";
+      return "결혼했거나 결혼 예정인 신혼부부입니까?";
     case "welfare":
-      return "기초생활수급자나 차상위계층에 해당하나요?";
+      return "기초생활수급자나 차상위계층에 해당합니까?";
     case "experienced":
-      return "지원하려는 분야의 경력이 있나요?";
+      return "지원하려는 분야의 경력이 있습니까?";
     case "education":
-      return op === "gte" ? `최종 학력이 ${EDU[Number(value)] ?? value} 이상인가요?` : `최종 학력이 ${EDU[Number(value)] ?? value} 이하인가요?`;
+      return op === "gte" ? `최종 학력이 ${EDU[Number(value)] ?? value} 이상입니까?` : `최종 학력이 ${EDU[Number(value)] ?? value} 이하입니까?`;
     case "field":
-      return `${join(value)} 분야 일자리를 찾나요?`;
+      return `${join(value)} 분야 일자리를 찾습니까?`;
+    case "topic":
+      return `${join(value)} 항목을 선호합니까?`;
     case "need":
-      return `${join(value)} 지원이 필요한가요?`;
+      return `${join(value)} 지원이 필요합니까?`;
     case "housingKind":
-      return value === "sale" ? "내 집 마련(분양)을 찾나요?" : "임대(월세·전세) 주택을 찾나요?";
+      return value === "sale" ? "내 집 마련(분양)을 찾습니까?" : "임대(월세·전세) 주택을 찾습니까?";
     case "interest":
       return many
-        ? `${join(value, DOMAIN_LABEL)} 중에 관심 있는 게 있나요?`
-        : `${join(value, DOMAIN_LABEL)} 정보가 필요한가요?`;
+        ? `${join(value, DOMAIN_LABEL)} 중에 관심 있는 게 있습니까?`
+        : `${join(value, DOMAIN_LABEL)} 정보가 필요합니까?`;
   }
 }
 

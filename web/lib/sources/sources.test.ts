@@ -169,7 +169,7 @@ describe("loadOpportunities", () => {
     _clearCache();
     _clearPoolMemory();
     delete process.env.DATA_GO_KR_KEY;
-    delete process.env.YOUTHCENTER_KEY;
+    delete process.env.YOUTHCENTER_API_KEY;
     delete process.env.WORK24_TRAINING_KEY;
     delete process.env.ANTHROPIC_API_KEY;
     delete process.env.GEMINI_API_KEY;

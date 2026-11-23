@@ -51,7 +51,7 @@ export function normalizeSchedule(schedule?: WatchSchedule): WatchSchedule {
   };
 }
 
-/** KST 일정과 마지막 실제 확인 시각을 기준으로 이번 cron 호출에서 조사할지 결정한다. */
+/** KST 일정과 마지막 실제 확인 시각을 기준으로 이번 cron 호출에서 조사할지 결정합니다. */
 export function isDue(rec: WatchRecord, now = new Date()): boolean {
   const schedule = normalizeSchedule(rec.watch.schedule);
   if (inQuiet(schedule, now)) return false;
