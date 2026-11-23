@@ -70,3 +70,17 @@ describe("후보가 많아 저장 한도를 넘어도 결과가 남음", () => {
     expect(r?.matches.map((m) => m.opportunity.id).sort()).toEqual(["s1", "s2"]);
   });
 });
+
+describe("채용 공고 범위", () => {
+  it("직무 무관 일반 채용을 켜고 끄면 결과에 더해지고 빠집니다", async () => {
+    const { setFieldScope } = await import("./lastResult");
+    vi.stubGlobal("sessionStorage", { getItem: () => null, setItem: () => {} });
+    const job = (id: string, field: string) => ({ id, title: id, domain: "job", region: [], isSample: false, origin: "api", apply: {}, summary: "", conditions: [{ attr: "field", op: "in", value: [field], rawText: "직무", confidence: "high" }] });
+    const pool = [job("it", "정보통신"), job("open", "직무 무관")];
+    const q = (v: string) => ({ id: `field:eq:${v}`, attr: "field", op: "eq", value: v, text: "어떤 분야 일을 찾습니까?" });
+    const r = { pool, answers: [{ question: q("정보통신"), answer: "yes" }, { question: q("직무 무관"), answer: "no" }], matches: [] } as never;
+    const on = setFieldScope(r, "직무 무관", true);
+    expect(on.matches.map((m) => m.opportunity.id).sort()).toEqual(["it", "open"]);
+    expect(setFieldScope(on, "직무 무관", false).matches.map((m) => m.opportunity.id)).toEqual(["it"]);
+  });
+});

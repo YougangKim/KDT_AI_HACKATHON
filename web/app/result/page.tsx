@@ -9,7 +9,8 @@ import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
 import { buildWatch, loadWatch, saveWatch } from "@/lib/alerts";
 import { registerSW, requestPermission, checkAlerts, syncWatch, pushPublicKey, sendTestPush } from "@/lib/alerts/client";
 import { MatchCard } from "@/components/result/MatchCard";
-import { readLastResult, relaxAnswer, setAnswers, type LastResult } from "@/components/result/lastResult";
+import { readLastResult, relaxAnswer, setAnswers, type LastResult, setFieldScope } from "@/components/result/lastResult";
+import { OPEN_FIELD, UNSPECIFIED_FIELD } from "@/lib/sources/field";
 import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { applySortMode, interleaveByDomain, myRegion, SORT_LABEL, sortMatches, type SortMode } from "@/components/result/sort";
@@ -94,6 +95,14 @@ export default function ResultPage() {
         : `모두 확인 필요, 기존 바로 신청 ${-okGain}개도 확인 필요로 바뀜`;
     setNote(`조건을 풀어서 ${gained}개 늘었습니다(${detail}).`);
     setResult(next);
+  }
+
+  function onScope(value: string, include: boolean) {
+    if (!result) return;
+    const next = setFieldScope(result, value, include);
+    setNote(`채용 공고 범위를 바꿨습니다. ${result.matches.length}개 → ${next.matches.length}개`);
+    setResult(next);
+    setSaved(false);
   }
 
   function onEdit(changes: AnswerChange[]) {
@@ -202,6 +211,24 @@ export default function ResultPage() {
       <Link href={over ? `/play?continue=1&target=${limit}` : "/play?continue=1"} className="block w-full rounded-2xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm">
         <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />{over ? `추가 질문으로 ${limit}개 이하로 좁히기` : "추가 질문으로 더 좁히기"}
       </Link>
+  ) : null;
+
+  // 희망 직무를 고른 경우에만: 직무 무관 일반 채용·직무 미표기 공고를 결과에 넣을지 바로 고른다
+  const pickedField = result?.answers.some((a) => a.question.attr === "field" && a.answer === "yes" && a.question.value !== OPEN_FIELD && a.question.value !== UNSPECIFIED_FIELD);
+  const scopeCount = (value: string) => (result?.pool ?? []).filter((o) => o.conditions.some((c) => c.attr === "field" && Array.isArray(c.value) && c.value.includes(value))).length;
+  const scopeOn = (value: string) => result?.answers.some((a) => a.question.id === `field:eq:${value}` && a.answer === "yes") ?? false;
+  const scopeControls = pickedField && (scopeCount(OPEN_FIELD) + scopeCount(UNSPECIFIED_FIELD)) > 0 ? (
+    <section className="app-card space-y-2 p-3 text-sm" aria-label="채용 공고 범위">
+      <p className="font-semibold">채용 공고 범위 <span className="font-normal text-slate-500">· 기본은 고른 직무로 확인된 공고만</span></p>
+      <div className="flex flex-wrap gap-2">
+        {[{ value: OPEN_FIELD, label: "직무 무관 일반 채용도 보기" }, { value: UNSPECIFIED_FIELD, label: "직무 미표기 공고도 보기" }].filter((s) => scopeCount(s.value) > 0).map((s) => (
+          <button key={s.value} type="button" aria-pressed={scopeOn(s.value)} onClick={() => onScope(s.value, !scopeOn(s.value))}
+            className={`min-h-10 rounded-full border px-3 ${scopeOn(s.value) ? "border-indigo-600 bg-indigo-600 text-white" : "bg-white text-slate-700"}`}>
+            {scopeOn(s.value) ? "✓ " : ""}{s.label}({scopeCount(s.value)}건)
+          </button>
+        ))}
+      </div>
+    </section>
   ) : null;
 
   const viewControls = (
@@ -365,6 +392,7 @@ export default function ResultPage() {
 
       {relax.length > 0 && <RelaxSuggestions options={relax} onRelax={onRelax} title={`현재 ${result.matches.length}건. 조건을 완화하면 더 표시됩니다`} />}
 
+      {scopeControls}
       {viewControls}
 
       <div className="space-y-3">

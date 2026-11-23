@@ -90,3 +90,16 @@ export function nonEmptyResultState(history: GameState[]): { state: GameState; n
   }
   return { state: last };
 }
+
+/** 채용 공고 범위: 직무 무관 일반 채용·직무 미표기 공고를 결과에 포함할지(분야 답에 예/아니오로 반영) */
+export function setFieldScope(r: LastResult, value: string, include: boolean): LastResult {
+  const id = `field:eq:${value}`;
+  const exists = r.answers.some((a) => a.question.id === id);
+  const answers: AnswerRecord[] = exists
+    ? updateAnswers(r.answers, [{ id, answer: include ? "yes" : "no" }])
+    : [...r.answers, { question: { id, attr: "field", op: "eq", value, text: `${value} 공고도 보시겠습니까?` }, answer: include ? "yes" : "no" }];
+  const filtered = filterMatchesByRadius(getMatches({ pool: r.pool ?? [], answers }), r.location);
+  const next = { ...r, answers, matches: filtered.matches, radiusExcluded: filtered.excluded };
+  saveLastResult(next);
+  return next;
+}
