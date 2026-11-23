@@ -24,12 +24,17 @@ describe("채용 공고 경력·직무 판별", () => {
   });
 
   it("IT·전기 희망 + 경력 없음이면 경력 전용·무관 직무 공고가 빠집니다", () => {
+    const run = (unspecified: "yes" | "no") => {
     let s = startGame(pool);
     const fieldQ = (v: string) => ({ id: `field:in:${v}`, attr: "field", op: "in", value: [v], text: "어떤 분야 일을 원하십니까?" }) as never;
     for (const f of ["정보통신", "전기·전자"]) s = applyAnswer(s, fieldQ(f), "yes");
     for (const f of ["화학·바이오", "문화·예술·디자인·방송", "교육·자연·사회과학"]) s = applyAnswer(s, fieldQ(f), "no");
+    s = applyAnswer(s, fieldQ("분야 미표기"), unspecified);
     s = applyAnswer(s, { id: "experienced:eq:true", attr: "experienced", op: "eq", value: true, text: "관련 경력이 있습니까?" } as never, "no");
-    const ids = getMatches(s).map((m) => m.opportunity.id).sort();
-    expect(ids).toEqual(["elec-new", "it-new", "plain"]);
+    return getMatches(s).map((m) => m.opportunity.id).sort();
+    };
+    // 직무가 적히지 않은 공고(plain)는 "직무 미표기 공고도 보기"를 고르지 않으면 빠진다
+    expect(run("no")).toEqual(["elec-new", "it-new"]);
+    expect(run("yes")).toEqual(["elec-new", "it-new", "plain"]);
   });
 });

@@ -278,6 +278,9 @@ export function parseDomains(param: string | null | undefined): Domain[] {
   return list.length ? [...new Set(list)] : ALL_DOMAINS;
 }
 
+import { UNSPECIFIED_FIELD } from "./field";
+export { UNSPECIFIED_FIELD };
+
 /** 직무 분야 판별 키워드(NCS 대분류). 공고 제목에서 기관명을 뺀 부분으로만 판단한다 */
 const FIELD_KEYWORDS: [string, RegExp][] = [
   ["정보통신", /(^|[^A-Za-z])IT([^A-Za-z]|$)|전산|정보보안|정보화|정보시스템|소프트웨어|SW|데이터|네트워크|서버|클라우드|Cloud|개발자|프로그래머|인공지능|AI|게임|DBA|백엔드|프론트엔드|웹개발|앱개발|빌드시스템|모바일플랫폼|보안관제/],
@@ -316,7 +319,10 @@ export function inferJobConditions(o: Opportunity): Opportunity {
     // 제목(기관명 제외)에서 먼저 찾고, 없으면 기관명까지 포함해 찾는다(예: ○○약품 신입 모집 → 화학·바이오)
     const find = (t: string) => FIELD_KEYWORDS.filter(([, re]) => re.test(t)).map(([f]) => f);
     const fields = find(title).length ? find(title) : find(`${o.org ?? ""} ${o.title}`);
-    if (fields.length) conditions.push({ attr: "field", op: "in", value: fields, rawText: `직무 분야: ${fields.join(", ")}(공고 제목으로 판별)`, confidence: "high" });
+    // 직무를 알 수 없는 공고는 "분야 미표기"로 표시해, 분야 질문에서 이 공고들까지 볼지 사용자가 고르게 한다
+    conditions.push(fields.length
+      ? { attr: "field", op: "in", value: fields, rawText: `직무 분야: ${fields.join(", ")}(공고 제목으로 판별)`, confidence: "high" }
+      : { attr: "field", op: "in", value: [UNSPECIFIED_FIELD], rawText: "직무 분야가 공고 제목에 적혀 있지 않음", confidence: "high" });
   }
   return conditions.length === o.conditions.length ? o : { ...o, conditions };
 }
