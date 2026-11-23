@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Match } from "@/lib/types";
 import { daysLeft, ddayLabel } from "@/lib/alerts/core";
 import { DOMAIN_META } from "./domain";
@@ -98,14 +99,23 @@ export function MatchCard({
         </section>
       )}
 
-      <a
-        href={o.apply?.url || o.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block min-h-11 content-center rounded-xl bg-indigo-600 px-4 py-2 text-center text-sm font-bold text-white"
-      >
-        신청 페이지 열기 ↗
-      </a>
+      <div className="flex gap-2">
+        <Link
+          href={`/prepare?id=${encodeURIComponent(o.id)}`}
+          className="block min-h-11 flex-1 content-center rounded-xl bg-indigo-600 px-4 py-2 text-center text-sm font-bold text-white"
+        >
+          신청 준비하기
+        </Link>
+        <a
+          href={o.apply?.url || o.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="신청 페이지 열기(원문)"
+          className="block min-h-11 content-center rounded-xl border border-indigo-200 px-3 py-2 text-center text-sm font-semibold text-indigo-700"
+        >
+          원문 ↗
+        </a>
+      </div>
     </article>
   );
 }

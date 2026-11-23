@@ -231,7 +231,7 @@ for (const [name, pool] of DATASETS) {
       // 남은 후보가 10개 이하가 되면 질문을 멈추므로, 바로 신청 0개여도 "확인 필요" 공고는 보여야 합니다
       assert.ok(await total(page) >= 1, "결과가 0건으로 끝나면 안 됩니다");
       // 상위 3개 카드: 모두 서울 대상이고 "왜 맞는지"에 지역 근거가 있습니다
-      const cards = page.locator("div.space-y-3 > *").filter({ hasText: "신청 페이지 열기" });
+      const cards = page.locator("div.space-y-3 > *").filter({ hasText: "신청 준비하기" });
       const shown = await cards.count();
       assert.ok(shown >= 1, "결과 카드가 1개 이상 보여야 합니다");
       if (pool === FIXTURE) assert.ok(shown >= 3, "고정 데이터(서울 주거 6건)에서는 카드 3개");
