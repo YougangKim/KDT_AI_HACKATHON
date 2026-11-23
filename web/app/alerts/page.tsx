@@ -177,7 +177,7 @@ export default function AlertsPage() {
             <Link href="/play" className="text-indigo-700 underline">
               게임
             </Link>
-            을 하고 결과 화면에서 &quot;이 조건으로 알림 받기&quot;를 선택하면 됩니다.
+            을 하고 결과 화면에서 &quot;이 조건으로 저장하고 알림 받기&quot;를 선택하면 됩니다.
           </p>
         ) : (
           <>

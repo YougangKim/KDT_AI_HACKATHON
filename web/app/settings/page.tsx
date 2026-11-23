@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Domain, Watch, WatchSchedule } from "@/lib/types";
 import { updateAnswers, type AnswerChange } from "@/lib/engine/answer-groups";
-import { loadWatch, saveWatch } from "@/lib/alerts";
+import { buildWatch, loadWatch, saveWatch } from "@/lib/alerts";
+import { readLastResult } from "@/components/result/lastResult";
 import { researchStatus, syncWatch, type ResearchStatus } from "@/lib/alerts/client";
 import { summarizeConditions } from "@/lib/insight/funnel";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
@@ -57,7 +58,15 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const current = loadWatch();
+    let current = loadWatch();
+    if (!current) {
+      // 알림을 아직 저장하지 않았어도 방금 마친 인터뷰 답으로 설정을 시작한다(질문을 다시 하지 않게)
+      const last = readLastResult();
+      if (last?.answers.length) {
+        current = { ...buildWatch(last.answers, last.matches), location: last.location };
+        setStatus("방금 인터뷰한 조건을 불러왔습니다. 아래에서 확인하고 저장하면 알림이 켜집니다.");
+      }
+    }
     setWatch(current ? {
       ...current,
       schedule: current.schedule ?? defaultSchedule(),

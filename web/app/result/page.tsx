@@ -6,7 +6,7 @@ import type { Domain } from "@/lib/types";
 import type { AnswerChange } from "@/lib/engine/answer-groups";
 import { analyzeFunnel } from "@/lib/insight/funnel";
 import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
-import { buildWatch, saveWatch } from "@/lib/alerts";
+import { buildWatch, loadWatch, saveWatch } from "@/lib/alerts";
 import { registerSW, requestPermission, checkAlerts, syncWatch, pushPublicKey, sendTestPush } from "@/lib/alerts/client";
 import { MatchCard } from "@/components/result/MatchCard";
 import { readLastResult, relaxAnswer, setAnswers, type LastResult } from "@/components/result/lastResult";
@@ -39,7 +39,12 @@ export default function ResultPage() {
   const mapRef = useRef<ResultMapHandle>(null);
 
   useEffect(() => {
-    setResult(readLastResult());
+    const loaded = readLastResult();
+    setResult(loaded);
+    // 이미 이 답으로 저장했다면 저장 버튼을 다시 보여 주지 않는다
+    const w = loadWatch();
+    const key = (a: { question: { id: string }; answer: string }[]) => a.map((x) => `${x.question.id}=${x.answer}`).sort().join("|");
+    if (w && loaded && key(w.answers) === key(loaded.answers)) setSaved(true);
     try {
       setHard(JSON.parse(localStorage.getItem("hardConditions") ?? "[]"));
     } catch {}
@@ -235,7 +240,7 @@ export default function ResultPage() {
       {!saved ? (
         <>
           <button onClick={onSave} className="w-full rounded-2xl bg-indigo-600 py-3 font-semibold text-white shadow active:scale-95">
-            <Icon name="bell" className="mr-1 inline h-5 w-5 align-[-4px]" />{result.matches.length ? "이 조건으로 알림 받기" : "이 조건으로 새 공고 오면 알림 받기"}
+            <Icon name="bell" className="mr-1 inline h-5 w-5 align-[-4px]" />{result.matches.length ? "이 조건으로 저장하고 알림 받기" : "이 조건으로 저장하고 새 공고 알림 받기"}
           </button>
           <p className="text-center text-[11px] text-slate-400">예·아니오 답변만 저장 · 알림함에서 삭제 가능</p>
         </>
