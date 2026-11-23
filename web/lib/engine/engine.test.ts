@@ -48,18 +48,17 @@ describe("후보 축소", () => {
     expect(m[0].status).toBe("eligible");
   });
 
-  it("다른 지역 지원금도 표시하되 거주 자격 확인을 남깁니다", () => {
+  it("다른 지역 지원금은 빠지고 지역 제한 없는 공고는 남습니다", () => {
     const pool = [opp("seoul", [], ["서울"]), opp("gg", [], ["경기"]), opp("all", [])];
     const s = applyAnswer(startGame(pool), q("region", "eq", "서울"), "yes");
-    expect(getMatches(s).map((m) => m.opportunity.id).sort()).toEqual(["all", "gg", "seoul"]);
-    expect(getMatches(s).find((m) => m.opportunity.id === "gg")).toMatchObject({ status: "needs_check", unknowns: [expect.objectContaining({attr:"region"})] });
+    expect(getMatches(s).map((m) => m.opportunity.id).sort()).toEqual(["all", "seoul"]);
   });
 
   it("지역 조건이 없는 전국 공고는 다른 지역 답 뒤에도 남습니다", () => {
     const nationwide = opp("nationwide", [], []);
     const local = opp("busan", [], ["부산"]);
     const s = applyAnswer(startGame([nationwide, local]), q("region", "eq", "서울"), "yes");
-    expect(getMatches(s).map((m) => m.opportunity.id)).toEqual(["nationwide", "busan"]);
+    expect(getMatches(s).map((m) => m.opportunity.id)).toEqual(["nationwide"]);
   });
 
   it("소득 100% 초과 답은 120%·150% 이하 조건을 탈락시키지 않고 확인 필요로 남긴다", () => {

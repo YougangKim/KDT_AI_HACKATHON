@@ -140,7 +140,7 @@ describe("analyzeFunnel", () => {
     ];
     const report = analyzeFunnel(pool, answers);
 
-    expect(report.passed).toBe(2);
+    expect(report.passed).toBe(1);
     expect(report.steps.map(({ questionId }) => questionId)).toEqual([
       homeless.id,
       region.id,
@@ -155,11 +155,11 @@ describe("analyzeFunnel", () => {
 
     expect(homelessStep).toMatchObject({
       aloneRemoved: 2,
-      passedWithout: 4,
+      passedWithout: 2,
     });
-    // 지역은 공고를 제외하지 않고 확인 필요로 남깁니다.
+    // 다른 지역(서울) 공고는 부산 답에서 빠진다: 무주택 답 이후 남은 서울 공고 1건
     expect(regionStep).toMatchObject({
-      aloneRemoved: 0,
+      aloneRemoved: 1,
       passedWithout: 2,
     });
     expect(homelessStep?.label).toBe(
@@ -203,10 +203,11 @@ describe("analyzeFunnel", () => {
       [homeless.id],
     );
 
-    expect(report.bottleneck).toBeNull();
+    // 무주택(hard)은 후보에서 빠지고, 남은 후보는 지역뿐이다
+    expect(report.bottleneck?.step.attr).toBe("region");
   });
 
-  it("지역은 이미 모두 표시하므로 완화 제안에서 제외합니다", () => {
+  it("바꾸기 어려운 지역은 완화 제안에서 마지막에 둡니다", () => {
     const homeless = question("homeless", "eq", true, "본인 명의 집이 없습니까? (무주택)");
     const region = question("region", "eq", "부산", "지금 부산에 살고 있습니까?");
     const pool = [
@@ -218,8 +219,7 @@ describe("analyzeFunnel", () => {
     ];
     const report = analyzeFunnel(pool, [answer(homeless, "no"), answer(region, "yes")]);
 
-    expect(report.bottleneck?.step.attr).toBe("homeless");
-    expect(report.relaxOptions.map((r) => r.step.attr)).toEqual(["homeless"]);
+    expect(report.relaxOptions.map((r) => r.step.attr)).toEqual(["homeless", "region"]);
     expect(report.relaxOptions[0].suggestion).toBe('주택 보유 여부를 "모름"으로 두면 1건이 더 표시됩니다');
   });
 
@@ -310,7 +310,7 @@ describe("analyzeFunnel", () => {
 
     expect(report.steps.map((step) => step.attr)).toEqual(["region", "homeless"]);
     // 무주택 "예"는 무주택 조건이 없는 공고를 빼지 않는다
-    expect(report.steps.map((step) => step.removedCount)).toEqual([0, 0]);
+    expect(report.steps.map((step) => step.removedCount)).toEqual([2, 0]);
   });
 
   it("모름 질문과 그 때문에 확인이 필요한 공고 수를 집계합니다", () => {

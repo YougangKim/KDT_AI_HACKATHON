@@ -1,5 +1,6 @@
 // 공고 수집 진입점. 실제 출처만 사용하며 키 없음·실패·0건은 빈 결과로 처리합니다.
 import type { Condition, Domain, Opportunity } from "../types";
+import { normalizeRegion } from "../ai/rules";
 import { aiEnabled, cachedStructuredConditions, structureConditions } from "../ai";
 import { regionsIn } from "../ai/rules";
 import { attachGeo } from "../geo/geocode";
@@ -197,7 +198,33 @@ export async function collectLiveOpportunities(
   }
   const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
   // 일괄 수집은 시간 여유가 있으니 카카오 좌표 조회를 넉넉히(무료 한도 일 10만 회 안쪽)
-  return attachGeo(attachPlaces(deduped), opts.full ? 3000 : undefined);
+  const located = await attachGeo(attachPlaces(deduped), opts.full ? 3000 : undefined);
+  return located.map(inferRegion);
+}
+
+const SIDO_TOKEN = /^(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주|충청북도|충청남도|전라북도|전라남도|경상북도|경상남도|전북특별자치도|강원특별자치도|제주특별자치도)(특별시|광역시|특별자치시|특별자치도|도|시)?$/;
+
+/**
+ * 지역 정보가 비어 있는 공고의 지역을 원문으로 판별한다(지역 필터가 다른 지역 공고를 거르도록).
+ * - 제목·기관명에 시·도 이름이 단독 낱말로 있으면 그 지역(예: "부산 청년 월세", "경기도 ○○") — "서울대학교" 같은 고유명사는 제외
+ * - 주거 공고는 카카오가 찾은 단지 주소의 시·도
+ * - 시·도가 2개 이상이거나 근거가 없으면 전국 공고로 둔다
+ */
+export function inferRegion(o: Opportunity): Opportunity {
+  if (o.region.length || o.domain === "exam" || o.domain === "training") return o;
+  const tokens = `${o.title} ${o.org}`.replace(/[[\]()<>「」『』]/g, " ").split(/[\s,·/]+/);
+  const found = new Set(tokens.filter((t) => SIDO_TOKEN.test(t)).map((t) => normalizeRegion(t)).filter((r): r is string => !!r));
+  if (!found.size && o.domain === "housing" && o.geo?.address && o.geo.precision !== "region") {
+    const r = normalizeRegion(o.geo.address.split(" ")[0]);
+    if (r) found.add(r);
+  }
+  if (found.size !== 1) return o;
+  const region = [...found];
+  return {
+    ...o,
+    region,
+    conditions: [...o.conditions, { attr: "region", op: "in", value: region, rawText: `대상 지역: ${region[0]}(공고 원문으로 판별)`, confidence: "high" }],
+  };
 }
 
 /** 분야별 공고를 모은다. fixture는 기존 경로, 운영 요청은 저장된 공고 풀을 우선합니다. */

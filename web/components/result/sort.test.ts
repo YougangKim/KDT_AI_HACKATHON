@@ -16,3 +16,19 @@ describe("전체 탭 분야 섞기", () => {
     expect(interleaveByDomain(list).map((x) => x.opportunity.id)).toEqual(["b1", "j1", "b2"]);
   });
 });
+
+import { applySortMode } from "./sort";
+describe("정렬 방식", () => {
+  const day = (n: number) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
+  const mk = (id: string, end?: string, start?: string): Match =>
+    ({ opportunity: { id, domain: "job", applyEnd: end, applyStart: start } as Opportunity, status: "eligible", reasons: [], unknowns: [] }) as Match;
+  const list = [mk("soon", day(2), day(-20)), mk("roomy-new", day(30), day(-1)), mk("roomy-old", day(40), day(-30)), mk("always")];
+  it("마감 임박순: 가까운 마감 먼저, 상시는 뒤", () => {
+    expect(applySortMode(list, "deadline").map((m) => m.opportunity.id)).toEqual(["soon", "roomy-new", "roomy-old", "always"]);
+  });
+  it("기한 넉넉한 최신순: 14일 이상 남은 공고를 최근 시작 순으로, 임박 공고는 뒤", () => {
+    const ids = applySortMode(list, "roomy").map((m) => m.opportunity.id);
+    expect(ids.indexOf("roomy-new")).toBeLessThan(ids.indexOf("roomy-old"));
+    expect(ids.at(-1)).toBe("soon");
+  });
+});

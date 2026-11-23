@@ -52,3 +52,22 @@ export function interleaveByDomain(ms: Match[]): Match[] {
   };
   return mix(ms);
 }
+
+export type SortMode = "relevance" | "deadline" | "roomy";
+export const SORT_LABEL: Record<SortMode, string> = { relevance: "관련도순", deadline: "마감 임박순", roomy: "기한 넉넉한 최신순" };
+
+/**
+ * 사용자가 고른 정렬. relevance는 기존 순서(바로 신청 → 내 지역 → 마감·거리 → 분야 섞기)를 그대로 쓴다.
+ * - deadline: 마감이 가까운 순(상시·마감 미상은 뒤)
+ * - roomy: 마감까지 14일 이상 남았거나 상시인 공고를 먼저, 그 안에서 최근 시작(게시)한 순
+ */
+export function applySortMode(ms: Match[], mode: SortMode): Match[] {
+  if (mode === "relevance") return ms;
+  const left = (m: Match) => daysLeft(m.opportunity.applyEnd);
+  if (mode === "deadline") {
+    return [...ms].sort((a, b) => (left(a) ?? 99999) - (left(b) ?? 99999));
+  }
+  const roomy = (m: Match) => { const d = left(m); return d === null || d >= 14; };
+  const start = (m: Match) => m.opportunity.applyStart ?? "";
+  return [...ms].sort((a, b) => Number(roomy(b)) - Number(roomy(a)) || start(b).localeCompare(start(a)) || (left(b) ?? 99999) - (left(a) ?? 99999));
+}

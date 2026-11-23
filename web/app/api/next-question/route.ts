@@ -1,4 +1,5 @@
 import { aiEnabled, ask, FAST_MODEL } from "@/lib/ai";
+import { withQuestionGuide } from "@/lib/ai/question-guide";
 import { validateQuestion, type QuestionFacet } from "@/lib/ai/question-contract";
 
 export const runtime = "nodejs";
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
     const evidence = Array.isArray(body.evidence) ? body.evidence.slice(0, 24).map((o: { domain?: string; title?: string; summary?: string }) => ({ domain: String(o.domain ?? "").slice(0, 20), title: String(o.title ?? "").slice(0, 120), summary: String(o.summary ?? "").slice(0, 240) })) : [];
     const safeFacets = facets.map((f) => ({ id: f.id.slice(0, 200), text: f.text.slice(0, 160), options: f.options.map((o) => ({ key: o.key.slice(0, 20), label: o.label.slice(0, 100), remaining: o.remaining })) }));
     const input = JSON.stringify({ facets: safeFacets, answered: answered.map((a) => ({ text: a.text.slice(0, 160), answer: a.answer.slice(0, 100) })), evidence, total: body.total });
-    const text = await ask(FAST_MODEL, QUESTION_SYSTEM, input, 1800);
+    const text = await ask(FAST_MODEL, withQuestionGuide(QUESTION_SYSTEM), input, 1800);
     const value = text ? JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) : null;
     const question = validateQuestion(value, facets, answered, body.total);
     return Response.json(question ? { ai: true, id: question.id, question } : { ai: false, reason: "invalid_or_no_gain" });

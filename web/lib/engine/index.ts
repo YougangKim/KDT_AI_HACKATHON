@@ -154,7 +154,6 @@ function decide(k: Knowledge, c: Condition): "pass" | "fail" | null {
  * - 기준중위소득이 아닌 소득 기준(연소득, 도시근로자 월평균소득, 학자금 구간): 질문은 기준중위소득으로 묻기 때문에 답으로 판정할 수 없습니다.
  */
 export function lenient(c: Condition): boolean {
-  if (c.attr === "region") return true; // 지역은 제외하지 않고 거주 자격·이동 가능성을 확인하도록 남깁니다.
   if (c.attr === "topic") return false; // 생성된 탐색 선호는 자격요건의 우대·예외 문구가 아닙니다.
   if (c.attr === "employment" || c.confidence === "low") return true;
   if (/우대|우선|가능|무관|다름/.test(c.rawText)) return true;

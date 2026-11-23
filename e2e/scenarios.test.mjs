@@ -334,8 +334,7 @@ for (const [name, pool] of DATASETS) {
         await page.getByText(/다시 조사했습니다\. 새 공고 \d+건/).waitFor({ timeout: 20000 });
         const body = await page.locator("body").textContent();
         // 앱이 열려 있으면 화면 쪽 확인(AlertPolling)이 서버 재조사보다 먼저 새 공고를 받을 수 있습니다 → 둘 중 한 곳에서 정확히 1건
-        // 다른 지역 공고는 이제 탈락이 아니라 "확인 필요"로 남는다(GPT 변경: 지역 lenient) → 0~2건 허용
-        assert.match(body, /다시 조사했습니다\. 새 공고 [012]건/, `새 공고 2건 중 조건에 맞는 것만: ${(body.match(/다시 조사했습니다[^.]*\.[^.]*\./) ?? [""])[0]}`);
+        assert.match(body, /다시 조사했습니다\. 새 공고 [01]건/, `새 공고 2건 중 조건에 맞는 것만: ${(body.match(/다시 조사했습니다[^.]*\.[^.]*\./) ?? [""])[0]}`);
         assert.ok(body.includes(NEW_MATCHING.title), "조건에 맞는 새 공고 제목이 보여야 합니다");
         assert.ok(!body.includes(NEW_OTHER_REGION.title), "다른 지역 새 공고는 알리면 안 됩니다");
 
@@ -397,6 +396,23 @@ for (const [name, pool] of DATASETS) {
       const [, from, to] = message.match(/(\d+)개 → (\d+)개/);
       assert.equal(Number(from), before, "좁히기 전 건수를 안내해야 합니다");
       assert.ok(Number(to) < Number(from), `결과 건수가 감소해야 합니다: ${message}`);
+      await page.context().close();
+    });
+
+    if (pool === FIXTURE) test("g) 정렬·보고 싶은 수를 고르고, 수가 넘치면 그 수 이하로 좁히기 링크가 나온다", async () => {
+      const page = await newPage();
+      await start(page, [/청년 주택/, /지원금/]);
+      await playAs(page, { region: "서울", answer: () => "모름" });
+      await page.waitForURL("**/result");
+      const total0 = await total(page);
+      await page.getByRole("combobox", { name: "정렬" }).selectOption("deadline");
+      await page.getByRole("combobox", { name: "보고 싶은 공고 수" }).selectOption("10");
+      const cards = await page.locator("article").count();
+      assert.ok(cards >= 1 && cards <= 10, `카드 수 ${cards}`);
+      if (total0 > 10) {
+        const href = await page.getByRole("link", { name: /10개 이하로 좁히기/ }).getAttribute("href");
+        assert.match(href ?? "", /target=10/);
+      }
       await page.context().close();
     });
 

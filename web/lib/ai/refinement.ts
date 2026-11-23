@@ -1,3 +1,4 @@
+import { checkQuestionQuality } from "./question-guide";
 import { hasCasualEnding } from "../copy";
 import type { Opportunity } from "../types";
 
@@ -40,6 +41,8 @@ export function validateRefinement(value: unknown, evidence: RefinementEvidence[
   const normalize = (s: string) => s.replace(/[\s?？.!]/g, "");
   if (answered.some((a) => normalize(a.text.split(" — ")[0]) === normalize(q.text))) return null;
   if (new Set(q.options.map((o) => o.label)).size !== q.options.length) return null;
+  // 어느 AI가 만들었든 같은 품질 기준(공용 지침)으로 거른다
+  if (checkQuestionQuality(q.text, q.options.map((o) => o.label), answered)) return null;
   const options = q.options.map((o) => ({ label: o.label, terms: o.terms.map((t) => t.trim()), ids: evidence.filter((e) => o.terms.some((term) => `${e.title} ${e.summary}`.toLowerCase().includes(term.trim().toLowerCase()))).map((e) => e.id) }));
   if (options.some((o) => o.ids.length === 0)) return null;
   const classified = new Set(options.flatMap((o) => o.ids));

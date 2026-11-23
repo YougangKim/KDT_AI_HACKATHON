@@ -1,4 +1,5 @@
 import { hasCasualEnding } from "../copy";
+import { checkQuestionQuality } from "./question-guide";
 
 export interface QuestionFacet {
   id: string;
@@ -26,6 +27,7 @@ export function validateQuestion(value: unknown, facets: QuestionFacet[], answer
   if (q.options.some((o) => typeof o.label !== "string" || o.label.length < 1 || o.label.length > 80)) return null;
   if ([q.text, q.why, ...q.options.map((o) => o.label)].some(hasCasualEnding)) return null;
   if (new Set(q.options.map((o) => o.label)).size !== q.options.length) return null;
+  if (checkQuestionQuality(q.text, q.options.map((o) => o.label), answered)) return null;
   if (!facet.options.some((o) => o.remaining > 0 && o.remaining < total)) return null;
   return { id: q.id, text: q.text.trim(), why: q.why.trim(), options: q.options.map(({ key, label }) => ({ key, label })) };
 }

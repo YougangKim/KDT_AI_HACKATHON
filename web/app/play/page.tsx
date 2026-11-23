@@ -263,6 +263,7 @@ export default function PlayPage() {
   const [refineAttempted, setRefineAttempted] = useState<Record<number, boolean>>({});
   const [locationStage, setLocationStage] = useState<LocationStage>("location");
   const [narrowedFrom, setNarrowedFrom] = useState<number>();
+  const [target, setTarget] = useState<number | null>(null); // 결과에서 "N개 이하로 좁히기": 남은 후보가 이 수 이하면 멈춘다
   const [location, setLocation] = useState<UserLocation>();
   const aiOff = useRef(false);
   const pickOff = useRef(false);
@@ -277,7 +278,10 @@ export default function PlayPage() {
           setContinuing(true);
           setNarrowedFrom(last.matches.length);
           const answeredCount = answerGroups(last.answers ?? []).length;
-          setLimit(answeredCount + MORE_QUESTIONS);
+          // 원하는 개수(target)가 있으면 그 수가 될 때까지 인터뷰하듯 더 묻는다(최대 12문항)
+          const wanted = Number(params.get("target"));
+          if (wanted > 0) setTarget(wanted);
+          setLimit(answeredCount + (wanted > 0 ? 12 : MORE_QUESTIONS));
           setBase(answeredCount);
           setHistory([{ pool: last.pool, answers: last.answers ?? [] }]);
           setLocation(last.location);
@@ -317,7 +321,7 @@ export default function PlayPage() {
       : needsRefine && !failedRefinement ? null : chosen?.question ?? null;
     const noMore = ranked.length === 0 && !refine && !refining;
     // 첫 탐색은 규칙 질문이 다 떨어지면 AI 생성 실패여도 결과로 간다. 결과에서 "더 좁히기"로 온 경우만 다시 생성 화면을 보여 준다
-    const done = stopNow || left <= 1 || asked >= limit || (noMore && !(continuing && failedRefinement) && !(continuing && step === 0));
+    const done = stopNow || left <= 1 || (target !== null && left <= target) || asked >= limit || (noMore && !(continuing && failedRefinement) && !(continuing && step === 0));
     let choice = choiceFor(state, q);
     if (refine) choice = {
       title: refine.text, help: `${refine.why} 분류 근거가 없는 공고는 유지합니다.`, group: "추가 맞춤 탐색",
@@ -333,7 +337,7 @@ export default function PlayPage() {
       else choice = { title: ai.text, help: ai.why, group: "맞춤 선택", options: ai.options.map((o) => ({ label: o.label, picks: [{ question: { ...q, text: ai.text }, answer: o.key as Answer }] })), unknown: [{ question: { ...q, text: ai.text }, answer: "unknown" }] };
     }
     return { left, asked, step, q, done, split: chosen ? { yes: chosen.yes, no: chosen.no } : null, choice, ranked, waiting, refining, byAi: !!refine || (!!picked && chosen?.question.id === picked), stuck: !done && failedRefinement && !q };
-  }, [state, stopNow, limit, base, history, aiPick, continuing, generated, refinements, refineAttempted]);
+  }, [state, stopNow, limit, base, history, aiPick, continuing, generated, refinements, refineAttempted, target]);
 
   // 공고를 구분할 수 있는 축과 실제 답변 이력으로 AI가 질문·선택지를 생성합니다.
   const pickKey = view?.waiting ? view.step : null;

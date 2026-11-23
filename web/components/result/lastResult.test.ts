@@ -26,6 +26,7 @@ describe("실제 공고 결과만 복원", () => {
   it("이전 지역 필터로 비어 있던 저장 결과를 원래 후보에서 복원합니다", () => {
     const pool = [{id:"remote-online",domain:"benefit",conditions:[],region:["부산"],isSample:false,apply:{how:"온라인 신청"}}];
     vi.stubGlobal("sessionStorage", {getItem:()=>JSON.stringify({pool,matches:[],radiusExcluded:1,answers:[{question:{id:"region:eq:서울",attr:"region",op:"eq",value:"서울",text:"서울에 거주합니까?"},answer:"yes"}]})});
-    expect(readLastResult()).toMatchObject({radiusExcluded:0,matches:[{opportunity:{id:"remote-online"},status:"needs_check"}]});
+    // 반경 필터 기록은 지우고 다시 판정한다: 서울 거주 답이면 부산 공고는 빠진다
+    expect(readLastResult()).toMatchObject({radiusExcluded:0,matches:[]});
   });
 });

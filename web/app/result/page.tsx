@@ -12,7 +12,7 @@ import { MatchCard } from "@/components/result/MatchCard";
 import { readLastResult, relaxAnswer, setAnswers, type LastResult } from "@/components/result/lastResult";
 import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
-import { interleaveByDomain, myRegion, sortMatches } from "@/components/result/sort";
+import { applySortMode, interleaveByDomain, myRegion, SORT_LABEL, sortMatches, type SortMode } from "@/components/result/sort";
 import { opportunityDistance } from "@/lib/geo/distance";
 import { DOMAIN_META } from "@/components/result/domain";
 import { Icon } from "@/components/brand/Icons";
@@ -34,6 +34,8 @@ export default function ResultPage() {
   const [hard, setHard] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState<ResultTab>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("relevance");
+  const [limit, setLimit] = useState<number | null>(null); // 보고 싶은 공고 수(null = 전체)
   const mapRef = useRef<ResultMapHandle>(null);
 
   useEffect(() => {
@@ -146,9 +148,10 @@ export default function ResultPage() {
       if (db === null) return -1;
       return da - db;
     });
-    // 전체 탭: 고른 분야가 골고루 보이도록 분야별로 번갈아 보여 준다
-    return tab === "all" ? interleaveByDomain(sorted) : sorted;
-  }, [result, selectedMatches, tab]);
+    // 관련도순 전체 탭: 고른 분야가 골고루 보이도록 분야별로 번갈아 보여 준다. 다른 정렬은 그 기준대로
+    const ordered = sortMode === "relevance" ? (tab === "all" ? interleaveByDomain(sorted) : sorted) : applySortMode(sorted, sortMode);
+    return limit ? ordered.slice(0, limit) : ordered;
+  }, [result, selectedMatches, tab, sortMode, limit]);
   const currentPage = Math.min(page, Math.max(0, Math.ceil(sortedAll.length / FIRST) - 1));
   const selectFromMap = useCallback((id: string) => {
     const index = sortedAll.findIndex((m) => m.opportunity.id === id);
@@ -167,7 +170,7 @@ export default function ResultPage() {
   useEffect(() => {
     setPage(0);
     setHighlighted("");
-  }, [tab]);
+  }, [tab, sortMode, limit]);
 
   function selectTab(next: ResultTab) {
     setTab(next);
@@ -179,11 +182,32 @@ export default function ResultPage() {
 
   if (result === undefined) return null;
 
+  // 원하는 개수를 고르면 그 수 이하가 될 때까지 추가 질문으로 좁힌다(target 전달)
+  const over = limit !== null && (result?.matches.length ?? 0) > limit;
   const narrowControl = result?.pool?.length ? (
-      <Link href="/play?continue=1" className="block w-full rounded-2xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm">
-        <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />추가 질문으로 더 좁히기
+      <Link href={over ? `/play?continue=1&target=${limit}` : "/play?continue=1"} className="block w-full rounded-2xl bg-indigo-600 px-4 py-3 text-center text-sm font-semibold text-white shadow-sm">
+        <Icon name="target" className="mr-1 inline h-4 w-4 align-[-3px]" />{over ? `추가 질문으로 ${limit}개 이하로 좁히기` : "추가 질문으로 더 좁히기"}
       </Link>
   ) : null;
+
+  const viewControls = (
+    <div className="flex flex-wrap items-center gap-2 text-sm" role="group" aria-label="보기 설정">
+      <label className="flex items-center gap-1">
+        <span className="text-slate-600">정렬</span>
+        <select aria-label="정렬" value={sortMode} onChange={(e) => setSortMode(e.target.value as SortMode)} className="min-h-10 rounded-lg border bg-white px-2">
+          {(Object.keys(SORT_LABEL) as SortMode[]).map((m) => <option key={m} value={m}>{SORT_LABEL[m]}</option>)}
+        </select>
+      </label>
+      <label className="flex items-center gap-1">
+        <span className="text-slate-600">보고 싶은 수</span>
+        <select aria-label="보고 싶은 공고 수" value={limit ?? ""} onChange={(e) => setLimit(e.target.value ? Number(e.target.value) : null)} className="min-h-10 rounded-lg border bg-white px-2">
+          <option value="">전체</option>
+          {[10, 20, 50].map((n) => <option key={n} value={n}>{n}개</option>)}
+        </select>
+      </label>
+      {over && <span className="text-xs text-slate-500">상위 {limit}개만 표시 중 · 전체 {result?.matches.length ?? 0}개</span>}
+    </div>
+  );
 
   const editor = result?.answers.length ? (
     <section className="space-y-2">
@@ -322,6 +346,8 @@ export default function ResultPage() {
       )}
 
       {relax.length > 0 && <RelaxSuggestions options={relax} onRelax={onRelax} title={`현재 ${result.matches.length}건. 조건을 완화하면 더 표시됩니다`} />}
+
+      {viewControls}
 
       <div className="space-y-3">
         {shown.map((m) => (
