@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#4f46e5",
-  colorScheme: "light",
+  colorScheme: "only light", // 휴대폰·브라우저의 강제 다크 모드에서도 밝게
   width: "device-width",
   initialScale: 1,
 };

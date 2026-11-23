@@ -2,7 +2,7 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
-  color-scheme: light;
+  color-scheme: only light;
   --brand: #4f46e5;
   --brand-strong: #3730a3;
   --accent: #0f766e;
