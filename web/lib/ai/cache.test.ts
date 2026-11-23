@@ -2,8 +2,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import {
   _clearAiCacheMemory,
   cacheKey,
+  cachedResult,
   getCached,
   setCached,
+  stableJson,
 } from "./cache";
 
 beforeEach(() => {
@@ -53,5 +55,25 @@ describe("AI 영구 캐시", () => {
     await setCached("file-test", "v1\ninput", "saved", 1);
     _clearAiCacheMemory();
     expect(await getCached("file-test", "v1\ninput")).toBe("saved");
+  });
+
+  test("객체 키 순서가 달라도 같은 정규화 JSON을 만든다", () => {
+    expect(stableJson({ b: 2, a: { d: 4, c: 3 } }))
+      .toBe(stableJson({ a: { c: 3, d: 4 }, b: 2 }));
+  });
+
+  test("동일 키의 동시 생성을 한 번만 실행한다", async () => {
+    let calls = 0;
+    const create = async () => {
+      calls++;
+      await Promise.resolve();
+      return { ok: true };
+    };
+    const [a, b] = await Promise.all([
+      cachedResult("single-flight", "same", 1, create),
+      cachedResult("single-flight", "same", 1, create),
+    ]);
+    expect([a, b]).toEqual([{ ok: true }, { ok: true }]);
+    expect(calls).toBe(1);
   });
 });

@@ -32,6 +32,18 @@ function makeQuestion(attr: Question["attr"], value: Question["value"], op: Ques
   return q;
 }
 
+type FeedbackType = "shown" | "answered" | "unknown" | "skipped" | "undo";
+
+function sendQuestionFeedback(key: string | undefined, type: FeedbackType, before: number, after: number) {
+  if (!key) return;
+  void fetch("/api/question-feedback", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ key, type, before, after }),
+    keepalive: true,
+  }).catch(() => {});
+}
+
 /** 홈에서 고른 분야는 이미 답한 것으로 둔다(같은 질문을 다시 묻지 않음) */
 const pickedInterests = (domains: Domain[]): AnswerRecord[] => domains.length ? Object.keys(DOMAIN_NAME).map((d) => ({ question: makeQuestion("interest", d), answer: domains.includes(d as Domain) ? "yes" : "no" })) : [];
 
@@ -267,6 +279,7 @@ export default function PlayPage() {
   const [aiPick, setAiPick] = useState<Record<number, string>>({}); // 단계별 AI가 고른 질문 id("" = 규칙 1순위)
   const [generated, setGenerated] = useState<Record<number, GeneratedQuestion>>({});
   const [refinements, setRefinements] = useState<Record<number, Refinement>>({});
+  const [feedbackKeys, setFeedbackKeys] = useState<Record<number, string>>({});
   const [refineAttempted, setRefineAttempted] = useState<Record<number, boolean>>({});
   const [locationStage, setLocationStage] = useState<LocationStage>("location");
   const [narrowedFrom, setNarrowedFrom] = useState<number>();
@@ -274,6 +287,7 @@ export default function PlayPage() {
   const [location, setLocation] = useState<UserLocation>();
   const aiOff = useRef(false);
   const pickOff = useRef(false);
+  const shownFeedback = useRef(new Set<string>());
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -360,12 +374,15 @@ export default function PlayPage() {
       const sample: Opportunity[] = [];
       for (let i = 0; sample.length < 240 && buckets.some((b) => b[i]); i++) for (const b of buckets) if (b[i] && sample.length < 240) sample.push(b[i]);
       fetch("/api/refine-question", { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(25000), body: JSON.stringify({ evidence: sample.map((o) => ({ id: o.id, domain: o.domain, title: o.title.slice(0, 160), summary: o.summary.slice(0, 240) })), answered: state.answers.map((a) => ({ text: a.question.text, answer: a.answer })) }) })
-        .then((r) => r.json()).catch(() => ({})).then((d: { question?: Refinement }) => {
+        .then((r) => r.json()).catch(() => ({})).then((d: { question?: Refinement; feedbackKey?: string }) => {
           // AI가 질문을 못 만들면(한도·장애·근거 부족) 남은 공고 분포로 규칙 질문을 만든다
           const refinement = d.question ?? (continuing || !view.ranked.length ? ruleRefinement(candidates, state.answers) : null);
           if (!alive || !refinement) return;
           setHistory((h) => h ? [...h.slice(0, -1), { ...h.at(-1)!, pool: attachRefinement(h.at(-1)!.pool, refinement) }] : h);
           setRefinements((m) => ({ ...m, [pickKey]: refinement }));
+          if (d.question && d.feedbackKey) {
+            setFeedbackKeys((m) => ({ ...m, [pickKey]: d.feedbackKey! }));
+          }
         }).catch(() => {}).finally(() => { if (alive) { setRefineAttempted((m) => ({ ...m, [pickKey]: true })); setAiPick((m) => ({ ...m, [pickKey]: "" })); } });
       return () => { alive = false; };
     }
@@ -382,8 +399,11 @@ export default function PlayPage() {
     const evidence = Object.keys(DOMAIN_NAME).flatMap((domain) => live.filter((o) => o.domain === domain).slice(0, 4)).map((o) => ({ domain: o.domain, title: o.title, summary: o.summary.slice(0, 240) }));
     fetch("/api/next-question", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ facets, evidence, answered, total: view.left }), signal: AbortSignal.timeout(15000) })
       .then((r) => r.json())
-      .then((d: { ai: boolean; id?: string; question?: GeneratedQuestion; reason?: string }) => {
+      .then((d: { ai: boolean; id?: string; question?: GeneratedQuestion; reason?: string; feedbackKey?: string }) => {
         if (alive && d.question) setGenerated((m) => ({ ...m, [pickKey]: d.question! }));
+        if (alive && d.question && d.feedbackKey) {
+          setFeedbackKeys((m) => ({ ...m, [pickKey]: d.feedbackKey! }));
+        }
         if (d.reason === "unavailable") pickOff.current = true;
         if (alive) setAiPick((m) => ({ ...m, [pickKey]: d.ai && d.id ? d.id : "" }));
       })
@@ -433,21 +453,40 @@ export default function PlayPage() {
     };
   }, [q, aiText]);
   const shownText = q ? (aiText[q.id] ?? q.text) : "";
+  const feedbackKey = view ? feedbackKeys[view.step] : undefined;
+
+  useEffect(() => {
+    if (!q || !view || !feedbackKey) return;
+    const shownId = `${view.step}:${feedbackKey}`;
+    if (shownFeedback.current.has(shownId)) return;
+    shownFeedback.current.add(shownId);
+    sendQuestionFeedback(feedbackKey, "shown", view.left, view.left);
+  }, [q, view, feedbackKey]);
 
   const answer = (a: Answer) => {
     if (!state || !q) return;
-    setHistory([...(history ?? []), applyAnswer(state, { ...q, text: shownText }, a)]);
+    const next = applyAnswer(state, { ...q, text: shownText }, a);
+    sendQuestionFeedback(feedbackKey, a === "unknown" ? "unknown" : "answered", remaining(state), remaining(next));
+    setHistory([...(history ?? []), next]);
   };
   const pick = (picks: AnswerRecord[]) => {
     if (!state) return;
+    const next = picks.reduce((s, p) => applyAnswer(s, p.question, p.answer), state);
+    const unknown = picks.length > 0 && picks.every((p) => p.answer === "unknown");
+    sendQuestionFeedback(feedbackKey, unknown ? "unknown" : "answered", remaining(state), remaining(next));
     setSelected([]);
-    setHistory([...(history ?? []), picks.reduce((s, p) => applyAnswer(s, p.question, p.answer), state)]);
+    setHistory([...(history ?? []), next]);
   };
   // 여러 개 고르기 완료: 고른 것은 예, 안 고른 것은 아니오(하나도 안 고르면 상관없음)
   const submitMulti = (c: Choice) =>
     pick(selected.length ? [...c.options.flatMap((o) => o.picks.map((p) => ({ ...p, answer: (selected.includes(o.label) ? "yes" : "no") as Answer }))), ...(c.rest ?? [])] : c.unknown);
   const undo = () => {
     if (!history || history.length <= 1) return;
+    const previousStep = history.length - 2;
+    const previous = history.at(-2)!;
+    const previousKey = feedbackKeys[previousStep];
+    sendQuestionFeedback(previousKey, "undo", remaining(history.at(-1)!), remaining(previous));
+    if (previousKey) shownFeedback.current.delete(`${previousStep}:${previousKey}`);
     setAiPick((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
     setGenerated((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
     setRefinements((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
@@ -603,7 +642,10 @@ export default function PlayPage() {
             {view.asked >= base + 2 && (
               <button
                 type="button"
-                onClick={() => setStopNow(true)}
+                onClick={() => {
+                  sendQuestionFeedback(feedbackKey, "skipped", view.left, view.left);
+                  setStopNow(true);
+                }}
                 className="text-sm font-medium text-indigo-600 underline underline-offset-4"
               >
                 여기까지만 답하고 바로 결과 보기 ({view.left}개)

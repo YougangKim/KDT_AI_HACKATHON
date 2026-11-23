@@ -28,7 +28,7 @@ const INDEX = "watch:index";
 const LAST_CRON = "watch:last-cron";
 let memoryLastCron: string | null = null;
 
-async function redis(cmd: (string | number)[]): Promise<unknown> {
+export async function redis(cmd: (string | number)[]): Promise<unknown> {
   const res = await fetch(URL_!, {
     method: "POST",
     headers: { Authorization: `Bearer ${TOKEN}`, "content-type": "application/json" },

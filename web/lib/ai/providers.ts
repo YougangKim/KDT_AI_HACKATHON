@@ -9,6 +9,8 @@ interface ProviderStats {
   success: number;
   failure: number;
   cooldownUntil: number;
+  promptTokens: number;
+  completionTokens: number;
 }
 
 const names: ProviderName[] = [
@@ -19,7 +21,7 @@ const names: ProviderName[] = [
   "anthropic",
 ];
 const stats = Object.fromEntries(
-  names.map((name) => [name, { success: 0, failure: 0, cooldownUntil: 0 }]),
+  names.map((name) => [name, { success: 0, failure: 0, cooldownUntil: 0, promptTokens: 0, completionTokens: 0 }]),
 ) as Record<ProviderName, ProviderStats>;
 
 const DEFAULT_COOLDOWN_MS = 10 * 60_000;
@@ -98,7 +100,13 @@ async function openAiCompatible(
   try {
     const body = await response.json() as {
       choices?: { message?: { content?: string } }[];
+      usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+      };
     };
+    stats[name].promptTokens += body.usage?.prompt_tokens ?? 0;
+    stats[name].completionTokens += body.usage?.completion_tokens ?? 0;
     const text = body.choices?.[0]?.message?.content?.trim();
     if (!text) {
       stats[name].failure++;
@@ -143,7 +151,13 @@ export async function askGemini(
   try {
     const body = await response.json() as {
       candidates?: { content?: { parts?: { text?: string }[] } }[];
+      usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+      };
     };
+    stats.gemini.promptTokens += body.usageMetadata?.promptTokenCount ?? 0;
+    stats.gemini.completionTokens += body.usageMetadata?.candidatesTokenCount ?? 0;
     const text = (body.candidates?.[0]?.content?.parts ?? [])
       .map((part) => part.text ?? "")
       .join("")
@@ -189,7 +203,13 @@ async function askAnthropic(
   try {
     const body = await response.json() as {
       content?: { type?: string; text?: string }[];
+      usage?: {
+        input_tokens?: number;
+        output_tokens?: number;
+      };
     };
+    stats.anthropic.promptTokens += body.usage?.input_tokens ?? 0;
+    stats.anthropic.completionTokens += body.usage?.output_tokens ?? 0;
     const text = (body.content ?? [])
       .map((block) => block.type === "text" ? block.text ?? "" : "")
       .join("")
@@ -269,12 +289,21 @@ export function aiProviderStatus() {
       success: stats[name].success,
       failure: stats[name].failure,
       cooldownRemainingMs: Math.max(0, stats[name].cooldownUntil - now),
+      promptTokens: stats[name].promptTokens,
+      completionTokens: stats[name].completionTokens,
+      totalTokens: stats[name].promptTokens + stats[name].completionTokens,
     },
   ]));
 }
 
 export function _resetProviders(): void {
   for (const name of names) {
-    stats[name] = { success: 0, failure: 0, cooldownUntil: 0 };
+    stats[name] = {
+      success: 0,
+      failure: 0,
+      cooldownUntil: 0,
+      promptTokens: 0,
+      completionTokens: 0,
+    };
   }
 }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { _resetClient, aiEnabled, structureConditions } from "./index";
 import { judgeYes } from "./jev";
-import { chat } from "./providers";
+import { aiProviderStatus, chat } from "./providers";
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); vi.restoreAllMocks(); _resetClient(); });
 
@@ -35,6 +35,18 @@ describe("무료 LLM 폴백 체인", () => {
     vi.stubGlobal("fetch", f);
     expect(await chat("system", "user", 1800)).toBe("ok");
     expect(JSON.parse(f.mock.calls[0][1].body)).toMatchObject({model:"openai/gpt-oss-120b",reasoning_effort:"low",max_tokens:1800});
+  });
+  it("공급자 usage를 누적합니다", async () => {
+    vi.stubEnv("GROQ_API_KEY", "groq");
+    vi.stubEnv("GEMINI_API_KEY", "");
+    const f = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      choices: [{ message: { content: "ok" } }],
+      usage: { prompt_tokens: 12, completion_tokens: 7 },
+    })));
+    vi.stubGlobal("fetch", f);
+    await chat("system", "user", 100);
+    expect(aiProviderStatus().groq)
+      .toMatchObject({ promptTokens: 12, completionTokens: 7, totalTokens: 19 });
   });
   it("첫 공급자가 429면 다음 공급자로 넘어간다", async () => {
     vi.stubEnv("GROQ_API_KEY", "groq");

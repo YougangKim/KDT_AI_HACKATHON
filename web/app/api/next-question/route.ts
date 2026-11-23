@@ -1,6 +1,15 @@
 import { aiEnabled, ask, FAST_MODEL } from "@/lib/ai";
 import { withQuestionGuide } from "@/lib/ai/question-guide";
 import { validateQuestion, type QuestionFacet } from "@/lib/ai/question-contract";
+import { cachedResult, cacheKey, stableJson } from "@/lib/ai/cache";
+import {
+  facetPoolKey,
+  generatedQuestionKey,
+} from "@/lib/ai/question-pool";
+import {
+  getPromotedQuestion,
+  saveQuestionDefinition,
+} from "@/lib/server/question-feedback";
 
 export const runtime = "nodejs";
 
@@ -30,13 +39,35 @@ export async function POST(req: Request) {
     if (!Array.isArray(facets) || facets.length > 8 || !Array.isArray(answered) || answered.length > 200 || !Number.isFinite(body.total)) return Response.json({ ai: false });
     if (facets.some((f) => !f || typeof f.id !== "string" || typeof f.text !== "string" || !Array.isArray(f.options) || f.options.length > 32 || f.options.some((o) => !o || typeof o.key !== "string" || typeof o.label !== "string" || !Number.isFinite(o.remaining)))) return Response.json({ ai: false });
     if (answered.some((a) => !a || typeof a.text !== "string" || typeof a.answer !== "string")) return Response.json({ ai: false });
+    const poolKey = facetPoolKey(facets);
+    if (Math.random() >= 0.1) {
+      const pooled = validateQuestion(await getPromotedQuestion(poolKey), facets, answered, body.total);
+      if (pooled) {
+        return Response.json({
+          ai: true,
+          id: pooled.id,
+          question: pooled,
+          feedbackKey: generatedQuestionKey(pooled),
+        });
+      }
+    }
     // 허용된 필드만 전송합니다. 이름·연락처·좌표를 포함하는 별도 프로필은 전송하지 않는다.
     const evidence = Array.isArray(body.evidence) ? body.evidence.slice(0, 24).map((o: { domain?: string; title?: string; summary?: string }) => ({ domain: String(o.domain ?? "").slice(0, 20), title: String(o.title ?? "").slice(0, 120), summary: String(o.summary ?? "").slice(0, 240) })) : [];
     const safeFacets = facets.map((f) => ({ id: f.id.slice(0, 200), text: f.text.slice(0, 160), options: f.options.map((o) => ({ key: o.key.slice(0, 20), label: o.label.slice(0, 100), remaining: o.remaining })) }));
-    const input = JSON.stringify({ facets: safeFacets, answered: answered.map((a) => ({ text: a.text.slice(0, 160), answer: a.answer.slice(0, 100) })), evidence, total: body.total });
-    const text = await ask(FAST_MODEL, withQuestionGuide(QUESTION_SYSTEM), input, 1800);
-    const value = text ? JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) : null;
-    const question = validateQuestion(value, facets, answered, body.total);
-    return Response.json(question ? { ai: true, id: question.id, question } : { ai: false, reason: "invalid_or_no_gain" });
+    const modelInput = { facets: safeFacets, answered: answered.map((a) => ({ text: a.text.slice(0, 160), answer: a.answer.slice(0, 100) })), evidence, total: body.total };
+    const input = stableJson(modelInput);
+    const key = `${cacheKey(withQuestionGuide(QUESTION_SYSTEM))}\n${input}`;
+    // 캐시는 모델 원본 응답을 저장하고, 꺼낼 때마다 현재 요청 기준으로 다시 검증한다
+    const generated = await cachedResult("next-question", key, 1, async () => {
+      const text = await ask(FAST_MODEL, withQuestionGuide(QUESTION_SYSTEM), input, 1800);
+      return text ? JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as unknown : null;
+    }, (value) => validateQuestion(value, facets, answered, body.total) !== null);
+    const question = validateQuestion(generated, facets, answered, body.total);
+    if (question) {
+      const feedbackKey = generatedQuestionKey(question);
+      await saveQuestionDefinition(feedbackKey, poolKey, question);
+      return Response.json({ ai: true, id: question.id, question, feedbackKey });
+    }
+    return Response.json({ ai: false, reason: "invalid_or_no_gain" });
   } catch { return Response.json({ ai: false, reason: "generation_failed" }); }
 }

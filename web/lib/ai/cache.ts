@@ -9,6 +9,7 @@ type CacheFile = Record<string, CacheEntry>;
 
 const memory = new Map<string, CacheEntry>();
 const locks = new Map<string, Promise<void>>();
+const inFlight = new Map<string, Promise<unknown>>();
 
 const redisUrl = () =>
   process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
@@ -17,6 +18,17 @@ const redisToken = () =>
 
 export function cacheKey(input: string): string {
   return createHash("sha256").update(input).digest("hex").slice(0, 24);
+}
+
+export function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableJson(item)}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value);
 }
 
 function id(ns: string, key: string): string {
@@ -42,7 +54,9 @@ async function redis(command: (string | number)[]): Promise<unknown> {
 }
 
 function fileEnabled(): boolean {
-  return process.env.AI_CACHE_DISABLE_FILE !== "1" && !process.env.VERCEL;
+  return process.env.AI_CACHE_DISABLE_FILE !== "1" &&
+    (!process.env.VITEST || process.env.AI_CACHE_DISABLE_FILE === "0") &&
+    !process.env.VERCEL;
 }
 
 async function filePath(ns: string): Promise<string> {
@@ -123,7 +137,28 @@ export async function setCached(
   await next;
 }
 
+export async function cachedResult<T>(
+  ns: string,
+  key: string,
+  ttlDays: number,
+  create: () => Promise<T>,
+  cacheable: (value: T) => boolean = () => true,
+): Promise<T> {
+  const found = await getCached<T>(ns, key);
+  if (found !== null) return found;
+  const cacheId = id(ns, key);
+  const pending = inFlight.get(cacheId) as Promise<T> | undefined;
+  if (pending) return pending;
+  const promise = create().then(async (value) => {
+    if (cacheable(value)) await setCached(ns, key, value, ttlDays);
+    return value;
+  }).finally(() => inFlight.delete(cacheId));
+  inFlight.set(cacheId, promise);
+  return promise;
+}
+
 export function _clearAiCacheMemory(): void {
   memory.clear();
   locks.clear();
+  inFlight.clear();
 }

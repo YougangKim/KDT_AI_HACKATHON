@@ -1,6 +1,15 @@
 import { aiEnabled, ask, FAST_MODEL } from "@/lib/ai";
 import { refinementContext, validateRefinement, type RefinementEvidence } from "@/lib/ai/refinement";
 import { withQuestionGuide } from "@/lib/ai/question-guide";
+import { cachedResult, cacheKey, stableJson } from "@/lib/ai/cache";
+import {
+  refinementPoolKey,
+  refinementQuestionKey,
+} from "@/lib/ai/question-pool";
+import {
+  getPromotedQuestion,
+  saveQuestionDefinition,
+} from "@/lib/server/question-feedback";
 
 export const runtime = "nodejs";
 const SYSTEM = `청년 공고 탐색 대화를 이어갑니다. 정해진 질문 목록에서 고르지 않습니다.
@@ -22,10 +31,32 @@ export async function POST(req: Request) {
     if (!Array.isArray(body.evidence) || body.evidence.length < 2 || body.evidence.length > 240 || !Array.isArray(body.answered) || body.answered.length > 300) return Response.json({ ai: false });
     const evidence: RefinementEvidence[] = body.evidence.map((o: RefinementEvidence) => ({ id: String(o.id).slice(0, 200), title: String(o.title ?? "").slice(0, 160), summary: String(o.summary ?? "").slice(0, 240), domain: String(o.domain ?? "").slice(0, 20) }));
     const answered = body.answered.map((a: { text: string; answer: string }) => ({ text: String(a.text ?? "").slice(0, 200), answer: String(a.answer ?? "").slice(0, 30) }));
-    const text = await ask(FAST_MODEL, withQuestionGuide(SYSTEM), JSON.stringify(refinementContext(evidence, answered)), 1800);
-    if (!text) return Response.json({ ai: false, reason: "provider_unavailable" });
-    const value = text ? JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) : null;
-    const question = validateRefinement(value, evidence, answered);
-    return Response.json(question ? { ai: true, question } : { ai: false, reason: "no_grounded_question" });
+    const poolKey = refinementPoolKey(evidence.map((item) => item.id));
+    if (Math.random() >= 0.1) {
+      const pooled = validateRefinement(await getPromotedQuestion(poolKey), evidence, answered);
+      if (pooled) {
+        return Response.json({
+          ai: true,
+          question: pooled,
+          feedbackKey: refinementQuestionKey(pooled),
+        });
+      }
+    }
+    const input = stableJson(refinementContext(evidence, answered));
+    const key = `${cacheKey(withQuestionGuide(SYSTEM))}\n${input}`;
+    // 캐시는 모델 원본 응답을 저장하고, 꺼낼 때마다 현재 요청 기준으로 다시 검증한다
+    const generated = await cachedResult("refine-question", key, 1, async () => {
+      const text = await ask(FAST_MODEL, withQuestionGuide(SYSTEM), input, 1800);
+      if (!text) return undefined;
+      return JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1)) as unknown;
+    }, (value) => value !== undefined && validateRefinement(value, evidence, answered) !== null);
+    if (generated === undefined) return Response.json({ ai: false, reason: "provider_unavailable" });
+    const question = validateRefinement(generated, evidence, answered);
+    if (question) {
+      const feedbackKey = refinementQuestionKey(question);
+      await saveQuestionDefinition(feedbackKey, poolKey, question);
+      return Response.json({ ai: true, question, feedbackKey });
+    }
+    return Response.json({ ai: false, reason: "no_grounded_question" });
   } catch { return Response.json({ ai: false, reason: "generation_failed" }); }
 }
