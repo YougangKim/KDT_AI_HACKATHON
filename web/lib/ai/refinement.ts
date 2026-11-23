@@ -1,6 +1,7 @@
 import { checkQuestionQuality } from "./question-guide";
 import { hasCasualEnding } from "../copy";
 import type { Opportunity } from "../types";
+import { RULE_FACETS } from "./refinement-rules";
 
 export interface RefinementEvidence { id: string; title: string; summary: string; domain: string }
 export interface Refinement { text: string; why: string; options: { label: string; ids: string[]; terms?: string[] }[] }
@@ -27,7 +28,10 @@ export function refinementContext(evidence: RefinementEvidence[], answered: {tex
     if (JSON.stringify([...history,item]).length > 1600) break;
     history.push(item);
   }
-  return {evidence:sample,answered:history.reverse()};
+  // 검수로 정한 세분화 축별로 전체 후보 분포를 알려 준다(AI가 실제로 갈리는 축을 고르도록)
+  const axes = RULE_FACETS.map((f) => ({ question: f.text, options: f.options.map((o) => ({ label: o.label, count: evidence.filter((e) => o.terms.some((t) => `${e.title} ${e.summary}`.includes(t))).length })) }))
+    .filter((a) => a.options.filter((o) => o.count > 0).length >= 2);
+  return {evidence:sample,answered:history.reverse(),axes,total:evidence.length};
 }
 
 /** AI가 새로 만든 탐색 기준은 원문에 있는 검색 근거와 실제 후보 감소를 검증한다. */

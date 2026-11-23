@@ -19,6 +19,7 @@ import { LogoSymbol } from "@/components/brand/Logo";
 import type { GeneratedQuestion, QuestionFacet } from "@/lib/ai/question-contract";
 import { answerGroups } from "@/lib/engine/answer-groups";
 import { attachRefinement, refinementValue, type Refinement } from "@/lib/ai/refinement";
+import { ruleRefinement } from "@/lib/ai/refinement-rules";
 
 const DOMAIN_NAME: Record<string, string> = { housing: "청년 주택", benefit: "지원금·혜택", job: "채용·인턴", parttime: "알바·단기직", training: "국비 과정", exam: "자격증 일정" };
 type LocationStage = "location" | "questions";
@@ -180,12 +181,12 @@ function multiChoice(s: GameState, attr: "field" | "need", title: string, group:
   const all = [...count.entries()].sort((a, b) => b[1] - a[1]).map(([v]) => v);
   const fields = attr === "field"
     ? [
+        // 직무가 적히지 않은 공고까지 볼지 직접 고른다(안 고르면 희망 분야로 확인된 공고만). 잘 보이게 맨 앞에 둔다
+        ...(all.includes(OPEN_FIELD) ? [{ value: OPEN_FIELD, label: "직무 무관 일반 채용도 보기" }] : []),
+        ...(all.includes(UNSPECIFIED_FIELD) ? [{ value: UNSPECIFIED_FIELD, label: "직무 미표기 공고도 보기" }] : []),
         ...NCS_FIELDS,
         ...all.filter((value) => !NCS_FIELDS.some((field) => field.value === value) && value !== UNSPECIFIED_FIELD && value !== OPEN_FIELD)
           .map((value) => ({ value, label: value })),
-        // 직무가 적히지 않은 공고까지 볼지 직접 고른다(안 고르면 희망 분야로 확인된 공고만)
-        ...(all.includes(OPEN_FIELD) ? [{ value: OPEN_FIELD, label: "직무 무관 일반 채용도 보기" }] : []),
-        ...(all.includes(UNSPECIFIED_FIELD) ? [{ value: UNSPECIFIED_FIELD, label: "직무 미표기 공고도 보기" }] : []),
       ]
     : all.map((value) => ({ value, label: value }));
   const values = fields.map((field) => field.value);
@@ -328,7 +329,9 @@ export default function PlayPage() {
     const noMore = ranked.length === 0 && !refine && !refining;
     // 첫 탐색은 규칙 질문이 다 떨어지면 AI 생성 실패여도 결과로 간다. 결과에서 "더 좁히기"로 온 경우만 다시 생성 화면을 보여 준다
     // 남은 후보가 최소 개수(10개) 이하가 되면 더 묻지 않고 결과로 간다(첫 탐색). "N개 이하로 좁히기"는 N 기준
-    const done = stopNow || left <= 1 || (target !== null && left <= target) || (!continuing && target === null && step >= 3 && left <= MIN_KEEP) || asked >= limit || (noMore && !(continuing && failedRefinement) && !(continuing && step === 0));
+    const done = stopNow || left <= 1 || (target !== null && left <= target) || (!continuing && target === null && step >= 3 && left <= MIN_KEEP) || asked >= limit || (noMore && !(continuing && failedRefinement) && !(continuing && step === 0)) ||
+      // AI·규칙 모두 더 나눌 질문이 없으면 멈춰 있지 말고 지금까지의 결과로 돌아간다
+      (failedRefinement && !(refine || chosen));
     let choice = choiceFor(state, q);
     if (refine) choice = {
       title: refine.text, help: `${refine.why} 분류 근거가 없는 공고는 유지합니다.`, group: "추가 맞춤 탐색",
@@ -357,9 +360,10 @@ export default function PlayPage() {
       const sample: Opportunity[] = [];
       for (let i = 0; sample.length < 240 && buckets.some((b) => b[i]); i++) for (const b of buckets) if (b[i] && sample.length < 240) sample.push(b[i]);
       fetch("/api/refine-question", { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(25000), body: JSON.stringify({ evidence: sample.map((o) => ({ id: o.id, domain: o.domain, title: o.title.slice(0, 160), summary: o.summary.slice(0, 240) })), answered: state.answers.map((a) => ({ text: a.question.text, answer: a.answer })) }) })
-        .then((r) => r.json()).then((d: { question?: Refinement }) => {
-          if (!alive || !d.question) return;
-          const refinement = d.question;
+        .then((r) => r.json()).catch(() => ({})).then((d: { question?: Refinement }) => {
+          // AI가 질문을 못 만들면(한도·장애·근거 부족) 남은 공고 분포로 규칙 질문을 만든다
+          const refinement = d.question ?? (continuing || !view.ranked.length ? ruleRefinement(candidates, state.answers) : null);
+          if (!alive || !refinement) return;
           setHistory((h) => h ? [...h.slice(0, -1), { ...h.at(-1)!, pool: attachRefinement(h.at(-1)!.pool, refinement) }] : h);
           setRefinements((m) => ({ ...m, [pickKey]: refinement }));
         }).catch(() => {}).finally(() => { if (alive) { setRefineAttempted((m) => ({ ...m, [pickKey]: true })); setAiPick((m) => ({ ...m, [pickKey]: "" })); } });
