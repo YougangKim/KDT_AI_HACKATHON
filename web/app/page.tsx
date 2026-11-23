@@ -33,6 +33,11 @@ export default function Home() {
       })
       .catch(() => {});
   }, []);
+  // 인터뷰를 마친 적이 있으면 그 결과 화면으로 바로 돌아가는 버튼을 보여 준다
+  const [hasResult, setHasResult] = useState(false);
+  useEffect(() => {
+    try { setHasResult(!!sessionStorage.getItem("lastResult")); } catch {}
+  }, []);
   const toggle = (d: Domain) => setPicked((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
   const start = () => router.push(picked.length ? `/play?domains=${picked.join(",")}` : "/play");
 
@@ -88,6 +93,11 @@ export default function Home() {
       </section>
 
       <div className="space-y-3">
+        {hasResult && (
+          <Link href="/result" className="block min-h-14 w-full rounded-2xl border-2 border-indigo-600 bg-white py-4 text-center text-lg font-bold text-indigo-700 active:scale-[0.98]">
+            지난 인터뷰 결과 보기
+          </Link>
+        )}
         <button
           type="button"
           onClick={start}

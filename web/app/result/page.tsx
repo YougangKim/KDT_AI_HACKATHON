@@ -7,7 +7,7 @@ import type { AnswerChange } from "@/lib/engine/answer-groups";
 import { analyzeFunnel } from "@/lib/insight/funnel";
 import { RelaxSuggestions } from "@/components/result/RelaxSuggestions";
 import { buildWatch, saveWatch } from "@/lib/alerts";
-import { registerSW, requestPermission, checkAlerts, syncWatch } from "@/lib/alerts/client";
+import { registerSW, requestPermission, checkAlerts, syncWatch, pushPublicKey, sendTestPush } from "@/lib/alerts/client";
 import { MatchCard } from "@/components/result/MatchCard";
 import { readLastResult, relaxAnswer, setAnswers, type LastResult } from "@/components/result/lastResult";
 import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
@@ -114,6 +114,15 @@ export default function ResultPage() {
       return;
     }
     setSaved(true);
+    if (p === "granted") {
+      // 저장 즉시 알림이 실제로 오는지 보여 준다(새 공고 알림은 매일 조사 때 발송). 푸시가 안 되면 기기 알림으로 대신 표시
+      const key = await pushPublicKey();
+      const pushed = key ? await sendTestPush(key) : false;
+      if (!pushed) {
+        const reg = await registerSW();
+        await reg?.showNotification("My News 알림 설정 완료", { body: "저장한 조건에 맞는 새 공고가 올라오면 이렇게 알려 드립니다.", icon: "/icon-192.png" }).catch(() => {});
+      }
+    }
     setNote(p === "granted" ? "저장했습니다. 매일 다시 찾아보고 새 공고·마감 임박을 알립니다." : "저장했습니다. 알림이 꺼져 있어 앱을 열 때 알림함에 표시합니다.");
   }
 
