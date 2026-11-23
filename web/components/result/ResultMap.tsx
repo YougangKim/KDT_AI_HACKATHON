@@ -19,9 +19,9 @@ export const ResultMap = forwardRef<ResultMapHandle, {
   const element = useRef<HTMLDivElement>(null);
   const mapRef = useRef<import("leaflet").Map | null>(null);
   const markers = useRef(new Map<string, import("leaflet").Marker>());
-  const [kakaoFailed, setKakaoFailed] = useState(false);
+  const [kakaoFailed, setKakaoFailed] = useState<string | false>(false);
   const useKakao = !kakaoFailed;
-  const fallback = useCallback(() => setKakaoFailed(true), []);
+  const fallback = useCallback((reason?: string) => setKakaoFailed(reason || "알 수 없는 오류"), []);
 
   useImperativeHandle(ref, () => ({
     show(id) {
@@ -154,7 +154,7 @@ export const ResultMap = forwardRef<ResultMapHandle, {
   return (
     <section aria-label="결과 지도" className="app-card space-y-3 overflow-hidden p-3">
       {useKakao ? <KakaoMap matches={matches} point={location} radiusKm={location?.radiusKm} onSelect={onSelect} onError={fallback} testId="result-map" /> : <div ref={element} data-testid="result-map" data-map-provider="openstreetmap" className="h-[280px] w-full overflow-hidden rounded-xl ring-1 ring-slate-200" />}
-      {kakaoFailed && <p className="text-xs text-amber-800">Kakao 지도 연결 실패로 대체 지도를 표시합니다.</p>}
+      {kakaoFailed && <p className="text-xs text-amber-800">Kakao 지도를 불러오지 못해 대체 지도를 표시합니다({kakaoFailed}). <button type="button" className="underline" onClick={() => setKakaoFailed(false)}>다시 시도</button></p>}
       <p className="text-xs text-slate-500">
         진한 핀은 주소, 연한 핀은 추정 위치입니다. 묶인 핀에서 공고를 선택할 수 있습니다.
       </p>

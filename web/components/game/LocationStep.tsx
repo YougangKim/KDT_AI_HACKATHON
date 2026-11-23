@@ -26,9 +26,9 @@ export function LocationStep({
   const [radiusKm, setRadiusKm] = useState<number | null | undefined>(initial?.radiusKm);
   const [error, setError] = useState("");
   const [found, setFound] = useState(""); // 주소 검색으로 찾은 장소 이름(카카오 결과)
-  const [kakaoFailed, setKakaoFailed] = useState(false);
+  const [kakaoFailed, setKakaoFailed] = useState<string | false>(false);
   const useKakao = !kakaoFailed;
-  const fallback = useCallback(() => setKakaoFailed(true), []);
+  const fallback = useCallback((reason?: string) => setKakaoFailed(reason || "알 수 없는 오류"), []);
 
   useEffect(() => {
     if (useKakao || !mapElement.current || mapRef.current) return;
@@ -135,7 +135,7 @@ export function LocationStep({
       </form>
 
       {useKakao ? <KakaoMap point={point} radiusKm={radiusKm} onPoint={setPoint} onError={fallback} testId="location-map" /> : <div ref={mapElement} data-testid="location-map" data-map-provider="openstreetmap" className="h-[280px] w-full overflow-hidden rounded-2xl ring-1 ring-slate-200" />}
-      {kakaoFailed && <p className="text-xs text-amber-800">Kakao 지도 연결 실패로 대체 지도를 표시합니다.</p>}
+      {kakaoFailed && <p className="text-xs text-amber-800">Kakao 지도를 불러오지 못해 대체 지도를 표시합니다({kakaoFailed}). <button type="button" className="underline" onClick={() => setKakaoFailed(false)}>다시 시도</button></p>}
       <p className="text-center text-sm text-slate-600">지도에서도 원하는 위치를 선택할 수 있습니다.</p>
       {found && !error && <p className="rounded-xl bg-indigo-50 px-3 py-2 text-sm text-indigo-800 break-keep">검색 위치: {found}</p>}
       {error && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
