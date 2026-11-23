@@ -9,7 +9,7 @@ import styles from "@/components/game/game.module.css";
 import { Icon } from "@/components/brand/Icons";
 import { LocationStep } from "@/components/game/LocationStep";
 import { applyAnswer, defaultQuestionText, getMatches, questionId, rankQuestions, remaining, startGame, type GameState, type RankedQuestion } from "@/lib/engine";
-import { readLastResult } from "@/components/result/lastResult";
+import { nonEmptyResultState, readLastResult } from "@/components/result/lastResult";
 import { INCOME_THRESHOLDS, NCS_FIELDS } from "@/lib/engine/choices";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { nearestRegion } from "@/lib/geo/regions";
@@ -35,7 +35,9 @@ const pickedInterests = (domains: Domain[]): AnswerRecord[] => domains.length ? 
 
 // 맞춤도를 위해 최대 12문항(서로 다른 조건만, 지역·소득·나이·취업 상태는 한 번에 고르기). 2문항부터 언제든 바로 결과 보기 가능
 const MAX_QUESTIONS = 12;
-const MORE_QUESTIONS = 5; // 결과에서 "질문 더 해서 좁히기"를 누르면 추가로 묻는 수
+const MORE_QUESTIONS = 5;
+const MIN_KEEP = 10; // 기본 질문 3개 뒤 남은 후보가 이 수 이하로 줄면 질문을 멈춘다
+// 결과에서 "질문 더 해서 좁히기"를 누르면 추가로 묻는 수
 
 async function loadPool(domains: string | null): Promise<{ pool: Opportunity[]; error: boolean }> {
   try {
@@ -321,7 +323,8 @@ export default function PlayPage() {
       : needsRefine && !failedRefinement ? null : chosen?.question ?? null;
     const noMore = ranked.length === 0 && !refine && !refining;
     // 첫 탐색은 규칙 질문이 다 떨어지면 AI 생성 실패여도 결과로 간다. 결과에서 "더 좁히기"로 온 경우만 다시 생성 화면을 보여 준다
-    const done = stopNow || left <= 1 || (target !== null && left <= target) || asked >= limit || (noMore && !(continuing && failedRefinement) && !(continuing && step === 0));
+    // 남은 후보가 최소 개수(10개) 이하가 되면 더 묻지 않고 결과로 간다(첫 탐색). "N개 이하로 좁히기"는 N 기준
+    const done = stopNow || left <= 1 || (target !== null && left <= target) || (!continuing && target === null && step >= 3 && left <= MIN_KEEP) || asked >= limit || (noMore && !(continuing && failedRefinement) && !(continuing && step === 0));
     let choice = choiceFor(state, q);
     if (refine) choice = {
       title: refine.text, help: `${refine.why} 분류 근거가 없는 공고는 유지합니다.`, group: "추가 맞춤 탐색",
@@ -386,8 +389,10 @@ export default function PlayPage() {
   useEffect(() => {
     if (!state || !state.pool.length || !view?.done) return;
     setFinishing(true);
-    const filtered = filterMatchesByRadius(getMatches(state), location);
-    const result = { answers: state.answers, matches: filtered.matches, pool: state.pool, location, radiusExcluded: filtered.excluded, narrowedFrom };
+    // 결과가 0건으로 끝나지 않게: 마지막 답(들)로 전부 걸러졌다면 공고가 남아 있던 직전 단계를 기준으로 보여 준다
+    const { state: shown, note: fallbackNote } = nonEmptyResultState(history ?? [state]);
+    const filtered = filterMatchesByRadius(getMatches(shown), location);
+    const result = { answers: shown.answers, matches: filtered.matches, pool: shown.pool, location, radiusExcluded: filtered.excluded, narrowedFrom, fallbackNote };
     try {
       sessionStorage.setItem("lastResult", JSON.stringify(result));
     } catch {
@@ -395,7 +400,7 @@ export default function PlayPage() {
     }
     const t = setTimeout(() => router.push("/result"), 900);
     return () => clearTimeout(t);
-  }, [state, view?.done, router, location, narrowedFrom]);
+  }, [state, view?.done, router, location, narrowedFrom, history]);
 
   // ANTHROPIC_API_KEY가 있으면 서버에서 질문 문장을 다듬는다. 없으면 기본 문장 그대로.
   const skippedPicker = Boolean(view?.q && PICKER_ATTRS.has(view.q.attr) && !view.choice);

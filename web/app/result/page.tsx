@@ -301,6 +301,10 @@ export default function ResultPage() {
         </p>
       </div>
 
+      {result.fallbackNote && (
+        <p role="status" className="rounded-xl bg-amber-50 p-3 text-center text-sm font-semibold text-amber-900 break-keep">{result.fallbackNote}</p>
+      )}
+
       {result.narrowedFrom !== undefined && (
         <p role="status" className="rounded-xl bg-emerald-50 p-3 text-center text-sm font-semibold text-emerald-800">
           {result.narrowedFrom}개 → {result.matches.length}개로 좁혔습니다

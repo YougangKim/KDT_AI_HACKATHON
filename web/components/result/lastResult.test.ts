@@ -30,3 +30,24 @@ describe("실제 공고 결과만 복원", () => {
     expect(readLastResult()).toMatchObject({radiusExcluded:0,matches:[]});
   });
 });
+
+describe("결과 화면이 빈 채로 끝나지 않음", () => {
+  const busan = (id: string) => ({ id, title: id, domain: "benefit", region: ["부산"], isSample: false, origin: "api", apply: {}, conditions: [{ attr: "region", op: "in", value: ["부산"], rawText: "부산 거주", confidence: "high" }] });
+  it("마지막 답으로 0건이 되면 직전 단계 결과와 안내 문구를 돌려줍니다", async () => {
+    const { startGame, applyAnswer, getMatches } = await import("@/lib/engine");
+    const { nonEmptyResultState } = await import("./lastResult");
+    const s0 = startGame([busan("a"), busan("b")] as never);
+    const s1 = applyAnswer(s0, { id: "region:eq:서울", attr: "region", op: "eq", value: "서울", text: "서울에 거주합니까?" } as never, "yes");
+    expect(getMatches(s1)).toHaveLength(0);
+    const r = nonEmptyResultState([s0, s1]);
+    expect(r.state).toBe(s0);
+    expect(getMatches(r.state).length).toBe(2);
+    expect(r.note).toMatch(/0건이라.*2건/);
+  });
+  it("공고가 남아 있으면 마지막 단계를 그대로 씁니다", async () => {
+    const { startGame } = await import("@/lib/engine");
+    const { nonEmptyResultState } = await import("./lastResult");
+    const s0 = startGame([busan("a")] as never);
+    expect(nonEmptyResultState([s0])).toEqual({ state: s0 });
+  });
+});

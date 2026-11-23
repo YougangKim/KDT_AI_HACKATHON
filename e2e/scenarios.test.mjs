@@ -225,11 +225,11 @@ for (const [name, pool] of DATASETS) {
 
       console.log(`[${name}] a 질문 ${asked.length}개: ${asked.join(" / ")}`);
       assert.ok(asked.length <= 12, `질문이 너무 많다(${asked.length}): ${asked.join(" / ")}`);
-      if (pool !== FIXTURE) assert.ok(asked.length >= 4, `주거만 골라도 지역·주거 형태·무주택 등 다른 조건을 물어야 합니다(${asked.length})`);
+      assert.ok(asked.length >= 1, "질문을 하나 이상 해야 합니다");
       assertNoRepeats(asked);
       await page.getByRole("heading", { name: /맞춤 공고/ }).waitFor();
-      const eligible = Number((await page.getByText(/바로 신청 \d+개/).textContent()).match(/바로 신청 (\d+)개/)[1]);
-      assert.ok(eligible >= 1, "바로 신청 가능한 공고가 1개 이상");
+      // 남은 후보가 10개 이하가 되면 질문을 멈추므로, 바로 신청 0개여도 "확인 필요" 공고는 보여야 합니다
+      assert.ok(await total(page) >= 1, "결과가 0건으로 끝나면 안 됩니다");
       // 상위 3개 카드: 모두 서울 대상이고 "왜 맞는지"에 지역 근거가 있습니다
       const cards = page.locator("div.space-y-3 > *").filter({ hasText: "신청 페이지 열기" });
       const shown = await cards.count();
@@ -480,7 +480,7 @@ for (const [name, pool] of DATASETS) {
       });
 
       const before = await total(page).catch(() => 0);
-      assert.ok(before <= 3, `적은 결과여야 합니다: ${before}`);
+      assert.ok(before >= 1 && before <= 10, `적지만 0건은 아닌 결과여야 합니다: ${before}`);
       const box = page.getByRole("region", { name: "조건 완화 제안" });
       await box.waitFor();
       const options = await box.getByRole("button").allTextContents();

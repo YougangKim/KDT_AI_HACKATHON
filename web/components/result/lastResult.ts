@@ -1,5 +1,5 @@
 import type { Answer, AnswerRecord, Match, Opportunity } from "@/lib/types";
-import { getMatches } from "@/lib/engine";
+import { getMatches, type GameState } from "@/lib/engine";
 import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { relatedAnswerIds } from "@/lib/insight/funnel";
 import { formalQuestion } from "@/lib/copy";
@@ -12,6 +12,8 @@ export type LastResult = {
   location?: UserLocation;
   radiusExcluded?: number;
   narrowedFrom?: number;
+  /** 마지막 답으로 0건이 되어 직전 단계 결과를 보여 줄 때 안내 문구 */
+  fallbackNote?: string;
 };
 
 export function readLastResult(): LastResult | null {
@@ -55,4 +57,15 @@ export function setAnswers(r: LastResult, changes: AnswerChange[]): LastResult {
     sessionStorage.setItem("lastResult", JSON.stringify(next));
   } catch {}
   return next;
+}
+
+/** 결과가 0건으로 끝나지 않게: 마지막 답(들)로 전부 걸러졌다면 공고가 남아 있던 가장 최근 단계를 보여 준다 */
+export function nonEmptyResultState(history: GameState[]): { state: GameState; note?: string } {
+  const last = history[history.length - 1];
+  if (getMatches(last).length) return { state: last };
+  for (let i = history.length - 2; i >= 0; i--) {
+    const n = getMatches(history[i]).length;
+    if (n) return { state: history[i], note: `마지막 답을 적용하면 맞는 공고가 0건이라, 직전 질문까지의 결과 ${n}건을 보여 드립니다.` };
+  }
+  return { state: last };
 }
