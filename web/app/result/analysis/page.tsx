@@ -98,7 +98,15 @@ export default function AnalysisPage() {
         <p className="py-16 text-center text-slate-500">분석할 결과가 없습니다.</p>
       )}
 
-      {tab !== "all" && <ContextNews key={tab} domain={tab} />}
+      {(() => {
+        // 전체 탭은 결과에 있는 분야 전부, 검색어는 인터뷰 답(지역·상태·직무·필요한 지원 등)에서 뽑는다
+        const doms = tab !== "all" ? [tab] : Array.from(new Set((result?.matches ?? []).map((m) => m.opportunity.domain))).slice(0, 3);
+        const keywords = Array.from(new Set((result?.answers ?? [])
+          .filter((a) => a.answer === "yes" && ["region", "employment", "field", "housingKind", "need"].includes(a.question.attr))
+          .flatMap((a) => (Array.isArray(a.question.value) ? a.question.value : [a.question.value]).map(String))
+          .filter((v) => v && v.length <= 12))).slice(0, 4).join(" ");
+        return doms.length ? <ContextNews key={`${tab}|${keywords}`} domains={doms as Domain[]} keywords={keywords} /> : null;
+      })()}
       {toast && <p role="status" className="text-center text-sm font-semibold text-indigo-700">{toast}</p>}
 
       <Link href="/result" className="mt-auto rounded-2xl bg-indigo-600 py-3 text-center font-semibold text-white">

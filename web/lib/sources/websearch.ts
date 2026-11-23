@@ -133,21 +133,23 @@ function providers(): WebProvider[] {
   return out;
 }
 
-const contextCache = new Map<Domain, { until: number; result: Promise<{ items: Hit[]; provider: WebProvider | null }> }>();
+const contextCache = new Map<string, { until: number; result: Promise<{ items: Hit[]; provider: WebProvider | null }> }>();
 /** 질문 답변·개인정보 대신 분야명만 전송합니다. 동일 분야 조회는 1시간 병합합니다. */
-export function searchContext(domain: Domain): Promise<{ items: Hit[]; provider: WebProvider | null }> {
-  const cached = contextCache.get(domain);
+export function searchContext(domainOrList: Domain | Domain[], keywords = ""): Promise<{ items: Hit[]; provider: WebProvider | null }> {
+  const domains = Array.isArray(domainOrList) ? domainOrList : [domainOrList];
+  const cacheKey = `${domains.join(",")}|${keywords}`;
+  const cached = contextCache.get(cacheKey);
   if (cached && cached.until > Date.now()) return cached.result;
   const result = (async () => {
     for (const provider of providers()) {
       try {
-        const items = await (provider === "tavily" ? tavily : exa)(`${QUERIES[domain]} 청년 통계 정책 동향 ${new Date().getFullYear()}`, ["kosis.kr", "kostat.go.kr", "moel.go.kr", "korea.kr", "molit.go.kr"]);
+        const items = await (provider === "tavily" ? tavily : exa)(`${keywords ? keywords + " " : ""}${domains.map((d) => QUERIES[d]).join(" ")} 청년 통계 정책 동향 ${new Date().getFullYear()}`, ["kosis.kr", "kostat.go.kr", "moel.go.kr", "korea.kr", "molit.go.kr"]);
         return { provider, items: items.filter((item) => /^https?:\/\//.test(item.url)).slice(0, 4).map((item) => ({ ...item, snippet: item.snippet.slice(0, 200) })) };
       } catch { /* 다음 제공자로 폴백 */ }
     }
     return { provider: null, items: [] };
   })();
-  contextCache.set(domain, { until: Date.now() + 60 * 60 * 1000, result });
+  contextCache.set(cacheKey, { until: Date.now() + 60 * 60 * 1000, result });
   return result;
 }
 
