@@ -2,6 +2,7 @@
 @import "leaflet/dist/leaflet.css";
 
 :root {
+  color-scheme: light;
   --brand: #4f46e5;
   --brand-strong: #3730a3;
   --accent: #0f766e;
@@ -119,25 +120,7 @@ button:not(:disabled) {
   width: 15px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #111426;
-    --surface: #1a1e32;
-    --surface-muted: #252a40;
-    --text: #f4f5fb;
-    --text-muted: #b4bbca;
-    --text-subtle: #949daf;
-    --shadow-sm: 0 2px 12px rgb(0 0 0 / 22%);
-    --shadow-md: 0 18px 44px rgb(0 0 0 / 32%);
-  }
-
-  body {
-    background:
-      radial-gradient(circle at 50% -10%, rgb(99 102 241 / 18%), transparent 34rem),
-      var(--background);
-  }
-}
-
+/* 화면 구성 요소가 밝은 색 기준이라, 휴대폰 다크 모드에서도 밝은 테마로 고정한다 */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
