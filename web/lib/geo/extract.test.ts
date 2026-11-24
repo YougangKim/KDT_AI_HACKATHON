@@ -7,7 +7,7 @@ import { _resetProviders } from "../ai/providers";
 
 const opportunity = (extra: Partial<Opportunity> = {}): Opportunity => ({
   id: "test:1",
-  domain: "job",
+  domain: "benefit",
   title: "청년인턴 모집",
   org: "한국공공기관",
   region: ["서울"],
@@ -44,6 +44,28 @@ describe("공고 장소 추출", () => {
     expect(extractPlaceRules(opportunity({
       summary: "근무지는 서울특별시 강남구 테헤란로 123입니다.",
     }))).toEqual({ address: "서울특별시 강남구 테헤란로 123", place: null });
+  });
+
+  test("채용 공고는 기관·본사·접수처 주소를 근무지로 쓰지 않습니다", async () => {
+    const job = opportunity({
+      domain: "job",
+      org: "전라남도 나주시 소재 한국공공기관",
+      summary: "본사 전라남도 나주시 빛가람로 661 / 정규직",
+      apply: { how: "방문 접수", where: "전라남도 나주시 빛가람로 661" },
+    });
+    expect(extractPlaceRules(job)).toBeNull();
+    process.env.GEMINI_API_KEY = "test";
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await extractPlace(job)).toEqual({ address: null, place: null });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test("채용 공고는 원문 근무지 문장의 주소만 씁니다", () => {
+    expect(extractPlaceRules(opportunity({
+      domain: "job",
+      summary: "본사 전라남도 나주시 빛가람로 661 / 근무지 서울특별시 중구 세종대로 110",
+    }))).toEqual({ address: "서울특별시 중구 세종대로 110", place: null });
   });
 
   test("청약홈 요약 앞부분을 주소로 추출", () => {

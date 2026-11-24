@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getMatches } from "../engine";
 import type { Opportunity, Question } from "../types";
-import { inferRegion } from "./index";
+import { dropRecruitRegionPin, inferRegion } from "./index";
 
 const opp = (id: string, title: string, extra: Partial<Opportunity> = {}): Opportunity => ({
   id, domain: "benefit", title, org: "", region: [], summary: "", url: "", source: "gov24", isSample: false, fetchedAt: "",
@@ -18,6 +18,20 @@ describe("지역 필터", () => {
     ];
     const ids = getMatches({ pool, answers: [{ question: seoul, answer: "yes" }] }).map((m) => m.opportunity.id).sort();
     expect(ids).toEqual(["all", "seoul"]);
+  });
+
+  it("채용 공고는 기관명 지역을 근무 지역으로 쓰지 않고 제목 지역만 씁니다", () => {
+    expect(inferRegion(opp("j1", "신입 사원 채용", { domain: "job", org: "전남 나주 소재 공사" })).region).toEqual([]);
+    expect(inferRegion(opp("j2", "부산 지역 신입 채용", { domain: "job", org: "전남 공사" })).region).toEqual(["부산"]);
+  });
+
+  it("저장된 채용 공고의 시·도 중심 좌표는 지도에서 뺍니다", () => {
+    const job = opp("j3", "신입 채용", { domain: "job", geo: { lat: 34.8, lng: 126.9, precision: "region" } });
+    expect(dropRecruitRegionPin(job).geo).toBeUndefined();
+    const exact = opp("j4", "신입 채용", { domain: "job", geo: { lat: 37.5, lng: 127, precision: "exact" } });
+    expect(dropRecruitRegionPin(exact).geo).toEqual(exact.geo);
+    const housing = opp("h1", "주택", { domain: "housing", geo: { lat: 34.8, lng: 126.9, precision: "region" } });
+    expect(dropRecruitRegionPin(housing).geo).toEqual(housing.geo);
   });
 
   it("지역이 비어 있으면 제목·기관명으로 판별해 다른 지역 공고를 거른다", () => {

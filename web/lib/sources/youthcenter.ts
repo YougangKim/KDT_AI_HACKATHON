@@ -7,7 +7,8 @@ const ENDPOINT = "https://www.youthcenter.go.kr/go/ythip/getPlcy";
 
 function domainOf(category: string): Domain {
   if (/주거/.test(category)) return "housing";
-  if (/일자리|취업|창업/.test(category)) return "job";
+  // 온통청년의 일자리·취업·창업 분류는 채용 공고가 아니라 정책·지원사업이므로 채용 직무 필터와 섞지 않는다
+  if (/일자리|취업|창업/.test(category)) return "benefit";
   if (/교육|훈련/.test(category)) return "training";
   return "benefit";
 }

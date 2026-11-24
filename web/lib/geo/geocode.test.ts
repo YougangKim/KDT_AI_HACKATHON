@@ -79,26 +79,19 @@ describe("attachGeo", () => {
     expect(result.geo?.address).toBe("서울특별시 중구 세종대로 110");
   });
 
-  test("채용 제목에서 지점명을 뽑고 다른 시도 결과는 버린 뒤 기관명으로 재검색합니다", async () => {
+  test("근무지 근거가 없는 채용 공고에는 시·도 중심 좌표를 붙이지 않습니다", async () => {
+    const [result] = await attachGeo([opportunity({ domain: "job", source: "seoul-recruit", summary: "" })]);
+    expect(result.geo).toBeUndefined();
+  });
+
+  test("채용 지점 검색이 다른 시도면 버리고 기관명(본사)으로 재검색하지 않습니다", async () => {
     process.env.KAKAO_REST_API_KEY = "test";
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          documents: [{ x: "129.0756", y: "35.1796", address: { region_1depth_name: "부산광역시" } }],
-        }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          documents: [{
-            x: "126.978",
-            y: "37.5665",
-            address_name: "서울특별시 중구",
-            address: { region_1depth_name: "서울특별시" },
-          }],
-        }),
-      });
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        documents: [{ x: "129.0756", y: "35.1796", address: { region_1depth_name: "부산광역시" } }],
+      }),
+    });
     vi.stubGlobal("fetch", fetchMock);
     const [result] = await attachGeo([opportunity({
       source: "jobalio",
@@ -107,8 +100,8 @@ describe("attachGeo", () => {
       org: "한국공공기관",
     })]);
     expect(branchKeyword("한국공공기관 서울지사 청년인턴 모집")).toContain("서울지사");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(result.geo).toMatchObject({ lat: 37.5665, lng: 126.978, precision: "approx" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(result.geo).toBeUndefined();
   });
 });
 

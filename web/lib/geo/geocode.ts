@@ -58,6 +58,8 @@ function govRegion(org: string): string | null {
 }
 
 function fallback(opportunity: Opportunity): Geo | undefined {
+  // 채용·알바는 시·도 중심점을 근무지처럼 보이게 하지 않는다(원문 근무지로 찾은 좌표만 사용)
+  if (opportunity.domain === "job" || opportunity.domain === "parttime") return undefined;
   const center = regionCenter(opportunity.region[0]);
   return center ? { lat: center.lat, lng: center.lng, precision: "region" } : undefined;
 }
@@ -79,11 +81,9 @@ function requestsFor(opportunity: Opportunity): GeocodeRequest[] {
     return housingQueries(opportunity.title).map((query) => ({ endpoint: "keyword" as const, query, precision: "approx" as const }));
   }
   if (opportunity.source === "jobalio") {
+    // 기관명만으로 검색하면 본사가 근무지로 찍히므로 제목에 지점명이 있을 때만 찾는다
     const branch = branchKeyword(opportunity.title);
-    return [
-      ...(branch ? [{ endpoint: "keyword" as const, query: `${opportunity.org} ${branch}`, precision: "approx" as const }] : []),
-      { endpoint: "keyword", query: opportunity.org, precision: "approx" },
-    ];
+    return branch ? [{ endpoint: "keyword", query: `${opportunity.org} ${branch}`, precision: "approx" }] : [];
   }
   if (opportunity.source === "gov24") {
     const query = govRegion(opportunity.org);

@@ -212,7 +212,9 @@ const SIDO_TOKEN = /^(서울|부산|대구|인천|광주|대전|울산|세종|�
  */
 export function inferRegion(o: Opportunity): Opportunity {
   if (o.region.length || o.domain === "exam" || o.domain === "training") return o;
-  const tokens = `${o.title} ${o.org}`.replace(/[[\]()<>「」『』]/g, " ").split(/[\s,·/]+/);
+  // 채용·알바는 기관명(본사 소재지)을 근무 지역 근거로 쓰지 않는다
+  const recruit = o.domain === "job" || o.domain === "parttime";
+  const tokens = (recruit ? o.title : `${o.title} ${o.org}`).replace(/[[\]()<>「」『』]/g, " ").split(/[\s,·/]+/);
   const found = new Set(tokens.filter((t) => SIDO_TOKEN.test(t)).map((t) => normalizeRegion(t)).filter((r): r is string => !!r));
   if (!found.size && o.domain === "housing" && o.geo?.address && o.geo.precision !== "region") {
     const r = normalizeRegion(o.geo.address.split(" ")[0]);
@@ -225,6 +227,12 @@ export function inferRegion(o: Opportunity): Opportunity {
     region,
     conditions: [...o.conditions, { attr: "region", op: "in", value: region, rawText: `대상 지역: ${region[0]}(공고 원문으로 판별)`, confidence: "high" }],
   };
+}
+
+/** 이전 수집분에 남은 채용·알바의 시·도 중심 좌표(근무지 근거 없음)를 지도에서 뺀다 */
+export function dropRecruitRegionPin(o: Opportunity): Opportunity {
+  if ((o.domain !== "job" && o.domain !== "parttime") || o.geo?.precision !== "region") return o;
+  return { ...o, geo: undefined };
 }
 
 /** 분야별 공고를 모은다. fixture는 기존 경로, 운영 요청은 저장된 공고 풀을 우선합니다. */
@@ -241,7 +249,7 @@ export async function loadOpportunities(
   // 비어 있는 풀(전 출처 실패)은 신선해도 쓰지 않는다
   const fresh = stored && stored.items.length > 0 && now.getTime() - new Date(stored.meta.collectedAt).getTime() < 6 * 60 * 60 * 1000;
   // 저장된 풀이 판별 규칙 추가 이전에 모은 것이어도 경력·직무 조건을 보충한다(이미 있으면 그대로)
-  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain)).map(inferJobConditions);
+  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain)).map(dropRecruitRegionPin).map(inferJobConditions);
 
   triggerPoolCollection(now);
   return collectLiveOpportunities(wanted, now, opts);

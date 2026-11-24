@@ -14,7 +14,15 @@ const MAX_AI_EXTRACTIONS = 30;
 const CONCURRENCY = 2;
 const ADDRESS_RE =
   /[가-힣]+(?:특별시|광역시|특별자치시|특별자치도|도)\s+[가-힣0-9]+(?:시|군|구)(?:\s+[가-힣0-9]+구)?(?:\s+[가-힣0-9·.-]+(?:읍|면|동|가|로|길)(?:\s+\d+(?:-\d+)?)?)?/;
-const EXTRACT_PROMPT_VERSION = "place-v2";
+const EXTRACT_PROMPT_VERSION = "place-v3";
+/** 채용 공고에서 근무지를 말하는 원문 표지 */
+const WORKPLACE_RE = /근무지|근무\s*장소|근무\s*지역|근무\s*예정지|근무처/;
+
+const isRecruit = (o: Opportunity) => o.domain === "job" || o.domain === "parttime";
+/** 채용 공고 원문 중 근무지를 말하는 문장만(기관명·본사·접수처 주소 제외) */
+function workplaceText(o: Opportunity): string {
+  return [o.summary, getEligibility(o)].filter(Boolean).join("\n").split(/[\n/]|[.!?](?:\s|$)/).filter((part) => WORKPLACE_RE.test(part)).join(" ");
+}
 
 export function _clearExtractCache() {
   cache.clear();
@@ -37,12 +45,14 @@ export function parsePlaceJson(text: string): ExtractedPlace | null {
 
 export function extractPlaceRules(opportunity: Opportunity): ExtractedPlace | null {
   const application = [opportunity.apply?.how, opportunity.apply?.where].filter(Boolean).join(" ");
-  if (/방문|현장|내방/.test(application) && opportunity.apply?.where) {
+  if (!isRecruit(opportunity) && /방문|현장|내방/.test(application) && opportunity.apply?.where) {
     const address = opportunity.apply.where.match(ADDRESS_RE)?.[0]?.trim();
     if (address) return { address, place: null };
     if (/(?:센터|청|사무소|회관|공단|지사)/.test(opportunity.apply.where)) return { address: null, place: opportunity.apply.where };
   }
-  const text = [opportunity.title, opportunity.summary, opportunity.org, getEligibility(opportunity)].filter(Boolean).join(" ");
+  const text = isRecruit(opportunity)
+    ? workplaceText(opportunity)
+    : [opportunity.title, opportunity.summary, opportunity.org, getEligibility(opportunity)].filter(Boolean).join(" ");
   // 청약홈은 요약 첫 부분이 공급 위치 주소 그대로라 가장 정확하다
   if (opportunity.source === "applyhome") {
     const first = opportunity.summary.split(" · ", 1)[0].trim();
@@ -65,6 +75,8 @@ function cacheInput(opportunity: Opportunity): string {
 }
 
 export async function extractPlace(opportunity: Opportunity): Promise<ExtractedPlace> {
+  // 근무지 표기가 없는 채용 공고는 AI도 추측하지 않게 한다(기관 본사 주소 오인 방지)
+  if (isRecruit(opportunity) && !workplaceText(opportunity)) return { address: null, place: null };
   const ruled = extractPlaceRules(opportunity);
   if (ruled) return ruled;
   const hit = cache.get(opportunity.id);
@@ -107,7 +119,7 @@ export function attachPlaces(items: Opportunity[]): Opportunity[] {
 
   if (!aiEnabled()) return output;
   const candidates = items
-    .filter((item) => !item.place && !extractPlaceRules(item) && !cache.has(item.id) && !pending.has(item.id))
+    .filter((item) => !item.place && !(isRecruit(item) && !workplaceText(item)) && !extractPlaceRules(item) && !cache.has(item.id) && !pending.has(item.id))
   void (async () => {
     for (const item of candidates) {
       const hit = await getCached<ExtractedPlace>("place", cacheInput(item));
