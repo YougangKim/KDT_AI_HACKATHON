@@ -21,6 +21,15 @@
 
 ## 진행 중 / 다음 작업
 
+- 11/24 15:20 Claude: 신청 준비 개편 Codex 교차 평가 32/60 '수정 후 배포'(`.ai-sync/tasks/20261124T055254-codex/result.md`) → 확인 필요는 check(AI 버튼 없음), warn·block 복사에서 초안 제외, AI는 동의 버튼 뒤(위치 미전송), 지역 불일치(별칭 포함)·요약 대상 키워드·마감 경과 판정, AI 팁 제거, AI 초안은 문장 추가·길이·새 낱말 검사. 재검증(`.ai-sync/tasks/` 최신) 지적 반영. test 243 통과·tsc·lint·빌드 통과. 커밋·푸시·배포.
+- 11/24 15:00 Claude(Codex 재현 초안 `.ai-sync/tasks/20261124T055210-codex/result.md` 검토 후 일부 적용): 채용 결과 정책 공고 혼입·근거 없는 지역 핀 수정. 온통청년 일자리·취업·창업 분류 job→benefit(`youthcenter.ts`), 채용·알바는 시·도 중심 좌표 fallback 없음·잡알리오 기관명 단독(본사) 재검색 제거(`geo/geocode.ts`), 채용 주소 추출은 '근무지' 문장만·근거 없으면 AI도 호출 안 함(`geo/extract.ts`, place-v3), 채용 지역 추론에서 기관명 제외·저장 풀의 채용 region 좌표 제거(`sources/index.ts` dropRecruitRegionPin). 반려: 근무지 place 없는 채용의 원문 region 전부 삭제(원문 근무지역 필드까지 지워 지역 필터 회귀), isOpenRecruit 키워드 삭제(정책 분리 효과 없음), 사람인 place 추가(요청 밖). test 241·tsc·lint·.next-prod 빌드 통과. 커밋·푸시 안 함, 3950 서버 재시작 안 함.
+- 11/24 Jev 판단 모델 토큰 절감 설계 `docs/설계/AI_트래픽_대응/Jev_판단모델_토큰절감.md`(한국어 3건 실측, 코드 미수정). 다음(승인 시): jev.ts choice 지원 → 수집 때 공고 태깅 → 질문 턴 LLM 제거.
+
+- 11/24 무료 AI 토큰 확보 조사 `docs/설계/AI_트래픽_대응/무료AI_토큰확보_조사.md`(Codex 조사+Claude 검토·MCP 보강, 코드 수정 없음). 다음(사용자 승인 시): GLM-4.7-Flash 체인 추가, OpenRouter $10 충전 검토, 폐기 모델 TTL·Retry-After.
+
+- 11/24 02:25 Claude: 신청 준비 설계 로컬 적용(사용자 요청). 새 `web/lib/prep/{profile,kind,draft}.ts`, `lib/prep/index.ts`·`prep.test.ts`(15), `app/prepare/page.tsx`(대상 배너·비교 표·한눈에·출처 배지 체크리스트·날짜 순서·유형별 초안·warn이면 초안 보류), `app/api/prep/route.ts`(사실 문장만 전송, 공용 프롬프트+다른 분야 예시 1쌍, checkDraft 통과분만 교체). 전체 test 229 통과·tsc·lint·.next-prod 빌드 통과, 3950 서버(next start, NEXT_DIST_DIR=.next-prod) 재시작. 화면 캡처 `docs/설계/신청준비_목업/적용_01·02.png`. 커밋·푸시 안 함. Codex 교차 평가는 대기열 `20261123T111457-codex-fsm3.json`(11/24 20:15 리셋 후).
+- 11/24 피드백 설문 시안 `docs/설계/피드백_설문_시안.html` 사용자 평가 대기. 승인되면 `web/app/result/page.tsx` onSave 성공 후 모달+시트, `/api/feedback`(Upstash) 구현 후 배포.
+
 - 11/24 피드백 수집 방식 조사 완료 `docs/피드백_수집_배포방식.md`. 다음(사용자 승인 시): Vercel Analytics 설치, Tally 폼 제작 후 결과 화면 버튼·처리방침 푸터 추가.
 
 - 11/23 18:40 Claude: 신청 준비(/prepare) 페이지 설계만 작성(코드 미수정, 사용자 지시). `docs/설계/신청준비_페이지_설계.md`(섹션 순서·데이터 출처·유형 판별·유형별 체크리스트/순서/초안·답→문장 변환·대상 경고·제목 정리), `docs/설계/신청준비_초안예시_프롬프트.md`(유형별 예시 문장·나쁜 예·무료 AI 공용 프롬프트·checkDraft), 목업 `docs/설계/신청준비_목업/00~03.png`(mockup.html). Codex 교차 평가는 한도로 대기열(`.ai-sync/queue/20261123T092807-codex-3bjz.json`, 20:15 리셋 후 재개) → 결과 나오면 반영.

@@ -1,5 +1,9 @@
 # 작업 로그 — 대한상공회의소 AI 해커톤
 
+## 2026-11-24 02:15 알림 설정 후 피드백 설문 시안 (Claude)
+
+- `docs/설계/피드백_설문_시안.html`·`.png`: 알림 저장 성공 직후 승인 메시지 → 하단 시트 설문 5문항 → 완료. 사용자 평가 대기, 코드 변경 없음.
+
 ## 2026-11-24 01:15 피드백 수집 배포 방식 조사 (Claude 조율·Codex 조사)
 
 - `docs/피드백_수집_배포방식.md`: 7개 방식 비교(무료 한도·출처), 추천 Vercel Web Analytics + Tally + `?ref=` 모집 링크, 처리방침 필수 항목, 핵심 지표 5개·설문 5문항. 코드 변경 없음.
@@ -429,3 +433,18 @@
 - 11/24 Claude(조율)·Codex(조사): AI 호출 9곳 프롬프트 원문·입출력 형식 정리 `docs/설계/AI_트래픽_대응/AI_프롬프트_입출력.md`. 코드 미수정.
 - 11/24 Claude(조율)·Codex(조사): AI 입출력 토큰 최소화 + 질문 승격 풀 설계 `docs/설계/AI_트래픽_대응/AI_토큰_최소화.md`, 05_질문승격풀.png. 코드 미수정.
 - 11/24 Claude(조율)·Codex(구현 패치): AI 토큰 절감·질문 승격 풀 적용. 질문 3개 라우트 1일 캐시(원본 저장·꺼낼 때 현재 요청으로 재검증)·동시 중복 방지·공급자별 usage 집계(/api/ai-status), 질문 승격 풀(/api/question-feedback 집계, 승격 기준 노출200·응답률65%·모름25%↓ 등, 10% 탐색, 응답에 feedbackKey만 추가), 화면 피드백 전송. 프롬프트·maxTokens·입력 상한 유지. 검증: vitest 212, tsc, build, E2E 14 통과, 변경 전후 비교(e2e/ai-compare.mjs, 구조 동일·재요청 약 10ms), Codex 리뷰 1차 배포불가 4건 수정 후 배포 가능(.ai-sync/tasks/20261123T170344-codex).
+
+- 11/24 02:25 Claude: 신청 준비 설계 로컬 적용(사용자 요청). 새 `web/lib/prep/{profile,kind,draft}.ts`, `lib/prep/index.ts`·`prep.test.ts`(15), `app/prepare/page.tsx`(대상 배너·비교 표·한눈에·출처 배지 체크리스트·날짜 순서·유형별 초안·warn이면 초안 보류), `app/api/prep/route.ts`(사실 문장만 전송, 공용 프롬프트+다른 분야 예시 1쌍, checkDraft 통과분만 교체). 전체 test 229 통과·tsc·lint·.next-prod 빌드 통과, 3950 서버(next start, NEXT_DIST_DIR=.next-prod) 재시작. 화면 캡처 `docs/설계/신청준비_목업/적용_01·02.png`. 커밋·푸시 안 함. Codex 교차 평가는 대기열 `20261123T111457-codex-fsm3.json`(11/24 20:15 리셋 후).
+
+- 2026-11-24 무료 AI 체인·토큰 확보 조사 문서 `docs/설계/AI_트래픽_대응/무료AI_토큰확보_조사.md`. 조사 Codex(`.ai-sync/tasks/20261123T171842-codex/`), Claude가 Groq AUP·Z.AI 가격 원문 재확인, 무료 AI 묶음 MCP 게이트웨이(freellmpool, freellmapi, free-llm-hub 등) 추가 평가. 코드 수정 없음.
+
+- 2026-11-24 14:58 GitHub Actions 'Scan saved watches' 실패 조사: GitHub 저장소에 `CRON_SECRET` 시크릿이 없어 빈 토큰으로 호출 → 배포 서버 `/api/cron/scan`이 401 반환(코드·서버 문제 아님). 해결: 사용자가 Vercel의 CRON_SECRET과 같은 값을 GitHub Actions 시크릿으로 등록. 워크플로 파일 변경 없음
+
+- 2026-11-24 Jev(판단 전용 초경량 모델) 활용 설계 `docs/설계/AI_트래픽_대응/Jev_판단모델_토큰절감.md`. 한국어 공고 3건 실측(시도·분야 3/3, 나이 판단은 애매 → 숫자는 규칙 유지). 코드 미수정.
+
+## 2026-11-24 15:00 채용 결과 정책 공고·지역 핀 수정 (Claude, Codex 재현)
+
+11/24 15:00 Claude(Codex 재현 초안 `.ai-sync/tasks/20261124T055210-codex/result.md` 검토 후 일부 적용): 채용 결과 정책 공고 혼입·근거 없는 지역 핀 수정. 온통청년 일자리·취업·창업 분류 job→benefit(`youthcenter.ts`), 채용·알바는 시·도 중심 좌표 fallback 없음·잡알리오 기관명 단독(본사) 재검색 제거(`geo/geocode.ts`), 채용 주소 추출은 '근무지' 문장만·근거 없으면 AI도 호출 안 함(`geo/extract.ts`, place-v3), 채용 지역 추론에서 기관명 제외·저장 풀의 채용 region 좌표 제거(`sources/index.ts` dropRecruitRegionPin). 반려: 근무지 place 없는 채용의 원문 region 전부 삭제(원문 근무지역 필드까지 지워 지역 필터 회귀), isOpenRecruit 키워드 삭제(정책 분리 효과 없음), 사람인 place 추가(요청 밖). test 241·tsc·lint·.next-prod 빌드 통과. 커밋·푸시 안 함, 3950 서버 재시작 안 함.
+
+
+- 11/24 15:20 Claude: 신청 준비 개편 Codex 교차 평가 32/60 '수정 후 배포'(`.ai-sync/tasks/20261124T055254-codex/result.md`) → 확인 필요는 check(AI 버튼 없음), warn·block 복사에서 초안 제외, AI는 동의 버튼 뒤(위치 미전송), 지역 불일치(별칭 포함)·요약 대상 키워드·마감 경과 판정, AI 팁 제거, AI 초안은 문장 추가·길이·새 낱말 검사. 재검증(`.ai-sync/tasks/` 최신) 지적 반영. test 243 통과·tsc·lint·빌드 통과. 커밋·푸시·배포.

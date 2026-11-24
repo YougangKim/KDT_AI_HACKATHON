@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><title>신청 준비 목업</title>
+<style>
+:root{--brand:#4f46e5;--bg:#f5f6fb;--text:#172033;--muted:#5f687a;--line:#e4e7f0;--ok:#047857;--okbg:#ecfdf5;--warn:#b45309;--warnbg:#fffbeb;--bad:#b91c1c;--badbg:#fef2f2}
+*{box-sizing:border-box}body{margin:0;background:#e9ebf3;font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--text);letter-spacing:-.015em}
+.wrap{display:flex;gap:36px;padding:36px;align-items:flex-start}
+.col{width:390px}.cap{font-weight:800;font-size:17px;margin:0 0 4px}.sub{font-size:13px;color:var(--muted);margin:0 0 12px}
+.phone{width:390px;background:var(--bg);border-radius:32px;padding:14px 14px 90px;box-shadow:0 16px 40px rgb(30 41 59/14%);position:relative;font-size:14px;line-height:1.5}
+.top{display:flex;justify-content:space-between;align-items:center;padding:4px 2px 10px;font-size:13px;color:var(--muted)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:4px 9px;font-size:12px;color:var(--text);margin-left:4px}
+.card{background:#fff;border-radius:18px;padding:14px;margin-bottom:10px;box-shadow:0 2px 10px rgb(30 41 59/7%)}
+h1{font-size:17px;margin:4px 0;line-height:1.35}h2{font-size:15px;margin:0 0 8px;display:flex;justify-content:space-between;align-items:center}
+.chips span{display:inline-block;font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px;margin-right:4px;background:#eef0ff;color:var(--brand)}
+.chips span.k{background:#f0fdfa;color:#0f766e}
+.meta{font-size:12.5px;color:var(--muted)}.dday{font-weight:800;font-size:13.5px;margin-top:4px}.dday b{color:var(--bad)}
+.banner{border-radius:16px;padding:12px 14px;margin-bottom:10px;font-size:13px}
+.banner.ok{background:var(--okbg);color:var(--ok)}.banner.warn{background:var(--warnbg);color:#78350f;border:1px solid #fcd34d}.banner.bad{background:var(--badbg);color:#7f1d1d;border:1px solid #fca5a5}
+.banner strong{display:block;font-size:14px;margin-bottom:2px}.banner a{color:inherit;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th{font-size:11px;color:var(--muted);text-align:left;font-weight:600;padding:0 4px 4px}td{padding:6px 4px;border-top:1px solid var(--line);vertical-align:top}
+.v{font-weight:800;white-space:nowrap}.v.ok{color:var(--ok)}.v.w{color:var(--warn)}.v.b{color:var(--bad)}
+.fold{font-size:12px;color:var(--muted);margin-top:8px;border-top:1px dashed var(--line);padding-top:6px}
+.glance{display:grid;grid-template-columns:52px 1fr;gap:4px 8px;font-size:13px}.glance dt{color:var(--muted);font-weight:700}.glance dd{margin:0}.na{color:#9aa1b1}
+.ck{list-style:none;padding:0;margin:0}.ck li{display:flex;gap:8px;align-items:flex-start;padding:4px 0;font-size:13px}.box{width:16px;height:16px;border:1.5px solid #c4c9d6;border-radius:4px;flex:none;margin-top:2px}.box.on{background:var(--brand);border-color:var(--brand)}
+.tag{font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;margin-left:auto;white-space:nowrap}.t1{background:#eef0ff;color:var(--brand)}.t2{background:#f1f2f6;color:var(--muted)}.t3{background:#f0fdfa;color:#0f766e}
+.prog{font-size:12px;color:var(--muted);font-weight:600}
+.steps{list-style:none;padding:0;margin:0;border-left:2px solid #dfe2ee;margin-left:6px}.steps li{position:relative;padding:0 0 8px 14px;font-size:13px}.steps li:before{content:"";position:absolute;left:-6px;top:5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid var(--brand)}.steps .d{font-size:11.5px;font-weight:800;color:var(--brand);display:block}
+.draft{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;font-size:13px;line-height:1.6}.draft h3{font-size:13px;margin:0 0 4px;display:flex;justify-content:space-between}.draft h3 a{font-size:11.5px;color:var(--brand);font-weight:600}
+.slot{background:#fff7d6;border-radius:4px;padding:0 2px;color:#7c5a00}.fact{background:#eef0ff;border-radius:4px;padding:0 2px}
+.src{font-size:11px;color:var(--muted)}.hold{background:#f7f8fc;border:1px dashed #c9cede;border-radius:12px;padding:12px;font-size:13px;color:var(--muted);text-align:center}.hold b{display:block;color:var(--text);margin-bottom:6px}
+.ghost{display:inline-block;margin-top:8px;border:1px solid var(--brand);color:var(--brand);border-radius:10px;padding:6px 12px;font-weight:700;font-size:12.5px}
+.cta{position:absolute;left:14px;right:14px;bottom:16px;background:var(--brand);color:#fff;text-align:center;font-weight:800;border-radius:18px;padding:14px;font-size:15px}
+.cta.alt{background:#fff;color:var(--brand);border:2px solid var(--brand)}
+.collapsed{opacity:.55}.note{font-size:11.5px;color:var(--muted);margin:6px 0 0}
+.legend{width:300px;font-size:13px;line-height:1.6}.legend h3{margin:0 0 6px;font-size:15px}.legend ol{padding-left:18px;margin:0 0 12px}
+</style></head><body><div class="wrap">
+
+<!-- A: 중장년 행사 (warn) -->
+<div class="col" id="a"><p class="cap">A. 대상이 다를 수 있는 공고</p><p class="sub">중장년 취업이음+ 면접 공동행사 · 행사형 · ⚠ 경고</p>
+<div class="phone">
+<div class="top"><span>← 결과로</span><span><span class="btn">전체 복사</span><span class="btn">인쇄·PDF</span></span></div>
+<div class="card"><div class="chips"><span>채용·인턴</span><span class="k">채용 행사</span></div>
+<h1>중장년 취업이음+ (주)면사랑 구인구직 만남의 날 면접 공동행사</h1><div class="meta">고용24 채용행사 · 일자리 수요데이 77회 <span class="src">(원제목 앞 번호·괄호는 정리해 표시)</span></div>
+<div class="dday">마감 2026-11-23 <b>(오늘 마감)</b></div></div>
+<div class="banner warn"><strong>⚠ 대상이 아닐 수 있습니다</strong>제목에 '중장년'이 있어 보통 만 40세 이상 구직자 대상입니다. 내 답은 만 25~29세입니다. 원문의 '참여 대상'을 먼저 확인하세요.<br><a>비슷한 청년 대상 채용 행사 보기 →</a></div>
+<div class="card"><h2>내 조건과 비교</h2>
+<table><tr><th>공고 조건</th><th>내 답</th><th></th></tr>
+<tr><td>나이 — 원문에 숫자 없음<br><span class="src">제목 '중장년'</span></td><td>만 25~29세</td><td class="v w">⚠ 확인</td></tr>
+<tr><td>지역 — 원문에 없음</td><td>서울 거주</td><td class="v w">⚠ 확인</td></tr></table>
+<div class="fold">▸ 찾던 것과 맞는 점 1개 (채용 정보)</div></div>
+<div class="card"><h2>이 공고 한눈에</h2><dl class="glance"><dt>무엇</dt><dd>(주)면사랑 현장 면접 <span class="src">· 제목에서</span></dd><dt>언제</dt><dd class="na">행사일 원문 확인</dd><dt>어디서</dt><dd class="na">장소 원문 확인</dd><dt>어떻게</dt><dd>고용24 채용행사 안내에서 참가 방법 확인</dd></dl></div>
+<div class="card"><h2>준비 체크리스트 <span class="prog">0/3</span></h2><ul class="ck">
+<li><span class="box"></span>사전 참가신청 여부 확인<span class="tag t2">보통 필요</span></li>
+<li><span class="box"></span>이력서 출력본 3~5부<span class="tag t2">보통 필요</span></li>
+<li><span class="box"></span>(주)면사랑 모집 직무·근무지 확인<span class="tag t1">제목에서</span></li></ul>
+<p class="note">공고에 제출 서류가 적혀 있지 않아 행사 참여에 보통 필요한 목록입니다.</p></div>
+<div class="card"><h2>신청 순서</h2><ol class="steps">
+<li><span class="d">지금</span>원문에서 참가 대상(나이) 확인</li><li><span class="d">오늘 안</span>대상이면 참가 신청 — 오늘 마감</li><li><span class="d">신청 후</span>면사랑 모집 직무 보고 이력서 맞추기</li><li><span class="d">행사 전날</span>이력서 출력</li><li><span class="d">행사일</span>현장 면접 (날짜 원문 확인)</li></ol></div>
+<div class="card"><h2>작성 초안</h2><div class="hold"><b>대상 확인 후 쓰세요</b>이 행사는 지원 동기 대신 30초 자기소개와 현장 질문이 필요합니다.<br><span class="ghost">그래도 초안 만들기</span></div></div>
+<div class="cta">원문에서 대상 확인하기 ↗</div>
+</div></div>
+
+<!-- B: 채용 정상 -->
+<div class="col" id="b"><p class="cap">B. 신청 가능한 채용 공고</p><p class="sub">청년인턴(사무·데이터) · 채용형 · ✅ 신청 가능</p>
+<div class="phone">
+<div class="top"><span>← 결과로</span><span><span class="btn">전체 복사</span><span class="btn">인쇄·PDF</span></span></div>
+<div class="card"><div class="chips"><span>채용·인턴</span><span class="k">채용</span></div>
+<h1>2026 하반기 체험형 청년인턴(데이터 관리)</h1><div class="meta">○○공단 · 서울 중구 · 내 위치에서 4km</div>
+<div class="dday">마감 12월 1일 18:00 <b>(D-8)</b></div></div>
+<div class="banner ok"><strong>✅ 답한 조건 기준으로 신청 가능합니다</strong>확인할 조건 1개만 원문에서 보세요.</div>
+<div class="card"><h2>내 조건과 비교</h2>
+<table><tr><th>공고 조건</th><th>내 답</th><th></th></tr>
+<tr><td>만 34세 이하</td><td>만 25~29세</td><td class="v ok">✓ 맞음</td></tr>
+<tr><td>미취업자</td><td>구직 중</td><td class="v ok">✓ 맞음</td></tr>
+<tr><td>최종학력 대졸 이상</td><td>대졸(4년제)</td><td class="v ok">✓ 맞음</td></tr>
+<tr><td>공고일 기준 졸업 2년 이내 우대</td><td>답하지 않음</td><td class="v w">⚠ 확인</td></tr></table>
+<div class="fold">▸ 찾던 것과 맞는 점 2개 (채용 정보 · 경영·회계·사무)</div></div>
+<div class="card"><h2>이 공고 한눈에</h2><dl class="glance"><dt>무엇</dt><dd>5개월 체험형 인턴, 월 약 210만 원</dd><dt>언제</dt><dd>접수 11/20~12/1 · 근무 1월~</dd><dt>어디서</dt><dd>서울 중구 본사</dd><dt>어떻게</dt><dd>채용 홈페이지 온라인 접수</dd></dl></div>
+<div class="card"><h2>준비 체크리스트 <span class="prog">1/4</span></h2><ul class="ck">
+<li><span class="box on"></span>최종학력 졸업증명서<span class="tag t1">공고 명시</span></li>
+<li><span class="box"></span>자기소개서(공고 문항 3개)<span class="tag t1">공고 명시</span></li>
+<li><span class="box"></span>이력서<span class="tag t2">보통 필요</span></li>
+<li><span class="box"></span>경험 정리표(알바·프로젝트)<span class="tag t3">신입이라서</span></li></ul></div>
+<div class="card"><h2>신청 순서</h2><ol class="steps">
+<li><span class="d">오늘</span>직무 내용·우대사항 확인</li><li><span class="d">11/26까지</span>자기소개서 3문항 작성</li><li><span class="d">11/28</span>서류 업로드·제출(마감 3일 전)</li><li><span class="d">11/28</span>접수 완료 메일 확인</li></ol></div>
+<div class="card"><h2>작성 초안 <span class="src">기본 초안 · 노란 칸을 채워 주세요</span></h2>
+<div class="draft"><h3>지원 동기 <a>복사</a></h3>○○공단의 「체험형 청년인턴(데이터 관리)」에 지원합니다. <span class="fact">4년제 대학을 졸업하고 현재 일자리를 찾고 있어</span>, 바로 근무를 시작할 수 있습니다. 특히 공고의 '자료 정리·통계 보고' 업무에 <span class="slot">[관련 경험: 예) 학과 프로젝트에서 설문 300건 엑셀 분석]</span>을 살릴 수 있습니다. 인턴 기간에 <span class="slot">[목표: 예) 월간 통계 보고서 작성 맡기]</span>를 해내겠습니다.</div>
+<div class="draft"><h3>강점 3줄 <a>복사</a></h3>· <span class="slot">[강점 1: 수치가 있는 경험]</span><br>· <span class="slot">[강점 2]</span><br>· <span class="slot">[강점 3]</span><br><span class="src">공고 우대사항: 컴퓨터활용능력, 졸업 2년 이내</span></div></div>
+<div class="cta">준비 끝, 원문에서 신청하기 ↗</div>
+</div></div>
+
+<!-- C: 지원금 -->
+<div class="col" id="c"><p class="cap">C. 지원금 공고</p><p class="sub">청년월세 지원 · 지원금형 · ✅ 신청 가능</p>
+<div class="phone">
+<div class="top"><span>← 결과로</span><span><span class="btn">전체 복사</span><span class="btn">인쇄·PDF</span></span></div>
+<div class="card"><div class="chips"><span>지원금·혜택</span><span class="k">지원금</span></div>
+<h1>2026 서울시 청년월세 지원</h1><div class="meta">서울특별시 · 서울 전역</div>
+<div class="dday">마감 12월 10일 <b>(D-17)</b></div></div>
+<div class="banner ok"><strong>✅ 답한 조건 기준으로 신청 가능합니다</strong>소득 증빙 서류만 미리 떼 두세요.</div>
+<div class="card"><h2>내 조건과 비교</h2>
+<table><tr><th>공고 조건</th><th>내 답</th><th></th></tr>
+<tr><td>만 19~39세</td><td>만 25~29세</td><td class="v ok">✓ 맞음</td></tr>
+<tr><td>서울 거주</td><td>서울 거주</td><td class="v ok">✓ 맞음</td></tr>
+<tr><td>무주택 1인 가구</td><td>무주택 · 1인 가구</td><td class="v ok">✓ 맞음</td></tr>
+<tr><td>기준중위소득 150% 이하</td><td>60% 이하</td><td class="v ok">✓ 맞음</td></tr></table></div>
+<div class="card"><h2>이 공고 한눈에</h2><dl class="glance"><dt>무엇</dt><dd>월 최대 20만 원, 최대 12개월</dd><dt>언제</dt><dd>12/1~12/10 · 결과 2월</dd><dt>어디서</dt><dd>온라인(서울주거포털)</dd><dt>어떻게</dt><dd>온라인 신청 후 서류 업로드</dd></dl></div>
+<div class="card"><h2>준비 체크리스트 <span class="prog">0/5</span></h2><ul class="ck">
+<li><span class="box"></span>임대차계약서 사본<span class="tag t1">공고 명시</span></li>
+<li><span class="box"></span>월세 이체 증빙(최근 3개월)<span class="tag t1">공고 명시</span></li>
+<li><span class="box"></span>주민등록등본<span class="tag t2">보통 필요</span></li>
+<li><span class="box"></span>건강보험료 납부확인서<span class="tag t3">소득 기준 때문에</span></li>
+<li><span class="box"></span>통장 사본<span class="tag t2">보통 필요</span></li></ul></div>
+<div class="card"><h2>신청 순서</h2><ol class="steps">
+<li><span class="d">오늘</span>나이·소득 기준 원문 확인</li><li><span class="d">12/5까지</span>정부24에서 등본·건보 확인서 발급</li><li><span class="d">12/1~12/8</span>온라인 신청·서류 업로드</li><li><span class="d">2월</span>결과 발표 확인</li></ol></div>
+<div class="card"><h2>작성 초안 <span class="src">AI 작성 · 그대로 내지 말고 고쳐 쓰세요</span></h2>
+<div class="draft"><h3>신청 사유 <a>복사</a></h3><span class="fact">혼자 살며 가구 소득이 기준중위소득 60% 이하라</span> 월세가 생활비의 큰 부분을 차지합니다. 「서울시 청년월세 지원」의 월 최대 20만 원을 받아 <span class="slot">[쓸 곳: 예) 월세 45만 원 중 일부]</span>에 보태고, 아낀 돈은 <span class="slot">[예) 자격증 준비]</span>에 쓰고자 신청합니다.</div></div>
+<div class="cta">준비 끝, 원문에서 신청하기 ↗</div>
+</div></div>
+
+<div class="legend" id="legend"><h3>화면 순서</h3><ol><li>공고 헤더(분야·유형 칩, D-day)</li><li><b>대상 판정 배너</b> ✅/⚠/⛔</li><li>내 조건과 비교 표(자격 조건만)</li><li>이 공고 한눈에(무엇·언제·어디서·어떻게)</li><li>체크리스트 — 출처 배지 3종</li><li>신청 순서 — 마감에서 역산한 날짜</li><li>작성 초안 — 유형별, 노란 칸 = 빈칸</li></ol>
+<h3>배지</h3><p><span class="tag t1">공고 명시</span> 원문에서 뽑음<br><span class="tag t2">보통 필요</span> 유형 기본값<br><span class="tag t3">내 상황</span> 인터뷰 답 때문에</p>
+<h3>초안 색</h3><p><span class="fact">파란 바탕</span> 인터뷰 답을 사실 문장으로 바꾼 부분<br><span class="slot">[노란 칸]</span> 사용자가 채울 곳(예시 포함)</p>
+<h3>⛔ 대상 아님(예: 공고 '만 40세 이상', 내 답 29세)</h3><p>체크리스트·순서는 접힘, 초안 생성·AI 호출 안 함, 버튼은 "원문에서 대상 확인하기".</p></div>
+</div></body></html>
