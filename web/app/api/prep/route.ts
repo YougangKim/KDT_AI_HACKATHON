@@ -38,7 +38,20 @@ const EX_JOB = {
 
 const s = (v: unknown, n: number) => String(v ?? "").slice(0, n);
 
+// 남용 방지: IP당 1분 5회(무료 AI 한도 보호). 서버리스 인스턴스 단위라 완전하지 않지만 반복 호출은 막는다
+const hits = new Map<string, number[]>();
+function limited(ip: string): boolean {
+  const now = Date.now();
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < 60_000);
+  recent.push(now);
+  hits.set(ip, recent);
+  if (hits.size > 5000) for (const [k, v] of hits) if (!v.some((t) => now - t < 60_000)) hits.delete(k);
+  return recent.length > 5;
+}
+
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  if (limited(ip)) return Response.json({ ai: false, limited: true }, { status: 429 });
   try {
     const body = (await req.json()) as {
       kind?: string;

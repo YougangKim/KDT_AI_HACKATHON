@@ -178,3 +178,27 @@ describe("재검증 지적 반영", () => {
     expect(checkDraft(ok, o, { rule, facts: "가구 소득이 기준중위소득 60% 이하입니다" })).toEqual([]);
   });
 });
+
+describe("최종 재검증 지적 반영", () => {
+  const NOW = new Date("2026-11-23T10:00:00");
+  const o = { title: "서울시 청년월세 지원", org: "서울특별시", summary: "월 최대 20만 원 지원" };
+  const rule = "혼자 살며, 가구 소득이 기준중위소득 60% 이하입니다. 「서울시 청년월세 지원」의 '월 최대 20만 원'을 받아 [쓸 곳: 예) 월세 일부]에 보태고자 신청합니다.";
+  const facts = "혼자 살고 있습니다 가구 소득이 기준중위소득 60% 이하입니다";
+  it("'전국' 공고는 지역 차단하지 않습니다", () => {
+    const p = ruleBasedPlan(match({ domain: "benefit", title: "청년 지원금", org: "○○", summary: "", region: ["전국"] }), ANSWERS, NOW);
+    expect(p.target.level).toBe("ok");
+    expect(p.rows.some((r) => r.cond.startsWith("지역"))).toBe(false);
+  });
+  it("짧은 허위 사유 한 문장으로 바꿔치기해도 실패", () => {
+    const ai = { title: "신청 사유", body: "부모 지원이 끊겼습니다. 「서울시 청년월세 지원」의 '월 최대 20만 원'을 받아 [쓸 곳: 예) 월세 일부]에 보태고자 신청합니다." };
+    expect(checkDraft(ai, o, { rule, facts }).some((w) => w.startsWith("새 내용 추가"))).toBe(true);
+  });
+  it("빈칸 예시를 바꾸면 실패", () => {
+    const ai = { title: "신청 사유", body: "혼자 살며 가구 소득이 기준중위소득 60% 이하입니다. 「서울시 청년월세 지원」의 '월 최대 20만 원'을 받아 [쓸 곳: 예) 생활비 전부]에 보태고자 신청합니다." };
+    expect(checkDraft(ai, o, { rule, facts })).toContain("빈칸 내용 변경");
+  });
+  it("연결어만 다듬은 초안은 통과", () => {
+    const ai = { title: "신청 사유", body: "혼자 살며 가구 소득이 기준중위소득 60% 이하입니다. 「서울시 청년월세 지원」의 '월 최대 20만 원'을 받아 [쓸 곳: 예) 월세 일부]에 보태고자 합니다." };
+    expect(checkDraft(ai, o, { rule, facts })).toEqual([]);
+  });
+});

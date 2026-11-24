@@ -191,7 +191,7 @@ export function ruleBasedPlan(m: Match, answers: AnswerRecord[], now = new Date(
   if (target.titleAge && !o.conditions.some((c) => c.attr === "age")) {
     rows.unshift({ cond: "나이 — 원문에 숫자 없음", note: `제목 '${target.titleAge}'`, mine: shortAnswer(p, "age") ?? "답하지 않음", verdict: "check" });
   }
-  if (o.region.length && !o.conditions.some((c) => c.attr === "region")) {
+  if (o.region.length && !o.region.some((r) => /전국/.test(r)) && !o.conditions.some((c) => c.attr === "region")) {
     rows.push({ cond: `지역 — ${o.region.join("·")}`, mine: shortAnswer(p, "region") ?? "답하지 않음", verdict: target.level !== "block" && p.region ? "ok" : "check" });
   }
   const prefs = [...new Set(o.conditions.filter((c) => PREF.includes(c.attr)).map((c) => c.rawText.replace(/^[^:]{1,8}:\s*/, "")))].slice(0, 4);

@@ -101,11 +101,14 @@ export function checkDraft(d: PrepDraft, o: Pick<Opportunity, "title" | "org" | 
     const count = (x: string) => x.split(/(?<=[.。])\s+/).filter((v) => v.trim()).length;
     if (!d.list && count(b) > count(opts.rule)) why.push("문장 추가");
     if (b.length > opts.rule.length * 1.3) why.push("규칙 초안보다 너무 김");
-    // 새 내용(사유·사실) 덧붙임 감지: 규칙 초안·공고·사실 문장에 없는 낱말(앞 두 글자 기준)이 3개를 넘으면 실패
+    // 새 내용(사유·사실) 덧붙임 감지: 규칙 초안·공고·사실 문장·연결어에 없는 낱말(앞 두 글자 기준)이 하나라도 있으면 실패
     const stems = (x: string) => new Set((x.replace(/\[[^\]]*\]/g, " ").match(/[가-힣]{2,}/g) ?? []).map((w) => w.slice(0, 2)));
     const known = stems(`${opts.rule} ${o.title} ${o.org} ${o.summary} ${opts.facts ?? ""} ${GLUE}`);
     const novel = [...stems(b)].filter((w) => !known.has(w));
-    if (novel.length > 3) why.push(`새 내용 추가(${novel.slice(0, 5).join("·")})`);
+    if (novel.length > 0) why.push(`새 내용 추가(${novel.slice(0, 5).join("·")})`);
+    // 빈칸은 규칙 초안과 글자까지 같아야 한다(예시를 바꿔 사실처럼 쓰지 못하게)
+    const bl = (x: string) => (x.match(/\[[^\]]+\]/g) ?? []).sort().join("|");
+    if (bl(b) !== bl(opts.rule)) why.push("빈칸 내용 변경");
   }
   if (/'[^']*(\s\/\s|\d{4}-\d{2})[^']*'/.test(b)) why.push("원문 필드를 그대로 인용");
   const blanks = (b.match(/\[[^\]]+\]/g) ?? []).filter((x) => x !== "[이름]");

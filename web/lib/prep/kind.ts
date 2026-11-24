@@ -87,7 +87,8 @@ export function targetCheck(
     }
   }
   const mineRegions = p.region ? [p.region, ...regionAliases(p.region)] : [];
-  if (p.region && o.region.length && !o.region.some((r) => [r, ...regionAliases(r)].some((x) => mineRegions.includes(x)))) {
+  const nationwide = !o.region.length || o.region.some((r) => /전국|全國/.test(r));
+  if (p.region && !nationwide && !o.region.some((r) => [r, ...regionAliases(r)].some((x) => mineRegions.includes(x)))) {
     return { level: "block", head: "다른 지역 대상 공고입니다", why: `공고 지역은 ${o.region.join("·")}인데 내 답은 ${p.region} 거주입니다. 원문에서 거주 조건을 확인하세요.` };
   }
   const titleOlder = o.title.match(OLDER)?.[1];

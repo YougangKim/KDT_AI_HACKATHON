@@ -1,5 +1,12 @@
 # 작업 로그 — 대한상공회의소 AI 해커톤
 
+## 2026-11-24 15:00 피드백 설문·처리방침·방문 통계 배포 (Claude)
+
+- 알림 저장 성공 직후 승인 메시지→설문 하단 시트(5문항)→완료 `components/result/FeedbackPrompt.tsx`, 저장 `/api/feedback`(Upstash `feedback:list`, 관리자 GET JSON 집계·`?format=csv`, `FEEDBACK_ADMIN_KEY` 또는 `CRON_SECRET`), `lib/feedback.ts`+테스트.
+- 버그: 알림 서버 저장 답변 상한 40→200(추가 질문으로 73개가 되어 400 실패), 설문 오버레이 z-index를 지도 위로.
+- `/privacy` 처리방침 + 하단 링크, Vercel Web Analytics 스크립트(대시보드에서 Analytics 켜야 수집, 현재 스크립트 404). Tally 버튼은 앱 안 설문과 중복이라 제외.
+- 검증: test 230, tsc·lint, 로컬 e2e(저장→설문→제출→집계·재질문 없음). 커밋 1578346·a82da2d 푸시, Vercel 배포 success, 운영 /api/feedback 검증 응답·/privacy 200 확인.
+
 ## 2026-11-24 02:15 알림 설정 후 피드백 설문 시안 (Claude)
 
 - `docs/설계/피드백_설문_시안.html`·`.png`: 알림 저장 성공 직후 승인 메시지 → 하단 시트 설문 5문항 → 완료. 사용자 평가 대기, 코드 변경 없음.
@@ -448,3 +455,9 @@
 
 
 - 11/24 15:20 Claude: 신청 준비 개편 Codex 교차 평가 32/60 '수정 후 배포'(`.ai-sync/tasks/20261124T055254-codex/result.md`) → 확인 필요는 check(AI 버튼 없음), warn·block 복사에서 초안 제외, AI는 동의 버튼 뒤(위치 미전송), 지역 불일치(별칭 포함)·요약 대상 키워드·마감 경과 판정, AI 팁 제거, AI 초안은 문장 추가·길이·새 낱말 검사. 재검증(`.ai-sync/tasks/` 최신) 지적 반영. test 243 통과·tsc·lint·빌드 통과. 커밋·푸시·배포.
+
+- 2026-11-24 Claude: 공고 분류·판별 Jev 재설계 적용. 직무 분야·세분화 축을 Jev choice로 태깅(영구 캐시), 직무 판별 Jev 우선·키워드 폴백, 추가 질문은 태그로 나눌 수 있으면 LLM 호출 생략. 로컬 풀 7,915건 213초 태깅. test 249·build 통과. 커밋 안 함.
+
+- 2026-11-24 15:25 Claude: 앱 판별 분기 전수 목록과 Jev 적용 범위 `docs/설계/AI_트래픽_대응/Jev_적용범위_분기목록.md`(LLM 호출 10개·규칙 분기 26개, 적용/유지 판정·근거·위험, 우선순위). 코드 미수정. Codex 교차 검토(`.ai-sync/tasks/20261124T061233-codex/result.md`) 반영: 누락 분기 7곳 추가, 절감·비용 수치는 기준선 없어 산정 불가로 정정.
+
+- 11/24 15:40 Claude: 배포본 Codex 재검증 36/60 반려(롤백 권고) → 사용자 승인으로 4개 수정: '전국' 공고 지역 차단 안 함, AI 다듬기 새 낱말 0개·빈칸 문자열 동일 검사, /api/prep IP당 분당 5회 제한, 경계 테스트. test 255 통과·tsc·lint·빌드, 로컬 429 확인. 커밋·푸시·배포.
