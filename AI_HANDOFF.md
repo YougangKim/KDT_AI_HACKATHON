@@ -21,6 +21,13 @@
 
 ## 진행 중 / 다음 작업
 
+- 11/25 03:15 Claude: 두 스레드(Jev 칼럼 DB / AI 질문 생성 전용·파싱 대체) 통합 커밋·배포. 후속 권고: pool 락 해제 Lua compare-and-delete, 새 칼럼 전체 분류 속도(실행당 400건), facets 동시 등록 CAS, 원문 채워진 뒤 Jev 관찰 측정·바로 신청 변화 측정.
+- 11/24 20:45 Claude: 대화형 AI는 질문 생성 전용(사용자 원칙). 부가 AI(요약·근무지·조건 해석)는 `AI_AUX=1`일 때만 새로 호출. 3950 서버는 재시작 안 함(새 빌드 반영하려면 재시작 필요). 다음 후보: 카드 요약을 문장 틀로 다듬기(출처별 20건 비교).
+- 11/24 20:25 Claude: RAG 전체 적용 1차(원문 eligibility DB 저장·화면 응답 제외·근거 표본) 완료, 커밋 안 함. 남은 것: 새 수집으로 원문 채우기→풀 용량 실측, Jev 측정→2단계 게이트. 모두 실 API 호출이라 사용자 허락 필요. Codex 지적 `.ai-sync/tasks/20261124T111638-codex/`.
+- 11/24 20:15 Claude: 근거·상태 재사용 1단계 구현 완료(캐시 키·근거 대조·Jev 관찰 모드, test 257·빌드 통과, 커밋 안 함). 다음: `cd web; AI_EVAL=1 npx vitest run scripts/jev-target-observe.test.ts`(실 API, 사용자 허락 필요) → `plan/jev_target_observe.json` 보고 → 2단계(Jev로 LLM 생략) 별도 승인.
+- 11/24 19:55 Claude: kepigame 나이 맞히기 분석 `docs/분석_kepigame_나이맞히기.md`(코드 미수정, Codex 66 조건부 반영). 정답셋 30~50건 측정은 사용자 결정으로 보류: Jev·RAG 작업 완료 → 공고 전체 분야 분류 후 분야별로 표본 뽑아 진행(원문 판독 정답 vs 추출 조건·엔진 판정). 풀은 `web/.cache/pool-v1.json` `sources.<출처>[]`(7,923건).
+- 11/24 19:45 알림 설정 "내 조건" 요약 제거·버튼 "내 조건 수정"(`web/app/settings/page.tsx`). build·test 통과, 3950 반영은 재빌드 필요, 배포는 사용자 확인 대기.
+
 - 11/24 19:15 Claude: 신청 준비 '한눈에' 항목명 내용·날짜·장소·신청방법, 내용은 목적(지원·채용 등) 포함 문장(contentLine), 대상 경고 배너 최하단 이동. 초안 기능 폐기분과 함께 커밋·푸시·배포.
 - 11/24 19:20 Claude: RAG 구조화 검토 `docs/설계/AI_트래픽_대응/공고지식DB_RAG_구조화_검토.md`(코드 미수정). 전면 전환은 해커톤 이후. 다음(승인 시): carryTags 본문 해시 재분류(분류 스레드 파일), providers 재시도 불가 오류 폴백 중단, play next-question 근거 대표 표본.
 - 11/24 19:20 Claude: 로고 시안 6종 `docs/설계/로고_시안/비교.png`(Codex 제작). 사용자 선택 대기 → 고르면 `web/public/icon.svg`·`icon-192/512.png`·`components/brand/Logo.tsx`·Splash 적용.

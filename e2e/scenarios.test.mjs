@@ -399,8 +399,10 @@ for (const [name, pool] of DATASETS) {
           : { ai: false, reason: "provider_unavailable" } });
       });
       await page.getByRole("link", { name: /추가 질문으로 더 좁히기/ }).click();
-      await page.getByTestId("question").filter({ hasText: "어떤 공고를 더 보고 싶습니까?" }).waitFor();
-      await page.getByRole("button", { name: "앞쪽 공고", exact: true }).click();
+      // 원칙: 규칙 질문으로 나눌 수 있으면 그것부터 묻고, 막혔을 때만 AI 추가 질문(위 고정 응답)이 나온다
+      await page.getByTestId("question").waitFor();
+      const aiQuestion = page.getByTestId("question").filter({ hasText: "어떤 공고를 더 보고 싶습니까?" });
+      if (await aiQuestion.isVisible().catch(() => false)) await page.getByRole("button", { name: "앞쪽 공고", exact: true }).click();
       // AI 질문이 더 안 나오면 남은 규칙 질문으로 이어 묻는다 → 끝까지 답하고 결과로
       await playAs(page, seoulJobseeker);
       await page.waitForURL("**/result");
@@ -458,11 +460,12 @@ for (const [name, pool] of DATASETS) {
 
       await page.goto(`${BASE}/settings`);
       await page.getByRole("heading", { name: /알림 설정/ }).waitFor();
+      // 긴 '내 조건' 요약 문장은 82168ed에서 사용자 요청으로 뺐다. 조건 편집 영역이 보이면 된다
       const body0 = await page.locator("body").textContent();
-      assert.match(body0, /청년/, "내 조건이 문장으로 보여야 합니다");
+      assert.match(body0, /거주 지역/, "내 조건 편집 영역이 보여야 합니다");
 
       // 조건 하나 바꾸기(첫 조건을 모름으로)
-      await page.getByText("상세 조건 수정", { exact: true }).click();
+      await page.getByText("내 조건 수정", { exact: true }).click();
       const groups = page.getByRole("list", { name: "내 조건" }).getByRole("group").filter({ has: page.getByRole("button", { name: "아니오", exact: true }) });
       await groups.first().getByRole("button", { name: "모름", exact: true }).click();
       // 일정: 간격 30분, 모드: 정해진 시간마다
@@ -474,7 +477,7 @@ for (const [name, pool] of DATASETS) {
 
       await page.reload();
       await page.getByRole("heading", { name: /알림 설정/ }).waitFor();
-      await page.getByText("상세 조건 수정", { exact: true }).click();
+      await page.getByText("내 조건 수정", { exact: true }).click();
       assert.equal(await page.getByRole("button", { name: "정해진 시간마다 요약 받기" }).getAttribute("aria-pressed"), "true", "모드가 유지돼야 합니다");
       assert.equal(await page.getByRole("group", { name: "알림 간격" }).getByRole("button", { name: "30분", exact: true }).getAttribute("aria-pressed"), "true", "간격이 유지돼야 합니다");
       assert.equal(await page.getByRole("list", { name: "내 조건" }).getByRole("group").filter({ has: page.getByRole("button", { name: "아니오", exact: true }) }).first().locator('[aria-pressed="true"]').textContent(), "모름", "바꾼 조건이 유지돼야 합니다");

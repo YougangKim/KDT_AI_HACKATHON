@@ -62,22 +62,56 @@ export function structureConditionsRules(rawText: string): Condition[] {
   const income = text.match(/(기준\s*중위\s*소득|중위소득|월평균\s*소득)[^0-9%]{0,10}(\d{2,3})\s*%\s*(이하|미만|이내)?/);
   if (income) out.push(cond("incomePct", "lte", Number(income[2]), income[0], /중위/.test(income[1]) ? "high" : "low"));
 
-  if (/무주택/.test(text)) out.push(cond("homeless", "eq", true, matchAround(text, /무주택/), "high"));
-  if (/1인\s*가구|부모와?\s*(따로|별도)|독립\s*거주|단독\s*세대/.test(text))
-    out.push(cond("livingAlone", "eq", true, matchAround(text, /1인\s*가구|부모와?\s*(따로|별도)|독립\s*거주|단독\s*세대/), "high"));
+  // 대상 단어는 "있다"고만 보지 않고, 바로 뒤가 제외·불가·무관이면(예: "재학생은 제외") 조건으로 만들지 않는다
+  const MUJUTAEK = /무주택/;
+  if (positive(text, MUJUTAEK)) out.push(cond("homeless", "eq", true, matchAround(text, MUJUTAEK), "high"));
+  const ALONE = /1인\s*가구|부모와?\s*(따로|별도)|독립\s*거주|단독\s*세대/;
+  if (positive(text, ALONE)) out.push(cond("livingAlone", "eq", true, matchAround(text, ALONE), "high"));
 
   // 고용 상태
   const emp: string[] = [];
-  if (/(대학|대학원)\s*(재학|휴학)|재학생|대학생/.test(text)) emp.push("student");
-  if (/미취업|구직|실업|취업\s*준비/.test(text)) emp.push("jobseeker");
-  if (/재직|근로\s*중|근로소득|직장인/.test(text)) emp.push("employed");
-  if (/아르바이트|단시간|단기\s*근로/.test(text)) emp.push("parttime");
+  // "대학원 재학생은 제외"가 "대학원 재학"까지만 맞고 부정을 놓치지 않게 뒤의 "생"까지 포함
+  if (positive(text, /(대학원|대학)\s*(재학|휴학)생?|재학생|대학생/)) emp.push("student");
+  if (positive(text, /미취업|구직|실업|취업\s*준비/)) emp.push("jobseeker");
+  if (positive(text, /재직|근로\s*중|근로소득|직장인/)) emp.push("employed");
+  if (positive(text, /아르바이트|단시간|단기\s*근로/)) emp.push("parttime");
   if (emp.length) out.push(cond("employment", "in", emp, matchAround(text, /재학|대학생|미취업|구직|실업|재직|근로|직장인|아르바이트|단시간/), "low"));
+
+  // 그동안 AI 해석에 맡기던 대상 조건(신혼·수급자·청약통장·경력·학력)도 원문 단어로 뽑는다.
+  // 우대·가점일 수 있어 확신도는 low → 엔진에서 탈락 대신 "확인 필요"
+  const MARRIED = /신혼\s*부부|예비\s*신혼|혼인\s*(신고\s*)?\d+\s*년\s*이내/;
+  if (positive(text, MARRIED)) out.push(cond("married", "eq", true, matchAround(text, MARRIED), "low"));
+  const WELFARE = /기초\s*생활\s*수급|생계\s*급여|주거\s*급여|차상위/;
+  if (positive(text, WELFARE)) out.push(cond("welfare", "eq", true, matchAround(text, WELFARE), "low"));
+  const SUBSCRIPTION = /청약\s*(통장|저축)|주택\s*청약\s*종합\s*저축/;
+  if (positive(text, SUBSCRIPTION)) out.push(cond("subscription", "eq", true, matchAround(text, SUBSCRIPTION), "low"));
+  const EXPERIENCED = /경력\s*\d+\s*년\s*이상|경력자(?!\s*우대)/;
+  // "신입 및 경력 3년 이상"처럼 바로 앞에 신입이 함께 있으면(동시 모집) 경력 필수가 아니다. 문서 다른 곳의 "신입"은 보지 않는다
+  if (!/경력\s*무관/.test(text) && [...text.matchAll(new RegExp(EXPERIENCED.source, "g"))].some((m) => !NEGATED_AFTER.test(text.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 12)) && !/신입\s*(및|과|·|\/|,|또는|와)?\s*$/.test(text.slice(Math.max(0, (m.index ?? 0) - 8), m.index))))
+    out.push(cond("experienced", "eq", true, matchAround(text, EXPERIENCED), "low"));
+  if (!/학력\s*(무관|제한\s*없)/.test(text)) {
+    const edu = /박사\s*(학위)?\s*(소지|이상)/.test(text) ? 5 : /석사\s*(학위)?\s*(소지|이상)/.test(text) ? 4 : /(4년제\s*)?대학교?\s*졸업|학사\s*(학위)?\s*(소지|이상)/.test(text) ? 3 : /전문\s*대(학)?\s*졸업/.test(text) ? 2 : /고등학교\s*졸업|고졸/.test(text) ? 1 : 0;
+    if (edu) out.push(cond("education", "gte", edu, matchAround(text, /석사|박사|대학교?\s*졸업|학사|전문\s*대|고등학교\s*졸업|고졸/), "low"));
+  }
 
   const regions = regionsIn(text);
   if (regions.length) out.push(cond("region", "in", regions, matchAround(text, /서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충청|충북|충남|전라|전북|전남|경상|경북|경남|제주/), "low"));
 
   return out;
+}
+
+/** 바로 뒤에 붙으면 "그 대상이 아니다"가 되는 말(예: "재학생은 제외", "무주택 요건 없음") */
+// 조사(은·는·이·가·도·을·를)와 "여부·요건"을 건너뛰고 본다: "재학생을 제외", "무주택 여부 무관", "신혼부부가 아닌 자"
+const NEGATED_AFTER = /^\s*[은는이가도을를]?\s*(여부\s*)?(요건\s*)?[은는이가을를]?\s*(제외|불가|무관|해당\s*없|해당하지\s*않|없음|아닌|아니|미해당|대상\s*아님)/;
+
+/** 원문에 그 표현이 "대상"으로 나오는지: 나온 곳 중 하나라도 뒤가 부정·예외가 아니면 true */
+function positive(text: string, re: RegExp): boolean {
+  const g = new RegExp(re.source, "g");
+  for (const m of text.matchAll(g)) {
+    const after = text.slice((m.index ?? 0) + m[0].length, (m.index ?? 0) + m[0].length + 12);
+    if (!NEGATED_AFTER.test(after)) return true;
+  }
+  return false;
 }
 
 function matchAround(text: string, re: RegExp): string {

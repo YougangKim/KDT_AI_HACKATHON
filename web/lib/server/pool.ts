@@ -6,9 +6,14 @@ import {
   type SourceRunMeta,
 } from "@/lib/sources";
 import { dedupeOpportunities } from "@/lib/sources/dedupe";
+import { attachTags, carryTags, needsTags } from "@/lib/sources/classify";
+import { jevEnabled } from "@/lib/ai/jev";
+import { allFacets } from "@/lib/server/facets";
 
 const META_KEY = "pool:v1:meta";
 const MAX_CHUNK_BYTES = 900 * 1024;
+/** 조각 수가 바뀌어 안 쓰게 된 예전 조각 키를 남겨 두는 시간(초) */
+const STALE_CHUNK_TTL_S = 600;
 const SOURCE_INTERVAL_MS: Record<string, number> = {
   gov24: 6 * 60 * 60 * 1000,
 };
@@ -17,6 +22,8 @@ const DEFAULT_INTERVAL_MS = 15 * 60 * 1000;
 export interface PoolSourceMeta extends SourceRunMeta {
   collectedAt?: string;
   chunks?: number;
+  /** 조각 키 세대(수집마다 새 값). 예전 세대 키는 다시 쓰이지 않아 만료를 걸어도 안전 */
+  gen?: string;
 }
 
 export interface PoolMeta {
@@ -116,41 +123,34 @@ async function readRedisMeta(): Promise<PoolMeta | null> {
   return raw ? JSON.parse(raw) as PoolMeta : null;
 }
 
-async function readRedisSource(source: string, chunks = 1): Promise<Opportunity[]> {
-  if (chunks <= 1) {
-    const raw = await redis(["GET", `pool:v1:${source}`]) as string | null;
-    return raw ? JSON.parse(raw) as Opportunity[] : [];
-  }
-  const values = await Promise.all(
-    Array.from({ length: chunks }, (_, index) =>
-      redis(["GET", `pool:v1:${source}:${index}`]) as Promise<string | null>,
-    ),
-  );
+/** 출처 조각 키 목록. 세대(gen)가 있으면 세대별 키, 없으면 예전 형식(단일 키 또는 번호 조각) */
+function sourceKeys(source: string, chunks = 1, gen?: string): string[] {
+  if (gen) return Array.from({ length: chunks }, (_, index) => `pool:v1:${source}:${gen}:${index}`);
+  if (chunks <= 1) return [`pool:v1:${source}`];
+  return Array.from({ length: chunks }, (_, index) => `pool:v1:${source}:${index}`);
+}
+
+async function readRedisSource(source: string, chunks = 1, gen?: string): Promise<Opportunity[]> {
+  const values = await Promise.all(sourceKeys(source, chunks, gen).map((key) => redis(["GET", key]) as Promise<string | null>));
   return values.flatMap((raw) => raw ? JSON.parse(raw) as Opportunity[] : []);
 }
 
+let genSeq = 0;
+/**
+ * 출처 하나를 새 세대 키에 조각으로 저장한다. 예전 세대 키는 바로 지우지 않고 돌려준다:
+ * meta를 바꾸기 전에 지우거나 같은 키를 덮어쓰면, 그 사이 예전 meta를 읽은 요청이 빈 출처·섞인 조각을 보기 때문.
+ * 세대가 매번 달라 예전 키가 다시 쓰이지 않으므로, 동시 수집이 겹쳐도 만료가 현재 키에 걸리지 않는다
+ */
 async function writeRedisSource(
   source: string,
   items: Opportunity[],
-  previousChunks: number,
-): Promise<number> {
+  previous: PoolSourceMeta | undefined,
+): Promise<{ chunks: number; gen: string; stale: string[] }> {
   const chunks = splitPoolChunks(items);
-  if (chunks.length === 1) {
-    await redis(["SET", `pool:v1:${source}`, JSON.stringify(chunks[0])]);
-    for (let index = 0; index < previousChunks; index++) {
-      await redis(["DEL", `pool:v1:${source}:${index}`]);
-    }
-    return 1;
-  }
-
-  await Promise.all(chunks.map((chunk, index) =>
-    redis(["SET", `pool:v1:${source}:${index}`, JSON.stringify(chunk)]),
-  ));
-  await redis(["DEL", `pool:v1:${source}`]);
-  for (let index = chunks.length; index < previousChunks; index++) {
-    await redis(["DEL", `pool:v1:${source}:${index}`]);
-  }
-  return chunks.length;
+  const gen = `g${Date.now().toString(36)}${(genSeq++).toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+  const keys = sourceKeys(source, chunks.length, gen);
+  await Promise.all(chunks.map((chunk, index) => redis(["SET", keys[index], JSON.stringify(chunk)])));
+  return { chunks: chunks.length, gen, stale: sourceKeys(source, previous?.chunks ?? 1, previous?.gen) };
 }
 
 async function readSnapshot(): Promise<FileSnapshot | null> {
@@ -160,7 +160,7 @@ async function readSnapshot(): Promise<FileSnapshot | null> {
     if (!meta) return null;
     const entries = await Promise.all(Object.entries(meta.sources).map(async ([source, status]) => [
       source,
-      await readRedisSource(source, status.chunks ?? 1),
+      await readRedisSource(source, status.chunks ?? 1, status.gen),
     ] as const));
     return { meta, sources: Object.fromEntries(entries) };
   } catch {
@@ -187,21 +187,44 @@ async function writeSnapshot(
     return;
   }
   try {
+    const stale: string[] = [];
     for (const source of changedSources) {
-      const chunks = await writeRedisSource(
-        source,
-        snapshot.sources[source] ?? [],
-        previous?.meta.sources[source]?.chunks ?? 1,
-      );
-      snapshot.meta.sources[source].chunks = chunks;
+      const written = await writeRedisSource(source, snapshot.sources[source] ?? [], previous?.meta.sources[source]);
+      snapshot.meta.sources[source].chunks = written.chunks;
+      snapshot.meta.sources[source].gen = written.gen;
+      stale.push(...written.stale);
     }
     await redis(["SET", META_KEY, JSON.stringify(snapshot.meta)]);
+    // 예전 세대 조각은 바로 지우지 않고 10분 뒤 만료시킨다: 새 meta 저장 직전에 예전 meta를 읽은 요청도 그 조각을 끝까지 읽을 수 있게.
+    // 세대 키는 다시 쓰이지 않으므로 동시 수집이 겹쳐도 현재 키에 만료가 걸리지 않는다
+    for (const key of stale) await redis(["EXPIRE", key, STALE_CHUNK_TTL_S]);
   } catch {
     await writeFileSnapshot(snapshot);
   }
 }
 
+const LOCK_KEY = "pool:v1:lock";
+/** 수집 1회 최대 시간(cron 제한 300초)보다 조금 길게. 비정상 종료해도 이 시간 뒤 풀린다 */
+const LOCK_TTL_S = 330;
+
+/**
+ * 공고 풀 수집. 여러 서버 인스턴스(cron·화면 요청 트리거)가 동시에 수집하면 meta를 서로 덮어써
+ * 한쪽 조각 키가 만료되거나 고아가 될 수 있어, Upstash 락으로 한 번에 하나만 수집한다(락을 못 잡으면 저장본 그대로)
+ */
 export async function collectPool(now = new Date()): Promise<PoolMeta> {
+  if (!redisUrl() || !redisToken()) return collectPoolUnlocked(now);
+  const token = `${now.getTime()}-${Math.random().toString(36).slice(2)}`;
+  const got = await redis(["SET", LOCK_KEY, token, "NX", "EX", LOCK_TTL_S]).catch(() => null);
+  if (got !== "OK") return (await readSnapshot())?.meta ?? { collectedAt: "", sources: {} };
+  try {
+    return await collectPoolUnlocked(now);
+  } finally {
+    // 내 락일 때만 푼다(만료 뒤 다른 수집이 잡은 락을 지우지 않게)
+    if ((await redis(["GET", LOCK_KEY]).catch(() => null)) === token) await redis(["DEL", LOCK_KEY]).catch(() => null);
+  }
+}
+
+async function collectPoolUnlocked(now: Date): Promise<PoolMeta> {
   const previous = await readSnapshot();
   const due = ADAPTERS.filter((adapter) => {
     // 키 등록 전 건너뛴 출처는 새 키가 있으면 주기와 무관하게 첫 수집합니다.
@@ -211,7 +234,10 @@ export async function collectPool(now = new Date()): Promise<PoolMeta> {
     const interval = SOURCE_INTERVAL_MS[adapter.id] ?? DEFAULT_INTERVAL_MS;
     return now.getTime() - new Date(collectedAt).getTime() >= interval;
   });
-  if (!due.length && previous) return previous.meta;
+  // 분류하지 않은 칼럼이 남은 공고(분류 도입 전·새 질문 칼럼 등록·Jev 실패)가 있으면 수집할 출처가 없어도 분류만 보충한다
+  const facets = jevEnabled() ? await allFacets() : [];
+  const untagged = jevEnabled() && Object.values(previous?.sources ?? {}).some((list) => list.some((o) => needsTags(o, facets)));
+  if (!due.length && previous && !untagged) return previous.meta;
 
   const statuses = new Map<string, SourceRunMeta>();
   const items = await collectLiveOpportunities(ALL_DOMAINS, now, {
@@ -240,7 +266,8 @@ export async function collectPool(now = new Date()): Promise<PoolMeta> {
       error: "수집 결과 없음",
     };
     if (status.ok) {
-      const sourceItems = grouped[adapter.id] ?? [];
+      // 다시 모은 공고도 이전 DB의 분류 칼럼을 그대로 옮긴다(같은 공고를 다시 분류하지 않음)
+      const sourceItems = carryTags(grouped[adapter.id] ?? [], previous?.sources[adapter.id] ?? []);
       next.sources[adapter.id] = sourceItems;
       next.meta.sources[adapter.id] = {
         ...status,
@@ -255,7 +282,23 @@ export async function collectPool(now = new Date()): Promise<PoolMeta> {
         count: previous?.sources[adapter.id]?.length ?? 0,
         collectedAt: previous?.meta.sources[adapter.id]?.collectedAt,
         chunks: previous?.meta.sources[adapter.id]?.chunks ?? 1,
+        gen: previous?.meta.sources[adapter.id]?.gen, // 이번에 안 바뀐 출처는 예전 세대 키를 그대로 읽는다
       };
+    }
+  }
+
+  // DB에 넣기 전 분류: 새 공고와 아직 분류하지 않은 칼럼만 Jev에 묻는다(한 번에 최대 400요청, 나머지는 다음 수집 때)
+  if (jevEnabled()) {
+    let budget = 400;
+    // cron 제한(300초) 안에 끝나도록 분류는 시작 후 150초까지만 새 요청을 보낸다
+    const deadline = Date.now() + 150_000;
+    for (const [source, list] of Object.entries(next.sources)) {
+      if (budget <= 0 || Date.now() >= deadline) break;
+      if (!list.some((o) => needsTags(o, facets))) continue;
+      const done = await attachTags(list, facets, { limit: budget, deadline });
+      budget -= done.asked;
+      next.sources[source] = done.items;
+      changedSources.add(source);
     }
   }
 

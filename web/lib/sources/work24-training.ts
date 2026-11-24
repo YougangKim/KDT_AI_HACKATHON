@@ -27,6 +27,8 @@ export function mapWork24Training(raw: unknown, now: Date): Opportunity[] {
         title,
         org: str(r.subTitle) || "훈련기관",
         region: [], // 훈련 장소는 자격이 아니다
+        // 훈련기관 주소는 API가 주는 그대로 장소로 쓴다(지도 핀용, AI 추출 불필요)
+        ...(str(r.address) ? { place: str(r.address) } : {}),
         summary: [str(r.trainTarget), place.length ? `훈련장소 ${place.join("·")}` : "", start && `개강 ${start}`].filter(Boolean).join(" / "),
         conditions: buildConditions("training", [], str(r.trainTarget)),
         applyEnd: dayBefore(start),

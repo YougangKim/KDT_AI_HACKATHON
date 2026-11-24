@@ -57,6 +57,10 @@ export interface Opportunity {
   origin?: "api" | "sample" | "websearch" | "rss"; // websearch = 선택 기능(Tavily·Exa) 결과. 화면에 "웹 검색 결과" 배지
   fetchedAt: string;
   geo?: { lat: number; lng: number; precision: "exact" | "approx" | "region"; address?: string };
+  /** Jev 판단 모델 분류 태그. 키 = 직무 분야("field") 또는 세분화 축 id, 값 = 선택지 이름("" = 확신하는 해당 없음). 키가 없으면 미분류 */
+  tags?: Record<string, string>;
+  /** 자격요건 원문(최대 1,000자). 공고 DB에 저장해 AI 해석·요약·Jev 판정이 다시 쓴다. 서버 전용: 화면 API 응답에서는 뺀다 */
+  eligibility?: string;
 }
 
 /** 사용자의 답. "unknown" = 모름 */

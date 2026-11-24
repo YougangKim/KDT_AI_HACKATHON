@@ -43,12 +43,22 @@ export function toRegions(...values: unknown[]): string[] {
   return [...set];
 }
 
+/**
+ * 원문 단어로 뽑는 대상 조건은 그 분야에서 의미 있을 때만 붙인다(불확실한 low 조건이 다른 분야 공고까지
+ * "확인 필요"로 바꾸지 않게): 신혼·청약통장은 주거, 경력·학력은 채용·알바·훈련
+ */
+function fitsDomain(attr: Condition["attr"], domain: Domain): boolean {
+  if (attr === "married" || attr === "subscription") return domain === "housing";
+  if (attr === "experienced" || attr === "education") return domain === "job" || domain === "parttime" || domain === "training";
+  return true;
+}
+
 /** 분야 조건 + 지역 조건 + 자격요건 원문 규칙 구조화 */
 export function buildConditions(domain: Domain, region: string[], eligibility: string, extra: Condition[] = []): Condition[] {
   const conds: Condition[] = [{ attr: "interest", op: "eq", value: domain, rawText: `분야: ${DOMAIN_LABEL[domain]}`, confidence: "high" }];
   if (region.length) conds.push({ attr: "region", op: "in", value: region, rawText: `대상 지역: ${region.join("·")}`, confidence: "high" });
   conds.push(...extra);
-  const ruled = structureConditionsRules(eligibility).filter((c) => c.attr !== "region" && !extra.some((e) => e.attr === c.attr));
+  const ruled = structureConditionsRules(eligibility).filter((c) => c.attr !== "region" && !extra.some((e) => e.attr === c.attr) && fitsDomain(c.attr, domain));
   conds.push(...ruled);
   return conds;
 }
@@ -124,12 +134,25 @@ export function pickArray(raw: unknown, paths: string[][]): Record<string, unkno
   return [];
 }
 
-/** 매핑한 공고의 자격요건 원문을 기억해 둔다(AI 재구조화용). Opportunity 타입은 건드리지 않는다 */
-const eligibilityText = new WeakMap<Opportunity, string>();
+/** 저장하는 자격요건 원문 최대 길이(공고 DB 용량 관리) */
+export const ELIGIBILITY_MAX = 1000;
+
+/**
+ * 매핑한 공고에 자격요건 원문을 붙인다. 공고 필드로 저장되므로 객체를 복사해도 남고 공고 DB에도 쌓여,
+ * 다음 수집·요약·Jev 판정이 원문을 다시 받아 오지 않고 재사용한다
+ */
 export function withEligibility(o: Opportunity, text: string): Opportunity {
-  if (text.trim()) eligibilityText.set(o, text.trim());
-  return o;
+  const t = text.replace(/\s+/g, " ").trim().slice(0, ELIGIBILITY_MAX);
+  return t ? { ...o, eligibility: t } : o;
 }
 export function getEligibility(o: Opportunity): string | undefined {
-  return eligibilityText.get(o);
+  return o.eligibility || undefined;
+}
+
+/** 화면(브라우저)으로 보내는 공고에서 서버 전용 원문을 뺀다(전송량·노출 최소화) */
+export function forClient(o: Opportunity): Opportunity {
+  if (o.eligibility === undefined) return o;
+  const rest = { ...o };
+  delete rest.eligibility;
+  return rest;
 }

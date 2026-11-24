@@ -67,6 +67,30 @@ export function parseConditionsJson(text: string): Condition[] | null {
   }
 }
 
+const norm = (s: string) => s.replace(/[^0-9a-zA-Z가-힣]/g, "").toLowerCase();
+/** 근거 구절 대조에 쓰는 앞부분 길이(LLM이 구절 뒤를 바꿔 쓰는 부분 인용 허용) */
+const EVIDENCE_PREFIX = 12;
+
+/**
+ * AI가 낸 조건의 근거 구절(rawText)이 실제 자격요건 원문에 있는지.
+ * 공백·문장부호는 무시하고, 구절이 길면 앞 12자만 본다. 원문에 없으면 근거 없는(unverified) 조건이다
+ */
+export function evidenceInSource(rawText: string, source: string): boolean {
+  const q = norm(rawText);
+  if (!q) return false;
+  const s = norm(source);
+  const needle = s.includes(q) ? q : q.length > EVIDENCE_PREFIX ? q.slice(0, EVIDENCE_PREFIX) : "";
+  if (!needle) return false;
+  // "무주택세대구성원은 제외"처럼 구절 바로 뒤가 부정·예외면 근거로 인정하지 않는다(나온 곳 중 하나라도 긍정이면 인정).
+  // 구절 안의 부정("주택을 소유하지 않은")은 조건 정의 자체일 수 있어 보지 않는다
+  for (let at = s.indexOf(needle); at >= 0; at = s.indexOf(needle, at + 1)) {
+    const end = at + needle.length;
+    if (!NEGATION.test(s.slice(end, end + 8))) return true;
+  }
+  return false;
+}
+const NEGATION = /^.{0,4}(제외|불가|미해당|해당되지|해당없|대상아님|대상이아닙)/;
+
 export function structureCacheInput(rawText: string): string {
   return `${STRUCTURE_PROMPT_VERSION}\n${rawText}`;
 }
@@ -165,4 +189,14 @@ export function aiEnabled(): boolean {
     process.env.GEMINI_API_KEY ||
     process.env.ANTHROPIC_API_KEY,
   );
+}
+
+/**
+ * 대화형 AI의 "부가 작업"(공고 요약·근무지 추출·자격조건 해석)을 새로 호출할지.
+ * 원칙: 대화형 AI는 질문 생성에 집중한다. 부가 작업은 규칙·원본 필드·저장된 결과로 처리하고,
+ * 공고 수집 때 수백 건씩 부르다 무료 한도에 걸려 대부분 실패하던 호출(로컬 기록 실패율 83~99%)을 없앤다.
+ * 이미 저장된 AI 결과는 계속 쓴다. 다시 켜려면 AI_AUX=1
+ */
+export function auxAiEnabled(): boolean {
+  return aiEnabled() && process.env.AI_AUX === "1";
 }

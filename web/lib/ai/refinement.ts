@@ -4,7 +4,8 @@ import type { Opportunity } from "../types";
 import { RULE_FACETS } from "./refinement-rules";
 
 export interface RefinementEvidence { id: string; title: string; summary: string; domain: string }
-export interface Refinement { text: string; why: string; options: { label: string; ids: string[]; terms?: string[] }[] }
+/** facet: 공고 분류 칼럼으로 만든 질문이면 그 칼럼 id(표본 밖 공고도 칼럼 값으로 나눈다) */
+export interface Refinement { text: string; why: string; facet?: string; options: { label: string; ids: string[]; terms?: string[] }[] }
 
 /** 생성에는 분야별 대표 원문만 사용하고, 반환 구절은 전체 후보에 적용합니다. */
 export function refinementContext(evidence: RefinementEvidence[], answered: {text: string; answer: string}[]) {
@@ -58,7 +59,9 @@ export function validateRefinement(value: unknown, evidence: RefinementEvidence[
 export function refinementValue(q: Refinement, label: string): string { return `${q.text} — ${label}`; }
 export function attachRefinement(pool: Opportunity[], q: Refinement): Opportunity[] {
   return pool.map((o) => {
-    const groups = q.options.filter((option) => option.terms?.length ? option.terms.some((term) => `${o.title} ${o.summary}`.toLowerCase().includes(term.toLowerCase())) : option.ids.includes(o.id)).map((option) => refinementValue(q, option.label));
+    const tag = q.facet ? o.tags?.[q.facet] : undefined;
+    const byTag = tag !== undefined && tag !== "?";
+    const groups = q.options.filter((option) => byTag ? tag === option.label : option.terms?.length ? option.terms.some((term) => `${o.title} ${o.summary}`.toLowerCase().includes(term.toLowerCase())) : option.ids.includes(o.id)).map((option) => refinementValue(q, option.label));
     return groups.length ? { ...o, conditions: [...o.conditions, { attr: "topic" as const, op: "in" as const, value: groups, confidence: "high" as const, rawText: `탐색 선호: ${q.text}` }] } : o;
   });
 }

@@ -27,10 +27,23 @@ beforeEach(() => {
   _resetClient();
   delete process.env.ANTHROPIC_API_KEY;
   delete process.env.GEMINI_API_KEY;
+  process.env.AI_AUX = "1"; // 아래 AI 추출 테스트는 부가 AI 작업을 켠 상태 기준
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  delete process.env.AI_AUX;
+});
+
+test("기본(AI_AUX 없음)에서는 키가 있어도 장소 추출에 대화형 AI를 부르지 않는다", async () => {
+  delete process.env.AI_AUX;
+  process.env.GEMINI_API_KEY = "test";
+  const fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  const { extractPlace } = await import("./extract");
+  const out = await extractPlace({ id: "x:1", domain: "housing", title: "어느 공고", org: "기관", region: [], summary: "", conditions: [], url: "https://e.go.kr", source: "x", isSample: false, fetchedAt: "" } as never);
+  expect(out).toEqual({ address: null, place: null });
+  expect(fetchMock).not.toHaveBeenCalled();
 });
 
 describe("공고 장소 추출", () => {

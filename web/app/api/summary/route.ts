@@ -1,4 +1,4 @@
-import { aiEnabled } from "@/lib/ai";
+import { aiEnabled, auxAiEnabled } from "@/lib/ai";
 import { cachedSummaries, summarizeOpportunities } from "@/lib/ai/summary";
 import { loadOpportunities } from "@/lib/sources";
 
@@ -17,6 +17,8 @@ export async function POST(req: Request) {
     const cachedIds = new Set(cached.map((item) => item.id));
     const missingIds = ids.filter((id) => !cachedIds.has(id));
     if (!missingIds.length) return Response.json({ ai: true, items: cached });
+    // 부가 작업: 새 AI 요약은 AI_AUX=1일 때만. 기본은 카드가 공고 원본 요약·신청방법을 그대로 보여 준다
+    if (!auxAiEnabled()) return Response.json(cached.length ? { ai: true, items: cached } : { ai: false });
 
     // 직전 공고 조회에서 채운 어댑터 캐시를 재사용하므로 원격 조회를 최소화합니다.
     const opportunities = await loadOpportunities();

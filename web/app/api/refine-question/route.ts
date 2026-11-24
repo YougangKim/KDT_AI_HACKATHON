@@ -10,6 +10,16 @@ import {
   getPromotedQuestion,
   saveQuestionDefinition,
 } from "@/lib/server/question-feedback";
+import { ruleRefinement } from "@/lib/ai/refinement-rules";
+import { allFacets, registerFacet } from "@/lib/server/facets";
+import type { Domain, Opportunity } from "@/lib/types";
+
+/** 클라이언트가 보낸 분류 칼럼 값(문자열만, 개수·길이 제한) */
+function cleanTags(v: unknown): Record<string, string> | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const out = Object.fromEntries(Object.entries(v as Record<string, unknown>).filter(([k, x]) => typeof x === "string" && k.length <= 40).slice(0, 60).map(([k, x]) => [k, String(x).slice(0, 80)]));
+  return Object.keys(out).length ? out : undefined;
+}
 
 export const runtime = "nodejs";
 const SYSTEM = `청년 공고 탐색 대화를 이어갑니다. 정해진 질문 목록에서 고르지 않습니다.
@@ -23,7 +33,6 @@ const SYSTEM = `청년 공고 탐색 대화를 이어갑니다. 정해진 질문
 JSON만 출력합니다: {"text":"새 질문","why":"무슨 후보 차이를 확인하는지","options":[{"label":"선택지","terms":["원문 구절"]}]}`;
 
 export async function POST(req: Request) {
-  if (!aiEnabled()) return Response.json({ ai: false, reason: "unavailable" });
   try {
     const raw = await req.text();
     if (raw.length > 120000) return Response.json({ ai: false }, { status: 413 });
@@ -31,6 +40,11 @@ export async function POST(req: Request) {
     if (!Array.isArray(body.evidence) || body.evidence.length < 2 || body.evidence.length > 240 || !Array.isArray(body.answered) || body.answered.length > 300) return Response.json({ ai: false });
     const evidence: RefinementEvidence[] = body.evidence.map((o: RefinementEvidence) => ({ id: String(o.id).slice(0, 200), title: String(o.title ?? "").slice(0, 160), summary: String(o.summary ?? "").slice(0, 240), domain: String(o.domain ?? "").slice(0, 20) }));
     const answered = body.answered.map((a: { text: string; answer: string }) => ({ text: String(a.text ?? "").slice(0, 200), answer: String(a.answer ?? "").slice(0, 30) }));
+    // 1) 공고 DB에 저장된 분류 칼럼(기본 + AI 질문으로 생긴 칼럼)으로 나눌 수 있으면 생성형 AI 없이 바로 질문
+    const tagged = (body.evidence as { tags?: unknown }[]).map((o, i) => ({ ...evidence[i], tags: cleanTags(o.tags) }) as unknown as Opportunity);
+    const byTags = ruleRefinement(tagged, answered.map((a: { text: string }) => ({ question: { text: a.text } })), { tagsOnly: true, facets: await allFacets() });
+    if (byTags) return Response.json({ ai: true, question: byTags, source: "tags" });
+    if (!aiEnabled()) return Response.json({ ai: false, reason: "unavailable" });
     const poolKey = refinementPoolKey(evidence.map((item) => item.id));
     if (Math.random() >= 0.1) {
       const pooled = validateRefinement(await getPromotedQuestion(poolKey), evidence, answered);
@@ -55,6 +69,9 @@ export async function POST(req: Request) {
     if (question) {
       const feedbackKey = refinementQuestionKey(question);
       await saveQuestionDefinition(feedbackKey, poolKey, question);
+      // 2) 새로 만든 질문은 분류 칼럼으로 등록 → 다음 공고 풀 수집 때 이 칼럼만 전체 공고에 한 번 분류
+      const ids = new Set(question.options.flatMap((o) => o.ids));
+      await registerFacet(question, [...new Set(evidence.filter((e) => ids.has(e.id)).map((e) => e.domain as Domain))]).catch(() => null);
       return Response.json({ ai: true, question, feedbackKey });
     }
     return Response.json({ ai: false, reason: "no_grounded_question" });

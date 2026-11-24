@@ -1,4 +1,4 @@
-import { FAST_MODEL, ask, aiEnabled } from "../ai";
+import { FAST_MODEL, ask, auxAiEnabled } from "../ai";
 import { getCached, setCached } from "../ai/cache";
 import type { Opportunity } from "../types";
 import { getEligibility } from "../sources/util";
@@ -86,7 +86,7 @@ export async function extractPlace(opportunity: Opportunity): Promise<ExtractedP
     cache.set(opportunity.id, persisted);
     return persisted;
   }
-  if (!aiEnabled()) return { address: null, place: null };
+  if (!auxAiEnabled()) return { address: null, place: null }; // 부가 작업: 기본은 규칙·저장된 결과만(AI_AUX=1이면 AI 추출)
 
   const text = await ask(
     FAST_MODEL,
@@ -117,7 +117,6 @@ export function attachPlaces(items: Opportunity[]): Opportunity[] {
     return place ? { ...item, place } : item;
   });
 
-  if (!aiEnabled()) return output;
   const candidates = items
     .filter((item) => !item.place && !(isRecruit(item) && !workplaceText(item)) && !extractPlaceRules(item) && !cache.has(item.id) && !pending.has(item.id))
   void (async () => {
@@ -126,6 +125,8 @@ export function attachPlaces(items: Opportunity[]): Opportunity[] {
       if (hit) cache.set(item.id, hit);
     }
   })();
+  // 저장된 결과는 위에서 읽어 두고, 새 AI 추출은 부가 작업이 켜져 있을 때만
+  if (!auxAiEnabled()) return output;
   const todo = candidates
     .filter((item) => !cache.has(item.id))
     .slice(0, MAX_AI_EXTRACTIONS);

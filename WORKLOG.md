@@ -1,5 +1,17 @@
 # 작업 로그 — 대한상공회의소 AI 해커톤
 
+## 2026-11-24 19:55 kepigame 나이 맞히기 동작 분석 (Claude, 문서만)
+
+- 사용자 요청: kepigame.com/games/nenrei.html 동작을 LeanREA 방식(공개 JS 읽기 전용, 격리 사본, 사실·추정 구분)으로 분석. GitHub 공개 저장소 없음. 문항 데이터 복제·저장 안 함.
+- 결과 `docs/분석_kepigame_나이맞히기.md`: LLM 실행 시 미사용, 매개변수 문항 약 945개, 나이×유형 32종 베이즈 갱신 + 기대 정보이득 선택, 실사용 기록 보정은 재생 검증 후 적용. 우리에게 획기적 알고리즘 이식은 없고 검증 보강(audit-live 확장·독립 정답셋)과 지역 사전확률 실험만 조건부.
+- Codex 교차 평가 66/100 조건부(`.ai-sync/tasks/20261124T105344-codex/result.md`), 지적 6건 반영. 코드 수정·커밋 없음.
+
+## 2026-11-24 19:45 알림 설정 "내 조건" 요약 제거 (Claude)
+
+- `web/app/settings/page.tsx`: 긴 조건 요약 문단과 "내 조건" 제목 제거, 펼침 버튼 문구 "상세 조건 수정"→"내 조건 수정". 미사용 `summarizeConditions` import 제거. 다른 화면 변경 없음.
+- 검증: build(별도 distDir) 통과, vitest 243 통과. tsc 오류는 `scripts/compare-question-input.test.ts`(다른 스레드 작업)에서만. 3950 서버(next start)는 재빌드·재시작 안 함.
+- 배포(사용자 요청): 9c75dfc(채용 정책 공고·지역 핀, 이미 배포 완료) 위에 settings만 커밋 82168ed 푸시, Vercel success, 운영 /settings 번들에 "내 조건 수정" 확인.
+
 ## 2026-11-24 19:20 My News 로고 시안 6종 (Codex 제작·Claude 조율)
 
 - 현재 로고(남색 말풍선+신호 물결+민트 점) 기준으로 Codex가 서로 다른 스타일 시안 6개 SVG 제작(`.ai-sync/tasks/20261124T101505-codex/result.md`). 종이 신문 모티프 제외.
@@ -476,3 +488,19 @@
 - 2026-11-24 19:20 Claude: AI 체인 구조 검토 `docs/설계/AI_트래픽_대응/공고지식DB_RAG_구조화_검토.md`(공고 지식 DB+Jev+원문 청크 RAG 안, 부족한 점 P1~P7, 시나리오 S1~S5). 코드 미수정. Codex 교차 검토(`.ai-sync/tasks/20261124T101555-codex/result.md`): 전면 전환 반려·최소 수정 4개만 조건부 추천(기준선, 본문 해시 재분류, 재시도 불가 오류 폴백 중단, 일반 질문 근거 대표 표본). 반영 완료.
 
 - 11/24 19:15 Claude: 신청 준비 '한눈에' 항목명 내용·날짜·장소·신청방법, 내용은 목적(지원·채용 등) 포함 문장(contentLine), 대상 경고 배너 최하단 이동. 초안 기능 폐기분과 함께 커밋·푸시·배포.
+
+- 2026-11-24 Claude: carryTags 이월 조건을 제목만 → 분류 입력 전체(제목·기관·요약, jevState)로 강화(RAG 검토 P2-1). 요약만 바뀐 공고도 다시 분류. classify 테스트 8 통과.
+
+- 2026-11-24 20:15 Claude: 근거·상태 재사용 1단계 구현(사용자 승인, 설계 `docs/설계/AI_트래픽_대응/근거상태_재사용_설계.md`). ① AI 조건 메모리 캐시·대기 키 = id+프롬프트 버전+원문 해시(`lib/sources/index.ts` aiKey) ② LLM 조건 근거 구절을 원문과 대조, 없거나 바로 뒤가 제외·불가면 confidence low(`lib/ai/index.ts` evidenceInSource, applyAi) ③ Jev 대상 판정 관찰 모드 `lib/ai/target-judge.ts`(JEV_OBSERVE=1, 결과 미반영, 수집과 분리된 순차 예약, 수집당 200건·중복 예약 방지) + 측정 스크립트 `web/scripts/jev-target-observe.test.ts`(AI_EVAL=1). 테스트 `lib/sources/evidence.test.ts`. Codex 리뷰 반려(`.ai-sync/tasks/20261124T110546-codex/`)→수정→조건부 통과(`20261124T110912-codex/`), 남은 지적(관찰이 aiEnabled에 종속·중복 예약·다중 일치 부정·상한 테스트) 수정. test 257·tsc·빌드 통과. 실제 공고 측정은 실 API 호출이라 자동 모드 차단, 사용자 허락 대기. 커밋 안 함. 그림 `docs/설계/AI_트래픽_대응/06·07_*.png`.
+
+- 2026-11-24 20:25 Claude: RAG 전체 적용 1차(사용자 "전체 적용" 승인): 공고 자격요건 원문을 `Opportunity.eligibility`(2,000자)로 공고 DB에 저장(WeakMap 제거, `lib/sources/util.ts` withEligibility·forClient), `/api/opportunities`는 원문 제외, next-question 근거 표본을 분야별 고르게 4건(`app/play/page.tsx`), 측정 스크립트는 풀 원문 우선. test 261·tsc·빌드 통과. Codex 리뷰 반려(`.ai-sync/tasks/20261124T111638-codex/`): 아직 RAG 전체 아님(next-question 원문 미사용), 원문 포함 풀 Upstash 용량·조각 수 미측정(이론상 +12.9MB), 재수집 시 AI 호출량 회귀 미측정. 실측은 새 수집(실 API) 필요 → 사용자 허락 대기. 커밋 안 함.
+
+- 2026-11-24 20:35 Claude: 공고 요약 AI 대체 검토 `docs/설계/AI_트래픽_대응/공고요약_AI대체_검토.md`(코드 미수정). 로컬 캐시 61건 중 52건 실패, 성공분도 대부분 원본 재서술 → 규칙 템플릿 추천. Codex 조건부(`.ai-sync/tasks/20261124T112255-codex/`) 반영.
+
+- 2026-11-24 20:45 Claude: 사용자 원칙 "대화형 AI는 질문 생성에 집중" 적용. `lib/ai/index.ts` auxAiEnabled()(AI_AUX=1일 때만) → 새 AI 호출 중단: 공고 요약(`app/api/summary`), 근무지 추출(`lib/geo/extract.ts`), 자격조건 해석(`lib/sources/index.ts` enrichWithAi). 저장된 AI 결과는 계속 사용(키 없어도). 질문 생성(next-question·refine-question·play/phrase)은 그대로. 근거: 로컬 기록 실패율 위치 99%(937/950)·요약 85%(52/61)·조건 83%(602/725). Codex 조건부(`.ai-sync/tasks/20261124T113251-codex/`): 저장 결과 회귀 지적 반영, Jev 호출도 막으라는 지적은 Jev가 대화형 AI가 아니라 미반영. test 260·tsc·빌드 통과. 커밋 안 함.
+
+- 2026-11-24 20:55 Claude: 사용자 원칙 "AI 질문 생성은 분류가 막혔을 때만" 적용(`web/app/play/page.tsx`). 매 질문마다 규칙 질문을 AI가 고르고 다시 쓰던 `/api/next-question` 호출 제거(aiPick·generated·pickOff 삭제). 규칙 질문으로 나눌 수 있으면 그대로 묻고, 막힘(규칙 질문 없음 또는 가장 좋은 예/아니오 질문도 후보를 10% 미만으로만 줄임)일 때만 추가 질문 경로(Jev 분류 칼럼 우선 → 없으면 `/api/refine-question` AI). 이전의 "3문항 뒤·이어묻기면 무조건 AI 추가 질문" 조건 제거. Codex 리뷰 반려(`.ai-sync/tasks/20261124T113632-codex/`)→수정→승인(`20261124T113910-codex/`). test 260·tsc·빌드 통과. 브라우저 확인은 3950 재시작 필요(안 함). 커밋 안 함.
+
+- 2026-11-24 21:05 Claude: 생성형 AI 대신 파싱(사용자 요청). 국비훈련 API 주소를 place로 저장(`lib/sources/work24-training.ts`, 기존 장소 0/1,000건), 자격조건 규칙 보강(`lib/ai/rules.ts`: 부정·예외 문구, 신혼·청약통장·경력·학력 low, `lib/sources/util.ts` 분야 제한). 테스트 `lib/ai/rules-parse.test.ts`. 라이브러리 조사 Codex(`.ai-sync/tasks/20261124T114030-codex/`), 코드 리뷰 반려→조건부→남은 1건 수정. test 272·tsc·빌드 통과. 문서 `docs/설계/AI_트래픽_대응/AI대체_파싱_방안.md`. 커밋 안 함.
+
+- 2026-11-25 03:15 Claude: 두 작업 통합·배포 준비(사용자 요청). 무료 AI 조사 스레드(Jev 태그 DB 칼럼·새 질문 칼럼·carryTags)와 이 스레드(원문 저장·근거 대조·Jev 관찰·부가 AI 차단·막혔을 때만 질문 AI·국비훈련 주소·자격조건 파싱)를 함께 검증. Codex 배포 리뷰 반려(`.ai-sync/tasks/20261124T175637-codex/`) → 공고 DB Upstash 저장을 세대 키+예전 세대 EXPIRE 600초, 동시 수집 락(SET NX EX 330)으로 수정, 원문 저장 상한 1,000자 → 재검토 배포 가능(`20261124T181313-codex/`). 남은 권고: 락 해제 compare-and-delete(Lua), 새 칼럼 전체 분류가 실행당 400건이라 여러 회 걸림, facets 동시 등록 유실 가능. e2e 시나리오 2개 갱신(알림 설정 문구, 더 좁히기가 규칙 질문 우선). vitest 274·tsc·빌드·e2e 14/15(1 skip) 통과.

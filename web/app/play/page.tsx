@@ -16,7 +16,6 @@ import { filterMatchesByRadius, type UserLocation } from "@/lib/geo/distance";
 import { nearestRegion } from "@/lib/geo/regions";
 import type { Answer, AnswerRecord, Domain, Opportunity, Question } from "@/lib/types";
 import { LogoSymbol } from "@/components/brand/Logo";
-import type { GeneratedQuestion, QuestionFacet } from "@/lib/ai/question-contract";
 import { answerGroups } from "@/lib/engine/answer-groups";
 import { attachRefinement, refinementValue, type Refinement } from "@/lib/ai/refinement";
 import { ruleRefinement } from "@/lib/ai/refinement-rules";
@@ -276,8 +275,6 @@ export default function PlayPage() {
   const [missing, setMissing] = useState<string[]>([]); // 골랐지만 연결된 공고가 없는 분야
   const [continuing, setContinuing] = useState(false);
   const [selected, setSelected] = useState<string[]>([]); // 여러 개 고르기 선택 중
-  const [aiPick, setAiPick] = useState<Record<number, string>>({}); // 단계별 AI가 고른 질문 id("" = 규칙 1순위)
-  const [generated, setGenerated] = useState<Record<number, GeneratedQuestion>>({});
   const [refinements, setRefinements] = useState<Record<number, Refinement>>({});
   const [feedbackKeys, setFeedbackKeys] = useState<Record<number, string>>({});
   const [refineAttempted, setRefineAttempted] = useState<Record<number, boolean>>({});
@@ -286,7 +283,6 @@ export default function PlayPage() {
   const [target, setTarget] = useState<number | null>(null); // 결과에서 "N개 이하로 좁히기": 남은 후보가 이 수 이하면 멈춘다
   const [location, setLocation] = useState<UserLocation>();
   const aiOff = useRef(false);
-  const pickOff = useRef(false);
   const shownFeedback = useRef(new Set<string>());
 
   useEffect(() => {
@@ -328,13 +324,17 @@ export default function PlayPage() {
     const asked = base + step; // 답한 질문 수(지역·소득 등 선택형은 한 번으로 셈)
     const grouped = new Set(state.answers.filter((a) => PICKER_ATTRS.has(a.question.attr)).map((a) => a.question.attr));
     const ranked: RankedQuestion[] = asked >= limit || stopNow ? [] : rankQuestions(state, 100).filter((r) => !grouped.has(r.question.attr)).slice(0, 5);
-    const picked = aiPick[step];
-    // AI가 고른 질문이 있으면 그것, AI가 아직 고르는 중이면 대기, AI를 못 쓰면 규칙(정보 이득) 1순위
     const refine = refinements[step];
-    const needsRefine = !stopNow && left > 1 && asked < limit && (continuing || step >= 3 || !ranked.length);
+    // 원칙: 대화형 AI는 분류가 막혔을 때만 새 질문을 만든다.
+    // 규칙 질문(정보 이득 1순위)으로 나눌 수 있으면 그대로 묻고 AI를 부르지 않는다. 막힘 = 남은 규칙 질문이 없거나,
+    // 가장 좋은 예/아니오 질문도 후보를 10% 미만으로만 줄일 때(선택형 질문은 선택지별로 나뉘므로 막힘으로 보지 않음).
+    // 막히면 추가 질문 경로: 공고 DB 분류 칼럼(Jev)으로 먼저 나누고, 그것도 안 될 때만 /api/refine-question이 AI로 생성
+    const best = ranked[0];
+    const weak = !!best && !choiceFor(state, best.question) && Math.max(best.yes, best.no) > left * 0.9;
+    const needsRefine = !stopNow && left > 1 && asked < limit && (!ranked.length || weak);
     const refining = needsRefine && !refineAttempted[step];
-    const waiting = refining || (!refine && ranked.length > 0 && !pickOff.current && picked === undefined);
-    const chosen = ranked.find((r) => r.question.id === picked) ?? (waiting ? null : ranked[0] ?? null);
+    const waiting = refining;
+    const chosen = waiting ? null : ranked[0] ?? null;
     const failedRefinement = needsRefine && !!refineAttempted[step] && !refine;
     // AI 추가 질문 생성이 실패해도(한도·장애) 규칙 기반 질문이 남아 있으면 그걸로 계속 묻는다(흐름이 멈추지 않게)
     const q = refine
@@ -352,16 +352,8 @@ export default function PlayPage() {
       options: refine.options.map((option) => ({ label: option.label, picks: refine.options.map((other) => ({ question: { ...makeQuestion("topic", refinementValue(refine, other.label)), text: `${refine.text} — ${other.label}` }, answer: other.label === option.label ? "yes" : "no" })) })),
       unknown: refine.options.map((option) => ({ question: { ...makeQuestion("topic", refinementValue(refine, option.label)), text: `${refine.text} — ${option.label}` }, answer: "unknown" })),
     };
-    const ai = generated[step];
-    if (!refine && ai && q?.id === ai.id) {
-      if (choice) choice = { ...choice, title: ai.text, help: ai.why, options: choice.options.map((o, i) => {
-        const label = ai.options.find((option) => option.key === String(i))?.label ?? o.label;
-        return { ...o, label, picks: o.picks.map((p) => ({ ...p, question: { ...p.question, text: `${ai.text} — ${label}` } })) };
-      }) };
-      else choice = { title: ai.text, help: ai.why, group: "맞춤 선택", options: ai.options.map((o) => ({ label: o.label, picks: [{ question: { ...q, text: ai.text }, answer: o.key as Answer }] })), unknown: [{ question: { ...q, text: ai.text }, answer: "unknown" }] };
-    }
-    return { left, asked, step, q, done, split: chosen ? { yes: chosen.yes, no: chosen.no } : null, choice, ranked, waiting, refining, byAi: !!refine || (!!picked && chosen?.question.id === picked), stuck: !done && failedRefinement && !q };
-  }, [state, stopNow, limit, base, history, aiPick, continuing, generated, refinements, refineAttempted, target]);
+    return { left, asked, step, q, done, split: chosen ? { yes: chosen.yes, no: chosen.no } : null, choice, ranked, waiting, refining, byAi: !!refine, stuck: !done && failedRefinement && !q };
+  }, [state, stopNow, limit, base, history, continuing, refinements, refineAttempted, target]);
 
   // 공고를 구분할 수 있는 축과 실제 답변 이력으로 AI가 질문·선택지를 생성합니다.
   const pickKey = view?.waiting ? view.step : null;
@@ -373,7 +365,7 @@ export default function PlayPage() {
       const buckets = Object.keys(DOMAIN_NAME).map((domain) => candidates.filter((o) => o.domain === domain));
       const sample: Opportunity[] = [];
       for (let i = 0; sample.length < 240 && buckets.some((b) => b[i]); i++) for (const b of buckets) if (b[i] && sample.length < 240) sample.push(b[i]);
-      fetch("/api/refine-question", { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(25000), body: JSON.stringify({ evidence: sample.map((o) => ({ id: o.id, domain: o.domain, title: o.title.slice(0, 160), summary: o.summary.slice(0, 240) })), answered: state.answers.map((a) => ({ text: a.question.text, answer: a.answer })) }) })
+      fetch("/api/refine-question", { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(25000), body: JSON.stringify({ evidence: sample.map((o) => ({ id: o.id, domain: o.domain, title: o.title.slice(0, 160), summary: o.summary.slice(0, 240), tags: o.tags })), answered: state.answers.map((a) => ({ text: a.question.text, answer: a.answer })) }) })
         .then((r) => r.json()).catch(() => ({})).then((d: { question?: Refinement; feedbackKey?: string }) => {
           // AI가 질문을 못 만들면(한도·장애·근거 부족) 남은 공고 분포로 규칙 질문을 만든다
           const refinement = d.question ?? (continuing || !view.ranked.length ? ruleRefinement(candidates, state.answers) : null);
@@ -383,34 +375,9 @@ export default function PlayPage() {
           if (d.question && d.feedbackKey) {
             setFeedbackKeys((m) => ({ ...m, [pickKey]: d.feedbackKey! }));
           }
-        }).catch(() => {}).finally(() => { if (alive) { setRefineAttempted((m) => ({ ...m, [pickKey]: true })); setAiPick((m) => ({ ...m, [pickKey]: "" })); } });
+        }).catch(() => {}).finally(() => { if (alive) setRefineAttempted((m) => ({ ...m, [pickKey]: true })); });
       return () => { alive = false; };
     }
-    const facets: QuestionFacet[] = view.ranked.map((r) => {
-      const choice = choiceFor(state, r.question);
-      return { id: r.question.id, text: choice?.title ?? r.question.text, options: choice ? choice.options.map((o, i) => {
-        const answers = choice.multi ? choice.options.flatMap((other) => other.picks.map((p) => ({ ...p, answer: (other === o ? "yes" : "no") as Answer }))) : o.picks;
-        const next = answers.reduce((s, a) => applyAnswer(s, a.question, a.answer), state);
-        return { key: String(i), label: o.label, remaining: remaining(next) };
-      }) : [{ key: "yes", label: "예", remaining: r.yes }, { key: "no", label: "아니오", remaining: r.no }] };
-    }).filter((f) => f.options.length >= 2);
-    const answered = state.answers.map((a) => ({ text: a.question.text, answer: a.answer }));
-    const live = aliveOpps(state);
-    const evidence = Object.keys(DOMAIN_NAME).flatMap((domain) => live.filter((o) => o.domain === domain).slice(0, 4)).map((o) => ({ domain: o.domain, title: o.title, summary: o.summary.slice(0, 240) }));
-    fetch("/api/next-question", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ facets, evidence, answered, total: view.left }), signal: AbortSignal.timeout(15000) })
-      .then((r) => r.json())
-      .then((d: { ai: boolean; id?: string; question?: GeneratedQuestion; reason?: string; feedbackKey?: string }) => {
-        if (alive && d.question) setGenerated((m) => ({ ...m, [pickKey]: d.question! }));
-        if (alive && d.question && d.feedbackKey) {
-          setFeedbackKeys((m) => ({ ...m, [pickKey]: d.feedbackKey! }));
-        }
-        if (d.reason === "unavailable") pickOff.current = true;
-        if (alive) setAiPick((m) => ({ ...m, [pickKey]: d.ai && d.id ? d.id : "" }));
-      })
-      .catch(() => alive && setAiPick((m) => ({ ...m, [pickKey]: "" })));
-    return () => {
-      alive = false;
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pickKey]);
 
@@ -487,8 +454,6 @@ export default function PlayPage() {
     const previousKey = feedbackKeys[previousStep];
     sendQuestionFeedback(previousKey, "undo", remaining(history.at(-1)!), remaining(previous));
     if (previousKey) shownFeedback.current.delete(`${previousStep}:${previousKey}`);
-    setAiPick((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
-    setGenerated((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
     setRefinements((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
     setRefineAttempted((m) => Object.fromEntries(Object.entries(m).filter(([k]) => Number(k) < history.length - 1)));
     setHistory(history.slice(0, -1));

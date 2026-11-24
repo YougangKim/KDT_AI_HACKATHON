@@ -1,7 +1,9 @@
 // 공고 수집 진입점. 실제 출처만 사용하며 키 없음·실패·0건은 빈 결과로 처리합니다.
 import type { Condition, Domain, Opportunity } from "../types";
 import { normalizeRegion } from "../ai/rules";
-import { aiEnabled, cachedStructuredConditions, structureConditions } from "../ai";
+import { auxAiEnabled, cachedStructuredConditions, evidenceInSource, STRUCTURE_PROMPT_VERSION, structureConditions } from "../ai";
+import { cacheKey } from "../ai/cache";
+import { resetObserveBudget, scheduleObservation } from "../ai/target-judge";
 import { regionsIn } from "../ai/rules";
 import { attachGeo } from "../geo/geocode";
 import { attachPlaces, _clearExtractCache } from "../geo/extract";
@@ -22,6 +24,7 @@ import { searchWeb } from "./websearch";
 import { fetchShRss } from "./sh-rss";
 import { dedupeOpportunities } from "./dedupe";
 import { addTargetConditions } from "./targets";
+import { FIELD_TAG, known } from "./classify";
 
 export const ALL_DOMAINS: Domain[] = ["housing", "job", "parttime", "benefit", "training", "exam"];
 
@@ -39,6 +42,10 @@ export interface SourceRunMeta {
   error?: string;
 }
 const aiConditionCache = new Map<string, Condition[]>();
+/** 메모리 캐시 키: 같은 공고라도 자격요건 원문이나 구조화 프롬프트가 바뀌면 다시 해석한다 */
+export function aiKey(o: Opportunity): string {
+  return `${o.id}|${STRUCTURE_PROMPT_VERSION}|${cacheKey(getEligibility(o) ?? "")}`;
+}
 
 /** 테스트용 */
 export function _clearCache() {
@@ -78,12 +85,14 @@ async function runAdapter(
 }
 
 /** AI가 해석한 조건을 공고에 입힌다(규칙 조건 우선, AI는 빈 속성만 채움) */
-function applyAi(o: Opportunity, conds: Condition[]): Opportunity {
+export function applyAi(o: Opportunity, conds: Condition[]): Opportunity {
   // 교차 평가 결과(규칙 정밀도 91% > AI 70%) 규칙 조건은 모두 유지하고, AI는 규칙이 못 찾은 속성만 보완합니다
   const keep = o.conditions;
+  const raw = getEligibility(o) ?? "";
   const add = conds
     .filter((c) => c.attr !== "interest" && !keep.some((k) => k.attr === c.attr) && plausibleAiCondition(c))
-    .map((c) => ({ ...c, aiGenerated: true }));
+    // 근거 구절이 원문에 없으면(AI가 지어냈거나 바꿔 쓴 구절) 탈락시키지 않고 "확인 필요"로 둔다
+    .map((c) => ({ ...c, aiGenerated: true, ...(raw && !evidenceInSource(c.rawText, raw) ? { confidence: "low" as const } : {}) }));
   return { ...o, conditions: [...keep, ...add] };
 }
 
@@ -112,28 +121,32 @@ const AI_CONCURRENCY = 2; // 무료 등급(Gemini) 분당 한도 때문에 동�
 
 /** 키가 있으면 실데이터 자격요건을 AI(Claude 또는 Gemini)로 다시 구조화(분야·지역 조건은 유지) */
 async function enrichWithAi(items: Opportunity[], wait: boolean): Promise<Opportunity[]> {
-  if (!aiEnabled()) return items;
+  // AI 키가 없어도 저장된 AI 해석은 쓴다(새 호출은 아래에서 auxAiEnabled일 때만)
   if (!wait) {
     // 화면 요청은 AI를 기다리지 않는다: 이미 해석한 공고만 AI 조건을 쓰고, 나머지는 뒤에서 해석해 다음 요청부터 반영
-    const todo = items.filter((o) => !aiConditionCache.has(o.id) && !aiPending.has(o.id) && getEligibility(o));
-    todo.forEach((o) => aiPending.add(o.id));
-    if (todo.length) void enrichWithAi(todo, true).catch(() => {}).finally(() => todo.forEach((o) => aiPending.delete(o.id)));
-    return items.map((o) => (aiConditionCache.has(o.id) ? applyAi(o, aiConditionCache.get(o.id)!) : o));
+    const todo = items.filter((o) => getEligibility(o) && !aiConditionCache.has(aiKey(o)) && !aiPending.has(aiKey(o)));
+    const keys = todo.map(aiKey);
+    keys.forEach((k) => aiPending.add(k));
+    if (todo.length) void enrichWithAi(todo, true).catch(() => {}).finally(() => keys.forEach((k) => aiPending.delete(k)));
+    return items.map((o) => (aiConditionCache.has(aiKey(o)) ? applyAi(o, aiConditionCache.get(aiKey(o))!) : o));
   }
   let budget = AI_ENRICH_LIMIT;
   const enrich = async (o: Opportunity): Promise<Opportunity> => {
     const raw = getEligibility(o);
     if (!raw) return o;
-    let conds = aiConditionCache.get(o.id);
+    const key = aiKey(o);
+    let conds = aiConditionCache.get(key);
     if (!conds) {
       conds = await cachedStructuredConditions(raw) ?? undefined;
-      if (conds) aiConditionCache.set(o.id, conds);
+      if (conds) aiConditionCache.set(key, conds);
     }
     if (!conds) {
+      // 부가 작업: 새 AI 해석은 AI_AUX=1일 때만(기본은 규칙 조건 + 저장된 AI 해석만)
+      if (!auxAiEnabled()) return o;
       // 영구 캐시 적중은 위에서 처리하므로 신규 AI 요청만 상한을 차감합니다.
       if (budget-- <= 0) return o;
       conds = await structureConditions(raw);
-      aiConditionCache.set(o.id, conds);
+      aiConditionCache.set(key, conds);
     }
     return applyAi(o, conds);
   };
@@ -160,6 +173,7 @@ export async function collectLiveOpportunities(
   } = {},
 ): Promise<Opportunity[]> {
   const wanted = domains.filter((d) => ALL_DOMAINS.includes(d));
+  resetObserveBudget(); // Jev 관찰 상한은 수집 1회 전체에서 공유
   const fixture = await readFixture();
   const adapters = (opts.adapters ?? ADAPTERS).filter((a) => a.domains.some((d) => wanted.includes(d)));
   // 테스트 파일이 있으면 어댑터 응답만 그 파일로 바꾸고, 마감·AI·중복 제거 등 후처리는 운영과 똑같이 거친다
@@ -179,6 +193,8 @@ export async function collectLiveOpportunities(
       const el = getEligibility(o) ?? "";
       return withEligibility(addTargetConditions(o, el), el); // 새 객체에도 자격요건 원문 유지(AI 해석용)
     });
+    // Jev 관찰만: 대상 판정을 뒤에 예약해 저장한다(기다리지 않음, 조건에 쓰지 않음, 일반 AI 사용 여부와 무관)
+    for (const o of liveOpen) scheduleObservation(getEligibility(o) ?? "");
     const picked = await enrichWithAi(liveOpen, opts.waitAi ?? false);
     for (const o of picked) {
       if (seen.has(o.id)) continue;
@@ -199,6 +215,7 @@ export async function collectLiveOpportunities(
   const deduped = dedupeOpportunities(out.filter((o) => !o.isSample && o.origin !== "sample" && !notForYouth(o)));
   // 일괄 수집은 시간 여유가 있으니 카카오 좌표 조회를 넉넉히(무료 한도 일 10만 회 안쪽)
   const located = await attachGeo(attachPlaces(deduped), opts.full ? 3000 : undefined);
+  // 직무 분야·세분화 칼럼(Jev 분류)은 공고 풀(DB)에 넣을 때 한 번만 붙인다(lib/server/pool.ts)
   return located.map(inferRegion).map(inferJobConditions);
 }
 
@@ -341,6 +358,17 @@ export function inferJobConditions(o: Opportunity): Opportunity {
     const find = (t: string) => FIELD_KEYWORDS.filter(([, re]) => re.test(t)).map(([f]) => f);
     // 제목(기관명 제외) → 요약 → 기관명 순으로 찾는다
     const fields = [title, o.summary ?? "", `${o.org ?? ""} ${o.title}`].map(find).find((f) => f.length) ?? [];
+    // Jev 판단 모델이 확신한 직무 분야가 있으면 키워드보다 우선한다(키워드는 "AI"·"생산" 같은 단어에 쉽게 오인)
+    const tag = o.tags?.[FIELD_TAG];
+    const jev = known(tag) ? tag : undefined;
+    if (jev === OPEN_FIELD) {
+      conditions.push({ attr: "field", op: "in", value: [OPEN_FIELD], rawText: "직무 제한 없는 일반 채용(AI 판단 모델로 판별)", confidence: "high", aiGenerated: true });
+      return { ...o, conditions };
+    }
+    if (jev) {
+      conditions.push({ attr: "field", op: "in", value: [jev], rawText: `직무 분야: ${jev}(AI 판단 모델로 판별)`, confidence: "high", aiGenerated: true });
+      return { ...o, conditions };
+    }
     // 분야를 못 찾은 공고는 전문직 제한이 있는지로 나눈다:
     //  - 경력·자격·면허·전문직 표시가 있으면 "분야 미표기"(직무를 원문에서 확인해야 함)
     //  - 신입·공개채용·인턴·학력무관처럼 직무 제한 없는 일반 채용이면 "직무 무관"
