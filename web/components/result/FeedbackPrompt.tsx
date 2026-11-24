@@ -31,6 +31,8 @@ function Scale({ value, set, lo, hi, label }: { value: number; set: (n: number) 
   );
 }
 
+const ASK_SECONDS = 10; // 승인 메시지는 10초 뒤 자동으로 닫힘("다음에"와 같게 처리)
+
 export function FeedbackPrompt({ trigger }: { trigger: number }) {
   const [step, setStep] = useState<"none" | "ask" | "form" | "done">("none");
   const [ease, setEase] = useState(0);
@@ -40,12 +42,24 @@ export function FeedbackPrompt({ trigger }: { trigger: number }) {
   const [comment, setComment] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const [left, setLeft] = useState(ASK_SECONDS);
 
   useEffect(() => {
     if (!trigger || !shouldAsk(readState())) return;
     const t = setTimeout(() => setStep("ask"), 800);
     return () => clearTimeout(t);
   }, [trigger]);
+
+  useEffect(() => {
+    if (step !== "ask") return;
+    setLeft(ASK_SECONDS);
+    const t = setInterval(() => setLeft((n) => n - 1), 1000);
+    return () => clearInterval(t);
+  }, [step]);
+
+  useEffect(() => {
+    if (step === "ask" && left <= 0) later();
+  });
 
   useEffect(() => {
     if (step === "none") return;
@@ -104,7 +118,7 @@ export function FeedbackPrompt({ trigger }: { trigger: number }) {
           <p className={s.text}>My News를 써 보신 느낌을 알려 주시면<br />더 정확한 공고 찾기에 반영할게요.</p>
           <p className={s.meta}>5문항 · 약 1분 · 익명</p>
           <button className={s.primary} onClick={() => setStep("form")} autoFocus>설문 참여할게요</button>
-          <button className={s.secondary} onClick={later}>다음에 할게요</button>
+          <button className={s.secondary} onClick={later}>다음에 할게요 ({Math.max(left, 0)}초)</button>
         </div>
       </div>
     );
