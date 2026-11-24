@@ -53,8 +53,19 @@ export async function POST(req: Request) {
     }
     // 허용된 필드만 전송합니다. 이름·연락처·좌표를 포함하는 별도 프로필은 전송하지 않는다.
     const evidence = Array.isArray(body.evidence) ? body.evidence.slice(0, 24).map((o: { domain?: string; title?: string; summary?: string }) => ({ domain: String(o.domain ?? "").slice(0, 20), title: String(o.title ?? "").slice(0, 120), summary: String(o.summary ?? "").slice(0, 240) })) : [];
-    const safeFacets = facets.map((f) => ({ id: f.id.slice(0, 200), text: f.text.slice(0, 160), options: f.options.map((o) => ({ key: o.key.slice(0, 20), label: o.label.slice(0, 100), remaining: o.remaining })) }));
-    const modelInput = { facets: safeFacets, answered: answered.map((a) => ({ text: a.text.slice(0, 160), answer: a.answer.slice(0, 100) })), evidence, total: body.total };
+    // 토큰 절감: 공고 원문 대신 분야별 건수 + 분야당 대표 공고 1건, 최근 답변 5개만 보낸다(검증은 전체 facets·answered 기준 그대로)
+    const domainCounts = Object.entries(evidence.reduce((c: Record<string, number>, e: { domain: string }) => { c[e.domain] = (c[e.domain] ?? 0) + 1; return c; }, {})).map(([id, count]) => ({ id, count }));
+    const seenDomains = new Set<string>();
+    const representatives = evidence
+      .filter((e: { domain: string }) => !seenDomains.has(e.domain) && !!seenDomains.add(e.domain))
+      .map((e: { domain: string; title: string; summary: string }) => ({ d: e.domain.slice(0, 12), t: e.title.slice(0, 72), s: e.summary.slice(0, 100) }));
+    const modelInput = {
+      total: body.total,
+      domainCounts,
+      facets: facets.map((f) => ({ id: f.id.slice(0, 80), text: f.text.slice(0, 72), options: f.options.map((o) => ({ key: o.key.slice(0, 20), label: o.label.slice(0, 48), remaining: o.remaining })) })),
+      recentAnswers: answered.slice(-5).map((a) => ({ text: a.text.slice(0, 72), answer: a.answer.slice(0, 32) })),
+      representatives,
+    };
     const input = stableJson(modelInput);
     const key = `${cacheKey(withQuestionGuide(QUESTION_SYSTEM))}\n${input}`;
     // 캐시는 모델 원본 응답을 저장하고, 꺼낼 때마다 현재 요청 기준으로 다시 검증한다
