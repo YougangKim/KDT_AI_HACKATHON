@@ -7,7 +7,6 @@ import { updateAnswers, type AnswerChange } from "@/lib/engine/answer-groups";
 import { buildWatch, loadWatch, saveWatch } from "@/lib/alerts";
 import { readLastResult } from "@/components/result/lastResult";
 import { researchStatus, syncWatch, type ResearchStatus } from "@/lib/alerts/client";
-import { summarizeConditions } from "@/lib/insight/funnel";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
 import { LocationStep } from "@/components/game/LocationStep";
 import { DOMAIN_META } from "@/components/result/domain";
@@ -133,9 +132,7 @@ export default function SettingsPage() {
       </header>
 
       <section className="app-card space-y-3 border-indigo-100 bg-indigo-50 p-4">
-        <h2 className="font-semibold">내 조건</h2>
-        <p className="text-sm font-medium leading-relaxed">{summarizeConditions(watch.answers)}</p>
-        <details><summary className="min-h-11 cursor-pointer content-center font-semibold">상세 조건 수정</summary>
+        <details><summary className="min-h-11 cursor-pointer content-center font-semibold">내 조건 수정</summary>
           <ConditionEditor answers={watch.answers} onChange={updateAnswer} />
         </details>
       </section>
