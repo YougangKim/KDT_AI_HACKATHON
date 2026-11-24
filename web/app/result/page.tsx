@@ -17,6 +17,7 @@ import { applySortMode, interleaveByDomain, myRegion, SORT_LABEL, sortMatches, t
 import { opportunityDistance } from "@/lib/geo/distance";
 import { DOMAIN_META } from "@/components/result/domain";
 import { Icon } from "@/components/brand/Icons";
+import { FeedbackPrompt } from "@/components/result/FeedbackPrompt";
 
 type AiSummary = { id: string; summary: string; how: string };
 type ResultTab = "all" | Domain;
@@ -29,6 +30,7 @@ export default function ResultPage() {
   const [page, setPage] = useState(0);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState("");
+  const [feedbackAt, setFeedbackAt] = useState(0); // 알림 저장 성공 시각 → 피드백 설문 제안
   const [summaries, setSummaries] = useState<Record<string, AiSummary>>({});
   const [summaryMs, setSummaryMs] = useState<Record<string, number>>({});
 
@@ -137,6 +139,7 @@ export default function ResultPage() {
         await reg?.showNotification("My News 알림 설정 완료", { body: "저장한 조건에 맞는 새 공고가 올라오면 이렇게 알려 드립니다.", icon: "/icon-192.png" }).catch(() => {});
       }
     }
+    setFeedbackAt(Date.now());
     setNote(p === "granted" ? "저장했습니다. 매일 다시 찾아보고 새 공고·마감 임박을 알립니다." : "저장했습니다. 알림이 꺼져 있어 앱을 열 때 알림함에 표시합니다.");
   }
 
@@ -419,6 +422,7 @@ export default function ResultPage() {
       {editor}
 
       {saveBar}
+      <FeedbackPrompt trigger={feedbackAt} />
     </main>
   );
 }

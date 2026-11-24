@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>피드백 설문 시안</title>
+<style>
+:root{--brand:#4f46e5;--brand-strong:#3730a3;--accent:#0f766e;--background:#f5f6fb;--surface:#fff;--surface-muted:#eef0f8;--text:#172033;--text-muted:#5f687a;--text-subtle:#7c8495;--radius-sm:12px;--radius-md:18px;--radius-lg:28px;--shadow-md:0 16px 40px rgb(30 41 59 / 12%)}
+*{box-sizing:border-box}
+body{margin:0;background:#dfe2ec;font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;color:var(--text)}
+h1{font-size:20px;text-align:center;margin:24px 0 4px}
+.lead{text-align:center;color:var(--text-muted);font-size:14px;margin:0 0 20px}
+.row{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;padding:0 16px 40px}
+.col{display:flex;flex-direction:column;align-items:center;gap:10px}
+.cap{font-size:13px;font-weight:700;color:var(--brand-strong)}
+.phone{position:relative;width:360px;height:740px;background:var(--background);border-radius:36px;overflow:hidden;box-shadow:0 20px 50px rgb(0 0 0 / 18%);border:8px solid #111827}
+.app{padding:18px 16px}
+.toast{background:#ecfdf5;color:var(--accent);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;font-weight:600}
+.card{background:var(--surface);border-radius:var(--radius-md);padding:14px;margin-top:12px;box-shadow:0 2px 10px rgb(30 41 59 / 7%)}
+.ghost{height:10px;border-radius:6px;background:var(--surface-muted);margin:8px 0}
+.dim{position:absolute;inset:0;background:rgb(15 23 42 / 45%)}
+.modal{position:absolute;left:20px;right:20px;top:200px;background:var(--surface);border-radius:var(--radius-lg);padding:24px 20px 18px;box-shadow:var(--shadow-md);text-align:center}
+.badge{width:52px;height:52px;border-radius:50%;background:#eef2ff;display:grid;place-items:center;margin:0 auto 12px;font-size:26px}
+.modal h2{font-size:18px;margin:0 0 8px}
+.modal p{font-size:14px;color:var(--text-muted);line-height:1.5;margin:0 0 6px}
+.meta{font-size:12px;color:var(--text-subtle);margin-bottom:18px!important}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.primary{background:var(--brand);color:#fff}
+.second{background:transparent;color:var(--text-muted);margin-top:6px}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:56px;background:var(--surface);border-radius:var(--radius-lg) var(--radius-lg) 0 0;padding:16px 18px 18px;display:flex;flex-direction:column}
+.grab{width:40px;height:4px;border-radius:2px;background:#d6d9e4;margin:0 auto 12px}
+.head{display:flex;justify-content:space-between;align-items:center}
+.head b{font-size:16px}.x{color:var(--text-subtle);font-size:20px}
+.prog{height:4px;background:var(--surface-muted);border-radius:2px;margin:10px 0 16px}.prog i{display:block;height:100%;width:40%;background:var(--brand);border-radius:2px}
+.scroll{overflow:auto;flex:1}
+.q{margin-bottom:18px}.q .t{font-size:14px;font-weight:700;margin-bottom:8px}.q .n{color:var(--brand);margin-right:4px}
+.scale{display:flex;gap:6px}.scale span{flex:1;text-align:center;padding:10px 0;border-radius:12px;background:var(--surface-muted);font-size:14px;font-weight:600;color:var(--text-muted)}
+.scale span.on{background:var(--brand);color:#fff}
+.ends{display:flex;justify-content:space-between;font-size:11px;color:var(--text-subtle);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chips span{padding:8px 12px;border-radius:999px;border:1px solid #d6d9e4;font-size:13px;color:var(--text-muted)}.chips span.on{border-color:var(--brand);color:var(--brand);background:#eef2ff;font-weight:700}
+textarea{width:100%;height:64px;border:1px solid #d6d9e4;border-radius:12px;padding:10px;font-family:inherit;font-size:13px;resize:none}
+.hint{font-size:11px;color:var(--text-subtle);margin-top:4px}
+.foot{border-top:1px solid var(--surface-muted);padding-top:12px}
+.done{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;background:var(--surface)}
+.done .badge{width:72px;height:72px;font-size:36px;background:#ecfdf5}
+.done h2{margin:6px 0 8px;font-size:20px}.done p{color:var(--text-muted);font-size:14px;line-height:1.5;margin:0 0 24px}
+.notes{max-width:1180px;margin:0 auto 40px;padding:0 16px;font-size:14px;line-height:1.6}
+.notes li{margin-bottom:4px}
+</style>
+</head>
+<body>
+<h1>알림 설정 후 피드백 설문 시안</h1>
+<p class="lead">결과 화면에서 "저장하고 알림 받기" 성공 직후 → 승인 메시지 → 설문 → 완료</p>
+<div class="row">
+
+  <div class="col"><div class="cap">① 알림 설정 직후 승인 메시지</div>
+  <div class="phone"><div class="app">
+    <div class="toast">✓ 저장했습니다. 매일 다시 찾아보고 새 공고·마감 임박을 알립니다.</div>
+    <div class="card"><div class="ghost" style="width:60%"></div><div class="ghost"></div><div class="ghost" style="width:80%"></div></div>
+    <div class="card"><div class="ghost" style="width:50%"></div><div class="ghost"></div></div>
+    <div class="card"><div class="ghost" style="width:70%"></div><div class="ghost"></div></div>
+  </div>
+  <div class="dim"></div>
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="badge">💬</div>
+    <h2>알림 설정이 끝났어요</h2>
+    <p>My News를 써 보신 느낌을 알려 주시면<br>더 정확한 공고 찾기에 반영할게요.</p>
+    <p class="meta">5문항 · 약 1분 · 익명</p>
+    <button class="btn primary">설문 참여할게요</button>
+    <button class="btn second">다음에 할게요</button>
+  </div></div></div>
+
+  <div class="col"><div class="cap">② 설문 (하단 시트)</div>
+  <div class="phone"><div class="app"><div class="toast">✓ 저장했습니다.</div></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div class="head"><b>서비스 개선 설문</b><span class="x">✕</span></div>
+    <div class="prog"><i></i></div>
+    <div class="scroll">
+      <div class="q"><div class="t"><span class="n">1</span>원하는 공고를 찾는 과정이 쉬웠나요?</div>
+        <div class="scale"><span>1</span><span>2</span><span>3</span><span class="on">4</span><span>5</span></div>
+        <div class="ends"><span>어려웠어요</span><span>쉬웠어요</span></div></div>
+      <div class="q"><div class="t"><span class="n">2</span>추천 결과가 내 상황과 잘 맞았나요?</div>
+        <div class="scale"><span>1</span><span>2</span><span class="on">3</span><span>4</span><span>5</span></div>
+        <div class="ends"><span>안 맞았어요</span><span>잘 맞았어요</span></div></div>
+      <div class="q"><div class="t"><span class="n">3</span>가장 불편했던 화면은? <span style="font-weight:400;color:var(--text-subtle)">(선택)</span></div>
+        <div class="chips"><span>홈</span><span class="on">질문</span><span>결과</span><span>지도</span><span>알림 설정</span><span>없었어요</span></div></div>
+      <div class="q"><div class="t"><span class="n">4</span>다시 사용할 의향이 있나요?</div>
+        <div class="chips"><span class="on">예</span><span>잘 모르겠어요</span><span>아니오</span></div></div>
+      <div class="q"><div class="t"><span class="n">5</span>개선했으면 하는 점 한 줄 <span style="font-weight:400;color:var(--text-subtle)">(선택)</span></div>
+        <textarea placeholder="예) 질문이 조금 더 짧았으면 좋겠어요"></textarea>
+        <div class="hint">이름·연락처 등 개인정보는 적지 마세요.</div></div>
+    </div>
+    <div class="foot"><button class="btn primary">제출하기</button></div>
+  </div></div></div>
+
+  <div class="col"><div class="cap">③ 제출 완료</div>
+  <div class="phone"><div class="done">
+    <div class="badge">🙏</div>
+    <h2>소중한 의견 감사합니다</h2>
+    <p>보내 주신 의견은 공고 추천과<br>질문 개선에 반영할게요.</p>
+    <button class="btn primary" style="max-width:260px">결과로 돌아가기</button>
+  </div></div></div>
+
+</div>
+<div class="notes">
+<b>동작 규칙(구현 시)</b>
+<ul>
+<li>띄우는 시점: 알림 저장이 <b>서버까지 성공</b>했을 때만(실패 시 안 띄움). 테스트 알림 발송 직후 0.8초 뒤.</li>
+<li>"다음에 할게요": 이 기기에서 7일간 다시 묻지 않음. 제출하면 다시 묻지 않음. ✕로 닫으면 "다음에"와 같게 처리.</li>
+<li>필수는 1·2·4번만, 3·5번은 선택. 제출 시 함께 저장: 현재 화면 경로, 유입 ref, 시각. IP·기기 정보는 저장 안 함.</li>
+<li>저장 위치는 기존 Upstash(앱 안 설문) 추천. 외부 폼(Tally)은 화면이 앱과 달라져서 이 디자인과 맞지 않음.</li>
+</ul>
+</div>
+</body>
+</html>

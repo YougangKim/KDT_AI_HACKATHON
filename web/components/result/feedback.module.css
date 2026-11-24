@@ -1,0 +1,33 @@
+.dim { position: fixed; inset: 0; z-index: 3000; /* 지도(Leaflet 창 z-index 400~1000) 위로 */ background: rgb(15 23 42 / 45%); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.modal { width: 100%; max-width: 340px; background: var(--surface); border-radius: var(--radius-lg); padding: 24px 20px 18px; box-shadow: var(--shadow-md); text-align: center; }
+.badge { width: 52px; height: 52px; border-radius: 50%; background: #eef2ff; display: grid; place-items: center; margin: 0 auto 12px; font-size: 26px; }
+.badgeDone { width: 72px; height: 72px; font-size: 36px; background: #ecfdf5; }
+.title { font-size: 18px; font-weight: 800; margin: 0 0 8px; color: var(--text); }
+.text { font-size: 14px; color: var(--text-muted); line-height: 1.5; margin: 0 0 6px; }
+.meta { font-size: 12px; color: var(--text-subtle); margin: 0 0 18px; }
+.primary, .secondary { display: block; width: 100%; border: 0; border-radius: 14px; padding: 14px; font-size: 15px; font-weight: 700; cursor: pointer; }
+.primary { background: var(--brand); color: #fff; }
+.primary:disabled { background: #c7cbe0; cursor: default; }
+.secondary { background: transparent; color: var(--text-muted); margin-top: 6px; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; top: 56px; margin: 0 auto; max-width: 480px; background: var(--surface); border-radius: var(--radius-lg) var(--radius-lg) 0 0; padding: 16px 18px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; color: var(--text); }
+.grab { width: 40px; height: 4px; border-radius: 2px; background: #d6d9e4; margin: 0 auto 12px; }
+.head { display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
+.close { background: none; border: 0; color: var(--text-subtle); font-size: 20px; cursor: pointer; padding: 4px; }
+.prog { height: 4px; background: var(--surface-muted); border-radius: 2px; margin: 10px 0 16px; }
+.prog i { display: block; height: 100%; background: var(--brand); border-radius: 2px; transition: width var(--motion-normal); }
+.scroll { overflow: auto; flex: 1; }
+.q { margin-bottom: 18px; }
+.qt { display: block; font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+.n { color: var(--brand); margin-right: 4px; }
+.opt { font-weight: 400; color: var(--text-subtle); }
+.scale { display: flex; gap: 6px; }
+.scale button { flex: 1; padding: 10px 0; border: 0; border-radius: 12px; background: var(--surface-muted); font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+.scale button.on { background: var(--brand); color: #fff; }
+.ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-subtle); margin-top: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips button { padding: 8px 12px; border-radius: 999px; border: 1px solid #d6d9e4; background: var(--surface); font-size: 13px; color: var(--text-muted); cursor: pointer; }
+.chips button.chipOn { border-color: var(--brand); color: var(--brand); background: #eef2ff; font-weight: 700; }
+.area { width: 100%; height: 64px; border: 1px solid #d6d9e4; border-radius: 12px; padding: 10px; font: inherit; font-size: 13px; resize: none; background: var(--surface); color: var(--text); }
+.hint { font-size: 11px; color: var(--text-subtle); margin-top: 4px; }
+.foot { border-top: 1px solid var(--surface-muted); padding-top: 12px; }
+.error { font-size: 12px; color: #b91c1c; margin: 0 0 8px; }

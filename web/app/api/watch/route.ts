@@ -36,7 +36,7 @@ function validWatch(w: Watch | undefined): w is Watch {
       Array.isArray(w.answers) &&
       Array.isArray(w.domains) &&
       Array.isArray(w.seenIds) &&
-      w.answers.length <= 40 &&
+      w.answers.length <= 200 && // 추가 질문·분야 범위까지 합치면 40개를 넘는다
       w.seenIds.length <= 2000 &&
       (!w.location ||
         (Number.isFinite(w.location.lat) &&
