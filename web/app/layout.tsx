@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+import Link from "next/link";
+import Script from "next/script";
 import "./globals.css";
 import { AlertBell } from "@/components/result/AlertBell";
 import { AlertPolling } from "@/components/AlertPolling";
@@ -30,7 +32,12 @@ export default function RootLayout({
             <AlertBell />
           </header>
           {children}
+          <footer className="py-4 text-center text-xs text-slate-400">
+            <Link href="/privacy" className="underline">개인정보 처리방침</Link>
+          </footer>
         </div>
+        {/* Vercel Web Analytics: 쿠키 없는 방문 통계. 대시보드에서 Analytics를 켜야 수집된다 */}
+        {process.env.VERCEL && <Script src="/_vercel/insights/script.js" strategy="afterInteractive" />}
       </body>
     </html>
   );
