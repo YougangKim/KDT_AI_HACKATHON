@@ -1,11 +1,18 @@
 # 작업 로그 — 대한상공회의소 AI 해커톤
 
+## 2026-11-24 19:20 My News 로고 시안 6종 (Codex 제작·Claude 조율)
+
+- 현재 로고(남색 말풍선+신호 물결+민트 점) 기준으로 Codex가 서로 다른 스타일 시안 6개 SVG 제작(`.ai-sync/tasks/20261124T101505-codex/result.md`). 종이 신문 모티프 제외.
+- `docs/설계/로고_시안/`: 시안1~6 `_icon.svg`(512)·`_wordmark.svg`(960x240), 비교 `비교.html`·`비교.png`(128/48/24px·어두운 배경), 생성 `build.mjs`, 렌더 `e2e/render-logos.mjs`.
+- 앱 코드 미적용(사용자 선택 대기). 커밋·푸시 없음.
+
 ## 2026-11-24 15:00 피드백 설문·처리방침·방문 통계 배포 (Claude)
 
 - 알림 저장 성공 직후 승인 메시지→설문 하단 시트(5문항)→완료 `components/result/FeedbackPrompt.tsx`, 저장 `/api/feedback`(Upstash `feedback:list`, 관리자 GET JSON 집계·`?format=csv`, `FEEDBACK_ADMIN_KEY` 또는 `CRON_SECRET`), `lib/feedback.ts`+테스트.
 - 버그: 알림 서버 저장 답변 상한 40→200(추가 질문으로 73개가 되어 400 실패), 설문 오버레이 z-index를 지도 위로.
 - `/privacy` 처리방침 + 하단 링크, Vercel Web Analytics 스크립트(대시보드에서 Analytics 켜야 수집, 현재 스크립트 404). Tally 버튼은 앱 안 설문과 중복이라 제외.
 - 검증: test 230, tsc·lint, 로컬 e2e(저장→설문→제출→집계·재질문 없음). 커밋 1578346·a82da2d 푸시, Vercel 배포 success, 운영 /api/feedback 검증 응답·/privacy 200 확인.
+- 추가(사용자 요청): 승인 메시지 10초 카운트다운 후 자동 닫힘(다음에와 동일 처리). 커밋 1449754, Vercel 배포 success.
 
 ## 2026-11-24 02:15 알림 설정 후 피드백 설문 시안 (Claude)
 
@@ -461,3 +468,11 @@
 - 2026-11-24 15:25 Claude: 앱 판별 분기 전수 목록과 Jev 적용 범위 `docs/설계/AI_트래픽_대응/Jev_적용범위_분기목록.md`(LLM 호출 10개·규칙 분기 26개, 적용/유지 판정·근거·위험, 우선순위). 코드 미수정. Codex 교차 검토(`.ai-sync/tasks/20261124T061233-codex/result.md`) 반영: 누락 분기 7곳 추가, 절감·비용 수치는 기준선 없어 산정 불가로 정정.
 
 - 11/24 15:40 Claude: 배포본 Codex 재검증 36/60 반려(롤백 권고) → 사용자 승인으로 4개 수정: '전국' 공고 지역 차단 안 함, AI 다듬기 새 낱말 0개·빈칸 문자열 동일 검사, /api/prep IP당 분당 5회 제한, 경계 테스트. test 255 통과·tsc·lint·빌드, 로컬 429 확인. 커밋·푸시·배포.
+
+- 2026-11-24 Claude: Jev 분류를 공고 DB 칼럼 방식으로 재설계. tags 칼럼별(값/""/"?"), 풀 저장 직전에만 빠진 칼럼 분류·이전 칼럼 이월, AI 새 질문은 칼럼 등록(facets.ts) 후 다음 수집에 그 칼럼만 분류, refine-question 칼럼 우선. Codex 리뷰 43점 반려 사항 4건 반영. test 256·build 통과.
+
+- 11/24 17:50 Claude: 사용자 결정으로 신청 준비 '작성 초안'·AI 다듬기 기능 폐기 → 정보 제공 전용. 삭제: `web/app/api/prep/`, `web/lib/prep/draft.ts`, profile 사실 문장·kind shortTitle/isSourceName, 페이지 초안 섹션·AI 버튼. test 242 통과·tsc·lint·.next-prod 빌드(오래된 .next*/types 정리), 로컬 3950 확인. 미커밋·미배포(사용자 확인 대기).
+
+- 2026-11-24 19:20 Claude: AI 체인 구조 검토 `docs/설계/AI_트래픽_대응/공고지식DB_RAG_구조화_검토.md`(공고 지식 DB+Jev+원문 청크 RAG 안, 부족한 점 P1~P7, 시나리오 S1~S5). 코드 미수정. Codex 교차 검토(`.ai-sync/tasks/20261124T101555-codex/result.md`): 전면 전환 반려·최소 수정 4개만 조건부 추천(기준선, 본문 해시 재분류, 재시도 불가 오류 폴백 중단, 일반 질문 근거 대표 표본). 반영 완료.
+
+- 11/24 19:15 Claude: 신청 준비 '한눈에' 항목명 내용·날짜·장소·신청방법, 내용은 목적(지원·채용 등) 포함 문장(contentLine), 대상 경고 배너 최하단 이동. 초안 기능 폐기분과 함께 커밋·푸시·배포.

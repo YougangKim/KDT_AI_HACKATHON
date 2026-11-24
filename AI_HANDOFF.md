@@ -21,6 +21,12 @@
 
 ## 진행 중 / 다음 작업
 
+- 11/24 19:15 Claude: 신청 준비 '한눈에' 항목명 내용·날짜·장소·신청방법, 내용은 목적(지원·채용 등) 포함 문장(contentLine), 대상 경고 배너 최하단 이동. 초안 기능 폐기분과 함께 커밋·푸시·배포.
+- 11/24 19:20 Claude: RAG 구조화 검토 `docs/설계/AI_트래픽_대응/공고지식DB_RAG_구조화_검토.md`(코드 미수정). 전면 전환은 해커톤 이후. 다음(승인 시): carryTags 본문 해시 재분류(분류 스레드 파일), providers 재시도 불가 오류 폴백 중단, play next-question 근거 대표 표본.
+- 11/24 19:20 Claude: 로고 시안 6종 `docs/설계/로고_시안/비교.png`(Codex 제작). 사용자 선택 대기 → 고르면 `web/public/icon.svg`·`icon-192/512.png`·`components/brand/Logo.tsx`·Splash 적용.
+- 11/24 17:50 Claude: 사용자 결정으로 신청 준비 '작성 초안'·AI 다듬기 기능 폐기 → 정보 제공 전용. 삭제: `web/app/api/prep/`, `web/lib/prep/draft.ts`, profile 사실 문장·kind shortTitle/isSourceName, 페이지 초안 섹션·AI 버튼. test 242 통과·tsc·lint·.next-prod 빌드(오래된 .next*/types 정리), 로컬 3950 확인. 미커밋·미배포(사용자 확인 대기).
+- 11/24 Claude: 분류를 공고 DB 칼럼 방식으로 재설계(사용자 요청). 수집 저장 때만 빠진 칼럼 분류, 새 AI 질문 → `lib/server/facets.ts` 칼럼 등록 → 다음 수집 때 그 칼럼만. refine-question은 칼럼 우선. test 256·build 통과, 3950 재시작. 상세 Jev 문서 9장. 미해결: 풀 저장 원자성(Codex ④). 커밋 안 함.
+
 - 11/24 15:40 Claude: 배포본 Codex 재검증 36/60 반려(롤백 권고) → 사용자 승인으로 4개 수정: '전국' 공고 지역 차단 안 함, AI 다듬기 새 낱말 0개·빈칸 문자열 동일 검사, /api/prep IP당 분당 5회 제한, 경계 테스트. test 255 통과·tsc·lint·빌드, 로컬 429 확인. 커밋·푸시·배포.
 - 11/24 15:25 Claude: Jev 적용 범위 분석 `docs/설계/AI_트래픽_대응/Jev_적용범위_분기목록.md`(코드 미수정, Codex 검토 반영). 다음(승인 시, 분류 DB 스레드 완료 후): usage 기준선 측정 → next-question 태그 기반 → jevState에 자격요건 추가 후 대상 noul.
 - 11/24 Claude: 공고 분류를 Jev 판단 모델 중심으로 재설계·적용(사용자 요청). `lib/sources/classify.ts`(신규), `lib/ai/jev.ts`, `lib/sources/index.ts`, `lib/server/pool.ts`, `lib/ai/refinement-rules.ts`, `app/play/page.tsx`, `lib/types.ts`(Opportunity.tags). 로컬 풀 7,915건 태깅 완료. test 249·build 통과, 3950 재시작(.next-prod). 상세 `docs/설계/AI_트래픽_대응/Jev_판단모델_토큰절감.md` 8장. 커밋·배포 안 함. 다음: next-question도 태그 기반으로, Codex 교차 리뷰 반영.

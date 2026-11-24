@@ -1,11 +1,13 @@
-// 신청 준비: 공고(이미 가진 데이터)와 인터뷰 답을 조합해 대상 판정·조건 비교·한눈에 요약·준비물·순서·초안을 만든다.
-// 설계: docs/설계/신청준비_페이지_설계.md. AI가 없거나 실패해도 규칙만으로 전부 나온다.
+// 신청 준비: 공고(이미 가진 데이터)와 인터뷰 답을 조합해 대상 판정·조건 비교·한눈에 요약·준비물·순서를 만든다(정보 제공 전용, 초안 없음).
+// 설계: docs/설계/신청준비_페이지_설계.md. AI를 쓰지 않는다.
 import type { AnswerRecord, AttrKey, Match, Opportunity } from "@/lib/types";
 import { cleanTitle, companyIn, KIND_LABEL, prepKind, targetCheck, type PrepKind, type TargetCheck } from "./kind";
-import { allFacts, buildProfile, shortAnswer, type Profile } from "./profile";
-import { benefitPhrase, FACT_ORDER, NO_DRAFT_NOTE, ruleDrafts, type PrepDraft } from "./draft";
+import { buildProfile, shortAnswer, type Profile } from "./profile";
 
-export type { PrepDraft } from "./draft";
+/** 요약에서 혜택 금액 구절(예: "월 최대 20만 원") */
+export function benefitPhrase(summary: string): string | undefined {
+  return summary.match(/((월|연|1인당|최대|총)\s?)+[\d,.]+\s?(만\s?원|원|천\s?원)/)?.[0];
+}
 export type { PrepKind } from "./kind";
 
 export interface CompareRow { cond: string; note?: string; mine: string; verdict: "ok" | "check" }
@@ -25,10 +27,6 @@ export interface PrepPlan {
   docs: PrepDoc[];
   docsFromPosting: boolean;
   steps: PrepStep[];
-  drafts: PrepDraft[];
-  draftNote?: string;
-  facts: string[]; // AI에 넘길 사실 문장(질문 원문 아님)
-  ai: boolean;
 }
 
 const ELIG: AttrKey[] = ["age", "region", "homeless", "livingAlone", "incomePct", "employment", "subscription", "married", "welfare", "experienced", "education"];
@@ -149,20 +147,40 @@ function steps(kind: PrepKind, o: Opportunity, now: Date): PrepStep[] {
   }
 }
 
+const PURPOSE = /(지원|지급|제공|대출|감면|공급|모집|채용|교육|훈련|상담|면접|접수|시험)(합니다|됩니다|함|됨)?$/;
+const KIND_PURPOSE: Record<PrepKind, string> = {
+  job: "채용", job_event: "채용 행사", parttime: "아르바이트 모집", benefit_cash: "지원금", benefit_service: "지원 서비스",
+  housing_rent: "임대주택 공급", housing_sale: "분양 공급", training: "교육 과정", exam: "자격 시험",
+};
+
+/** '내용' 한 줄: 금액만 쓰지 않고 무엇을 하는지(지원·채용 등)를 함께 적는다. 예) "무주택 청년 1인 가구에 월 최대 20만 원, 최대 12개월 지원" */
+export function contentLine(kind: PrepKind, summary: string, parts: string[]): string | undefined {
+  const clean = (x: string) => x.replace(/[.。]$/, "").replace(/(합니다|됩니다)$/, "").trim();
+  const money = benefitPhrase(summary);
+  if (money) {
+    const sent = parts.find((x) => x.includes(money));
+    const line = sent ? clean(sent) : money;
+    if (line.length <= 50) return PURPOSE.test(line) ? line : `${line} 지원`;
+    return `${money} 지원`;
+  }
+  const first = parts.find((x) => !/^\d/.test(x));
+  if (!first) return undefined;
+  const line = clean(first).slice(0, 50);
+  return PURPOSE.test(line) ? line : `${KIND_PURPOSE[kind]} · ${line}`;
+}
+
 function glance(kind: PrepKind, o: Opportunity): Glance {
   const parts = o.summary.split(/\s\/\s|(?<=[.。])\s+/).map((s) => s.trim()).filter(Boolean);
   const co = companyIn(o.title);
   const g: Glance = {};
   if (kind === "job_event") {
-    if (co) { g.what = `${co} 현장 면접`; g.whatNote = "제목에서"; }
+    if (co) { g.what = `${co} 현장 면접 참여`; g.whatNote = "제목에서"; }
     const ev = parts.find((s) => s.startsWith("행사"));
     if (ev) g.when = ev;
     const area = parts.find((s) => !s.startsWith("행사"));
     g.where = o.place || area;
   } else {
-    const money = benefitPhrase(o.summary);
-    const first = parts.find((s) => !/^\d/.test(s));
-    g.what = money ? `${money}${first && !first.includes(money) ? ` · ${first.slice(0, 40)}` : ""}` : first?.slice(0, 60);
+    g.what = contentLine(kind, o.summary, parts);
     g.where = o.place || (o.region.length ? o.region.join("·") : undefined);
   }
   if (!g.when) {
@@ -203,7 +221,6 @@ export function ruleBasedPlan(m: Match, answers: AnswerRecord[], now = new Date(
     if (!docs.some((x) => x.name === d.name)) docs.push(d);
   }
 
-  const drafts = ruleDrafts(o, kind, p);
   const ct = cleanTitle(o.title);
   return {
     kind,
@@ -217,15 +234,11 @@ export function ruleBasedPlan(m: Match, answers: AnswerRecord[], now = new Date(
     docs: docs.slice(0, 7),
     docsFromPosting: posting.length > 0,
     steps: target.expired ? [{ when: "지금", text: "원문에서 연장·추가 모집 여부 확인" }] : steps(kind, o, now),
-    drafts,
-    draftNote: NO_DRAFT_NOTE[kind],
-    facts: allFacts(p).filter((f) => FACT_ORDER[kind].includes(f.attr) || o.conditions.some((c) => c.attr === f.attr)).map((f) => f.s).slice(0, 4),
-    ai: false,
   };
 }
 
-/** 복사·인쇄용 전체 텍스트. 대상 확인 전(warn·block)에는 초안을 넣지 않는다(withDrafts로 사용자가 연 경우만) */
-export function planText(plan: PrepPlan, o: Opportunity, withDrafts = plan.target.level === "ok" || plan.target.level === "check"): string {
+/** 복사·인쇄용 전체 텍스트 */
+export function planText(plan: PrepPlan, o: Opportunity): string {
   return [
     `[${plan.title}] ${o.org}`,
     `마감: ${o.applyEnd?.slice(0, 10) ?? "상시"}`,
@@ -233,7 +246,6 @@ export function planText(plan: PrepPlan, o: Opportunity, withDrafts = plan.targe
     "",
     "■ 준비 서류", ...plan.docs.map((d) => `- ${d.name} (${d.tag})`),
     "", "■ 신청 순서", ...plan.steps.map((s, i) => `${i + 1}. [${s.when}] ${s.text}`),
-    ...(withDrafts ? plan.drafts.flatMap((d) => ["", `■ ${d.title}`, d.body]) : []),
     "", `원문: ${o.apply?.url || o.url}`,
   ].join("\n");
 }

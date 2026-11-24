@@ -1,9 +1,8 @@
 "use client";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { readLastResult } from "@/components/result/lastResult";
 import { planText, ruleBasedPlan, type PrepPlan } from "@/lib/prep";
-import { shortTitle } from "@/lib/prep/kind";
 import { ddayLabel } from "@/lib/alerts/core";
 import { DOMAIN_META } from "@/components/result/domain";
 import { opportunityDistance } from "@/lib/geo/distance";
@@ -18,50 +17,13 @@ const BANNER = {
 } as const;
 const ICON = { ok: "✅", check: "☑", warn: "⚠", block: "⛔" } as const;
 
-/** 초안 안 [빈칸]을 노란 칸으로 */
-function DraftBody({ text }: { text: string }) {
-  return (
-    <p className="whitespace-pre-wrap text-sm leading-relaxed">
-      {text.split(/(\[[^\]]+\])/).map((part, i) =>
-        part.startsWith("[") ? <mark key={i} className="rounded bg-amber-100 px-0.5 text-amber-900">{part}</mark> : <span key={i}>{part}</span>,
-      )}
-    </p>
-  );
-}
-
-/** 신청 준비: 대상 판정 → 조건 비교 → 한눈에 → 준비물 → 순서 → 초안 (설계 docs/설계/신청준비_페이지_설계.md) */
+/** 신청 준비(정보 제공): 대상 판정 → 조건 비교 → 한눈에 → 준비물 → 순서 (설계 docs/설계/신청준비_페이지_설계.md) */
 export default function PreparePage() {
   const [match, setMatch] = useState<Match | null | undefined>(undefined);
   const [plan, setPlan] = useState<PrepPlan | null>(null);
-  const [aiState, setAiState] = useState<"idle" | "loading" | "done" | "off">("idle");
-  const [showDrafts, setShowDrafts] = useState(false);
   const [distance, setDistance] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
-
-  // 외부 AI 전송은 사용자가 버튼을 눌렀을 때만(사실 문장·공고 정보만, 위치 제외)
-  const requestAi = useCallback((m: Match, base: PrepPlan) => {
-    if (!base.drafts.length) return;
-    setAiState("loading");
-    fetch("/api/prep", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        kind: base.kind,
-        posting: { title: shortTitle(m.opportunity.title, base.kind), org: m.opportunity.org, summary: m.opportunity.summary, conditions: m.opportunity.conditions.map((c) => c.rawText), applyEnd: m.opportunity.applyEnd },
-        facts: base.facts,
-        ruleDrafts: base.drafts,
-      }),
-    })
-      .then((res) => res.json())
-      .then((j: { ai?: boolean; drafts?: PrepPlan["drafts"] }) => {
-        if (j.ai && j.drafts?.length) {
-          setPlan((p) => (p ? { ...p, drafts: p.drafts.map((d) => j.drafts!.find((x) => x.title === d.title) ?? d), ai: true } : p));
-          setAiState("done");
-        } else setAiState("off");
-      })
-      .catch(() => setAiState("off"));
-  }, []);
 
   useEffect(() => {
     const id = new URLSearchParams(window.location.search).get("id");
@@ -74,7 +36,6 @@ export default function PreparePage() {
     try { setChecked(JSON.parse(localStorage.getItem(`prep:${m.opportunity.id}`) ?? "{}")); } catch {}
     const km = r.location ? opportunityDistance(r.location, m.opportunity) : null;
     if (km !== null) setDistance(`${Math.round(km)}km`);
-    setShowDrafts(base.target.level === "ok" || base.target.level === "check");
   }, []);
 
   if (match === undefined) return <p className="py-16 text-center text-slate-500">불러오는 중…</p>;
@@ -99,15 +60,14 @@ export default function PreparePage() {
   const done = plan.docs.filter((d) => checked[d.name]).length;
   const dday = o.applyEnd ? ddayLabel(o.applyEnd) : null;
   const g = plan.glance;
-  const glanceRows: [string, string | undefined, string?][] = [["무엇", g.what, g.whatNote], ["언제", g.when], ["어디서", g.where], ["어떻게", g.how]];
-  const hold = !showDrafts;
+  const glanceRows: [string, string | undefined, string?][] = [["내용", g.what, g.whatNote], ["날짜", g.when], ["장소", g.where], ["신청방법", g.how]];
 
   return (
     <main className="space-y-3 py-6 pb-28 print:py-0 print:pb-0">
       <div className="flex items-center justify-between print:hidden">
         <Link href="/result" className="text-sm text-slate-600">← 결과로</Link>
         <div className="flex gap-2">
-          <button onClick={() => copy("all", planText(plan, o, showDrafts))} className="rounded-lg border bg-white px-3 py-1.5 text-sm">{copied === "all" ? "복사됨" : "전체 복사"}</button>
+          <button onClick={() => copy("all", planText(plan, o))} className="rounded-lg border bg-white px-3 py-1.5 text-sm">{copied === "all" ? "복사됨" : "전체 복사"}</button>
           <button onClick={() => window.print()} className="rounded-lg border bg-white px-3 py-1.5 text-sm">인쇄·PDF</button>
         </div>
       </div>
@@ -124,11 +84,6 @@ export default function PreparePage() {
         </p>
       </header>
 
-      <section role="status" className={`rounded-2xl border p-4 text-sm ${BANNER[t.level]}`}>
-        <p className="font-bold">{ICON[t.level]} {t.head}</p>
-        <p className="mt-0.5">{t.why}</p>
-        {(t.level === "warn" || t.level === "block") && <Link href="/result" className="mt-1 inline-block font-bold underline print:hidden">결과에서 다른 청년 대상 공고 보기 →</Link>}
-      </section>
 
       <section className="app-card p-4" aria-label="내 조건과 비교">
         <h2 className="mb-2 font-bold">내 조건과 비교</h2>
@@ -158,7 +113,7 @@ export default function PreparePage() {
 
       <section className="app-card p-4" aria-label="이 공고 한눈에">
         <h2 className="mb-2 font-bold">이 공고 한눈에</h2>
-        <dl className="grid grid-cols-[3.5rem_1fr] gap-x-2 gap-y-1 text-sm">
+        <dl className="grid grid-cols-[4.5rem_1fr] gap-x-2 gap-y-1 text-sm">
           {glanceRows.map(([k, v, note]) => (
             <div key={k} className="contents">
               <dt className="font-semibold text-slate-500">{k}</dt>
@@ -195,43 +150,11 @@ export default function PreparePage() {
         </ol>
       </section>
 
-      <section className="app-card space-y-2 p-4" aria-label="작성 초안">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="font-bold">작성 초안</h2>
-          {!hold && plan.drafts.length > 0 && (
-            <span className="text-right text-[11px] text-slate-500">{aiState === "loading" ? "AI가 다듬는 중…" : plan.ai ? "AI가 다듬음 · 공고에 없는 내용이 있는지 확인하세요" : "기본 초안 · 노란 칸을 채워 주세요"}</span>
-          )}
-        </div>
-        {plan.draftNote && <p className="text-sm text-slate-600">{plan.draftNote}</p>}
-        {hold && plan.drafts.length > 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-sm text-slate-600">
-            <p className="mb-1 font-bold text-slate-800">대상 확인 후 쓰세요</p>
-            <p>{t.expired ? "마감이 지난 공고라 초안을 만들지 않았습니다." : plan.kind === "job_event" ? "이 행사는 지원 동기 대신 30초 자기소개와 현장 질문이 필요합니다." : "대상이 맞는지 원문에서 먼저 확인하세요."}</p>
-            {t.level === "warn" && (
-              <button onClick={() => setShowDrafts(true)} className="mt-2 rounded-lg border border-indigo-600 px-3 py-1.5 font-bold text-indigo-700">대상이 맞아요, 초안 만들기</button>
-            )}
-          </div>
-        ) : (
-          plan.drafts.map((d) => (
-            <div key={d.title} className="space-y-1 rounded-xl border p-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">{d.title}</h3>
-                <button onClick={() => copy(d.title, d.body)} className="text-xs text-indigo-700 underline print:hidden">{copied === d.title ? "복사됨" : "복사"}</button>
-              </div>
-              <DraftBody text={d.body} />
-            </div>
-          ))
-        )}
-        {!hold && plan.drafts.length > 0 && t.level === "ok" && aiState !== "done" && (
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 p-3 text-[11.5px] text-slate-600 print:hidden">
-            <span>AI로 문장을 다듬으면 위 초안의 내 답 문장(예: 구직 중·소득 구간)과 공고 정보가 외부 AI로 전송됩니다.</span>
-            <button disabled={aiState === "loading"} onClick={() => requestAi(match, plan)} className="rounded-lg border border-indigo-600 bg-white px-3 py-1 font-bold text-indigo-700 disabled:opacity-50">
-              {aiState === "loading" ? "다듬는 중…" : aiState === "off" ? "다시 시도" : "AI로 다듬기"}
-            </button>
-            {aiState === "off" && <span className="w-full text-amber-700">AI 결과가 기준(공고에 없는 숫자·문장 추가 금지 등)을 통과하지 못해 기본 초안을 유지했습니다.</span>}
-          </div>
-        )}
-        {!hold && plan.drafts.length > 0 && <p className="text-[11px] text-slate-500">제출 전 원문과 꼭 대조하세요.</p>}
+
+      <section role="status" className={`rounded-2xl border p-4 text-sm ${BANNER[t.level]}`}>
+        <p className="font-bold">{ICON[t.level]} {t.head}</p>
+        <p className="mt-0.5">{t.why}</p>
+        {(t.level === "warn" || t.level === "block") && <Link href="/result" className="mt-1 inline-block font-bold underline print:hidden">결과에서 다른 청년 대상 공고 보기 →</Link>}
       </section>
 
       <a href={o.apply?.url || o.url} target="_blank" rel="noopener noreferrer"

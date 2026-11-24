@@ -34,24 +34,9 @@ export function cleanTitle(title: string): { title: string; series?: string; num
   return { title: t || title, series: series?.[1], num };
 }
 
-/** 초안에 쓸 짧은 이름. 28자 넘으면 회사명 + 행사 종류 */
-export function shortTitle(title: string, kind: PrepKind): string {
-  const t = cleanTitle(title).title;
-  if (t.length <= 28) return t;
-  const co = companyIn(t);
-  const ev = ["면접 공동행사", "채용박람회", "박람회", "채용설명회", "공동행사", "만남의 날"].find((k) => t.includes(k));
-  if (co && kind === "job_event") return `${co} ${ev ?? "채용 행사"}`;
-  return `${t.slice(0, 38)}…`;
-}
-
 /** 제목 안 회사명 "(주)면사랑" */
 export function companyIn(text: string): string | undefined {
   return text.match(/(\((주|유|재)\)\s?[가-힣A-Za-z0-9&]+|[가-힣A-Za-z0-9&]+\s?\((주|유)\)|주식회사\s?[가-힣A-Za-z0-9&]+)/)?.[0]?.replace(/\s+/g, "");
-}
-
-/** 기관명이 출처 이름이면 초안 주어로 쓰지 않는다 */
-export function isSourceName(org: string): boolean {
-  return /고용24|워크넷|온통청년|공공데이터|채용행사|정부24|복지로|잡코리아|사람인|웹 검색|RSS/.test(org);
 }
 
 /** 받침에 따라 "이/가" */
@@ -61,7 +46,7 @@ export function iga(w: string): string {
   return (c - 0xac00) % 28 ? `${w}이` : `${w}가`;
 }
 
-/** ok 신청 가능 · check 확인할 조건 있음 · warn 대상 다를 수 있음(초안 보류) · block 대상 아님·마감 지남 */
+/** ok 신청 가능 · check 확인할 조건 있음 · warn 대상 다를 수 있음 · block 대상 아님·마감 지남 */
 export type TargetLevel = "ok" | "check" | "warn" | "block";
 export interface TargetCheck { level: TargetLevel; head: string; why: string; titleAge?: string; expired?: boolean }
 
