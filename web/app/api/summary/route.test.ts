@@ -25,10 +25,17 @@ describe("POST /api/summary", () => {
     expect(await response.json()).toEqual({ ai: false });
   });
 
-  test("후보 id 5개 초과는 거부", async () => {
+  test("한 페이지 6개·상한 10개는 허용", async () => {
+    for (const n of [6, 10]) {
+      const response = await POST(new Request("http://localhost/api/summary", { method: "POST", body: JSON.stringify({ ids: Array.from({ length: n }, (_, i) => String(i)) }) }));
+      expect(response.status).toBe(200);
+    }
+  });
+
+  test("후보 id 10개 초과는 거부(한 페이지 6개는 허용)", async () => {
     const response = await POST(new Request("http://localhost/api/summary", {
       method: "POST",
-      body: JSON.stringify({ ids: ["1", "2", "3", "4", "5", "6"] }),
+      body: JSON.stringify({ ids: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"] }),
     }));
 
     expect(response.status).toBe(400);

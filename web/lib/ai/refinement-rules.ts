@@ -4,8 +4,22 @@
 import type { Domain, Opportunity } from "../types";
 import type { Refinement } from "./refinement";
 
+/**
+ * 선택형 질문 하나의 기대 정보량(비트). 사용자가 선택지 i를 고를 확률은 그 선택지 공고 비율,
+ * 고르면 그 선택지 공고 + 미분류 공고(근거 없어 유지)가 남는다. 후보가 많은 분야 안을 고르게 나눌수록 크다.
+ */
+export function expectedInfo(total: number, sizes: number[], unclassified = 0): number {
+  const classified = sizes.reduce((a, b) => a + b, 0);
+  if (total <= 1 || classified === 0) return 0;
+  return sizes.reduce((sum, n) => sum + (n / classified) * Math.log2(total / Math.min(total, n + unclassified)), 0);
+}
+
 /** id는 Jev 분류 태그 키(Opportunity.tags[id] = 선택지 label), domains는 이 축으로 분류할 공고 분야 */
 export interface Facet { id: string; domains: Domain[]; text: string; why: string; options: { label: string; terms: string[] }[] }
+
+/** 이보다 정보량이 작은 질문은 묻지 않는다(0.15비트 ≈ 남은 후보 약 10% 감소) */
+export const MIN_INFO = 0.15;
+export const MIN_INFO_TAGS = 0.2;
 
 export const RULE_FACETS: Facet[] = [
   { id: "employ", domains: ["job","parttime"], text: "어떤 고용 형태를 원하십니까?", why: "남은 채용 공고를 정규직·계약직·인턴으로 나눕니다.", options: [
@@ -77,10 +91,9 @@ export function ruleRefinement(alive: Opportunity[], answered: { question: { tex
     if (options.length < 2) continue;
     const classified = new Set(options.flatMap((o) => o.ids)).size;
     if (options.some((o) => o.ids.length >= classified)) continue; // 한 선택지가 전부를 덮으면 나누지 못한다
-    const sizes = options.map((o) => o.ids.length);
-    const balance = Math.min(...sizes) / Math.max(...sizes);
-    const score = (classified / alive.length) * (0.4 + 0.6 * balance);
+    // 정보량 기준: 남은 후보 전체에서 이 질문 답 하나로 기대되는 감소(비트). 후보가 적은 분야만 가르는 축은 작게 나온다
+    const score = expectedInfo(alive.length, options.map((o) => o.ids.length), alive.length - classified);
     if (!best || score > best.score) best = { score, r: { text: f.text, why: f.why, facet: f.id, options } };
   }
-  return best && best.score > (opts.tagsOnly ? 0.08 : 0.03) ? best.r : null;
+  return best && best.score >= (opts.tagsOnly ? MIN_INFO_TAGS : MIN_INFO) ? best.r : null;
 }

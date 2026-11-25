@@ -5,6 +5,7 @@ import { auxAiEnabled, cachedStructuredConditions, evidenceInSource, STRUCTURE_P
 import { cacheKey } from "../ai/cache";
 import { resetObserveBudget, scheduleObservation } from "../ai/target-judge";
 import { regionsIn } from "../ai/rules";
+import { regionsOfToken } from "./sigungu";
 import { attachGeo } from "../geo/geocode";
 import { attachPlaces, _clearExtractCache } from "../geo/extract";
 import type { SourceAdapter } from "./types";
@@ -224,25 +225,33 @@ const SIDO_TOKEN = /^(서울|부산|대구|인천|광주|대전|울산|세종|�
 /**
  * 지역 정보가 비어 있는 공고의 지역을 원문으로 판별한다(지역 필터가 다른 지역 공고를 거르도록).
  * - 제목·기관명에 시·도 이름이 단독 낱말로 있으면 그 지역(예: "부산 청년 월세", "경기도 ○○") — "서울대학교" 같은 고유명사는 제외
+ * - 시·도 공식 명칭("전남광주통합특별시"), 시·도 기관("충남도립대학교"), 시·군 이름("광양시", "서산시")도 근거로 쓴다
  * - 주거 공고는 카카오가 찾은 단지 주소의 시·도
- * - 시·도가 2개 이상이거나 근거가 없으면 전국 공고로 둔다
+ * - 서로 다른 시·도가 함께 나오거나 근거가 없으면 전국 공고로 둔다
  */
 export function inferRegion(o: Opportunity): Opportunity {
-  if (o.region.length || o.domain === "exam" || o.domain === "training") return o;
-  // 채용·알바는 기관명(본사 소재지)을 근무 지역 근거로 쓰지 않는다
-  const recruit = o.domain === "job" || o.domain === "parttime";
-  const tokens = (recruit ? o.title : `${o.title} ${o.org}`).replace(/[[\]()<>「」『』]/g, " ").split(/[\s,·/]+/);
-  const found = new Set(tokens.filter((t) => SIDO_TOKEN.test(t)).map((t) => normalizeRegion(t)).filter((r): r is string => !!r));
-  if (!found.size && o.domain === "housing" && o.geo?.address && o.geo.precision !== "region") {
+  if (o.region.length || o.domain === "exam" || /전국/.test(o.title)) return o;
+  // 채용·알바는 기관명(본사 소재지)을 근무 지역 근거로 쓰지 않는다. 국비 과정은 기관명이 학원명이라 제목만 본다
+  const titleOnly = o.domain === "job" || o.domain === "parttime" || o.domain === "training";
+  const tokens = (titleOnly ? o.title : `${o.title} ${o.org}`).replace(/[[\]()<>「」『』]/g, " ").split(/[\s,·/]+/);
+  const hits = tokens.map((t) => (SIDO_TOKEN.test(t) ? [normalizeRegion(t)].filter((r): r is string => !!r) : regionsOfToken(t))).filter((r) => r.length);
+  // 국비 과정은 훈련 장소(요약의 "훈련장소 ○○")가 지역이다
+  const place = o.domain === "training" ? o.summary.match(/훈련장소 (\S+)/)?.[1] : undefined;
+  // 온라인·원격 과정은 지역 제한 없음(훈련장소가 기관 소재지로 적혀 있어도 판별하지 않는다)
+  if (o.domain === "training" && /온라인|원격|인터넷|비대면|사이버|이러닝|e-?러닝/i.test(`${place ?? ""} ${o.org} ${o.title}`)) return o;
+  if (!hits.length && place && normalizeRegion(place)) hits.push([normalizeRegion(place)!]);
+  if (!hits.length && (o.domain === "housing" || o.domain === "training") && o.geo?.address && o.geo.precision !== "region") {
     const r = normalizeRegion(o.geo.address.split(" ")[0]);
-    if (r) found.add(r);
+    if (r) hits.push([r]);
   }
-  if (found.size !== 1) return o;
-  const region = [...found];
+  // 한 시·도(통합특별시는 전남·광주)를 가리킬 때만 확정: 가장 넓은 근거가 나머지를 모두 포함해야 한다
+  const widest = hits.reduce<string[]>((a, b) => (b.length > a.length ? b : a), []);
+  if (!widest.length || hits.some((h) => h.some((r) => !widest.includes(r)))) return o;
+  const region = widest;
   return {
     ...o,
     region,
-    conditions: [...o.conditions, { attr: "region", op: "in", value: region, rawText: `대상 지역: ${region[0]}(공고 원문으로 판별)`, confidence: "high" }],
+    conditions: [...o.conditions, { attr: "region", op: "in", value: region, rawText: `대상 지역: ${region.join("·")}(공고 원문으로 판별)`, confidence: "high" }],
   };
 }
 
@@ -265,8 +274,8 @@ export async function loadOpportunities(
   const stored = await readPool();
   // 비어 있는 풀(전 출처 실패)은 신선해도 쓰지 않는다
   const fresh = stored && stored.items.length > 0 && now.getTime() - new Date(stored.meta.collectedAt).getTime() < 6 * 60 * 60 * 1000;
-  // 저장된 풀이 판별 규칙 추가 이전에 모은 것이어도 경력·직무 조건을 보충한다(이미 있으면 그대로)
-  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain)).map(dropRecruitRegionPin).map(inferJobConditions);
+  // 저장된 풀이 판별 규칙 추가 이전에 모은 것이어도 지역·경력·직무 조건을 보충한다(이미 있으면 그대로)
+  if (fresh) return stored.items.filter((item) => wanted.includes(item.domain)).map(dropRecruitRegionPin).map(inferRegion).map(inferJobConditions);
 
   triggerPoolCollection(now);
   return collectLiveOpportunities(wanted, now, opts);

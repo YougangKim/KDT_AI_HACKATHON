@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import { AlertBell } from "@/components/result/AlertBell";
 import { AlertPolling } from "@/components/AlertPolling";
+import { VisitKeeper } from "@/components/VisitKeeper";
 
 export const metadata: Metadata = {
   title: "My News | 나만의 소식통",
@@ -27,6 +28,7 @@ export default function RootLayout({
     <html lang="ko">
       <body className="min-h-dvh bg-slate-50 text-slate-900 antialiased">
         <div className="app-shell mx-auto flex min-h-dvh max-w-md flex-col px-4">
+          <VisitKeeper />
           <AlertPolling />
           <header className="flex justify-end pt-2">
             <AlertBell />

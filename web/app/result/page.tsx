@@ -13,7 +13,7 @@ import { readLastResult, relaxAnswer, setAnswers, type LastResult, setFieldScope
 import { OPEN_FIELD, UNSPECIFIED_FIELD } from "@/lib/sources/field";
 import { ResultMap, type ResultMapHandle } from "@/components/result/ResultMap";
 import { ConditionEditor } from "@/components/result/ConditionEditor";
-import { applySortMode, interleaveByDomain, myRegion, SORT_LABEL, sortMatches, type SortMode } from "@/components/result/sort";
+import { applySortMode, interleaveByDomain, myRegion, restrictedTarget, SORT_LABEL, sortMatches, type SortMode } from "@/components/result/sort";
 import { opportunityDistance } from "@/lib/geo/distance";
 import { DOMAIN_META } from "@/components/result/domain";
 import { Icon } from "@/components/brand/Icons";
@@ -167,6 +167,8 @@ export default function ResultPage() {
     const sorted = sortMatches(selectedMatches, myRegion(result.answers)).sort((a, b) => {
       if (!result.location) return 0;
       if (a.status !== b.status) return a.status === "eligible" ? -1 : 1;
+      const ra = restrictedTarget(a.opportunity.title, a.opportunity.domain), rb = restrictedTarget(b.opportunity.title, b.opportunity.domain);
+      if (ra !== rb) return ra ? 1 : -1; // 장애인·보훈 등 제한 공고는 가까워도 뒤로
       const da = opportunityDistance(result.location, a.opportunity);
       const db = opportunityDistance(result.location, b.opportunity);
       if (da === null && db === null) return 0;

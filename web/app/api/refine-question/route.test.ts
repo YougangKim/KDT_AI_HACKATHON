@@ -14,7 +14,7 @@ describe("새 질문 API", () => {
     expect(body.question.options[0].ids).toEqual(["a"]);
     expect(body.feedbackKey).toBe(refinementQuestionKey(body.question));
     const input = JSON.parse(vi.mocked(ask).mock.calls[0][2]);
-    expect(Object.keys(input).sort()).toEqual(["answered","axes","evidence","total"]);
+    expect(Object.keys(input).sort()).toEqual(["answered","axes","domains","evidence","focus","total"]);
   });
   it("제공자 실패를 질문 소진으로 오인하지 않습니다", async () => {
     vi.mocked(ask).mockResolvedValue(null);

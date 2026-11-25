@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import type { FunnelReport } from "@/lib/insight/types";
 import type { AnswerRecord, Domain } from "@/lib/types";
@@ -158,21 +157,6 @@ export function AnalysisView({
           })}
         </PaginatedList>
       </section>
-
-      {report.pendingQuestions.length > 0 && (
-        <section className="app-card space-y-2 border-amber-200 bg-amber-50 p-4">
-          <h2 className="text-sm font-bold text-amber-950">
-            확인이 더 필요한 공고 {report.pendingCount.toLocaleString()}건
-          </h2>
-          <p className="text-xs text-amber-900">잘 모르겠다고 답한 질문이 있어 원문 확인이 필요하다.</p>
-          <PaginatedList label="확인 필요 질문" className="space-y-1 text-xs text-amber-950">
-            {report.pendingQuestions.map((item) => <li key={item.attr}>• {item.question}</li>)}
-          </PaginatedList>
-          <Link href="#conditions" className="inline-block text-xs font-bold text-indigo-700 underline">
-            다시 답하기
-          </Link>
-        </section>
-      )}
 
       {sampleCount > 0 && (
         <p className="text-center text-[11px] text-amber-700">

@@ -60,6 +60,8 @@ export async function GET(req: Request) {
   if (!ID_RE.test(id)) return Response.json({ error: "잘못된 id" }, { status: 400 });
   const { rec, ok } = await authorized(req, id);
   if (!ok) return Response.json({ error: "unauthorized" }, { status: 401 });
+  // 앱 접속 = 보관 기간 연장(마지막 접속 후 14일 지나면 삭제)
+  if (rec) await putRecord({ ...rec, lastSeenAt: new Date().toISOString() });
   return Response.json(await status(rec));
 }
 
@@ -111,6 +113,7 @@ export async function POST(req: Request) {
     if (!validSubscription(body.subscription)) return Response.json({ error: "지원하지 않는 푸시 구독" }, { status: 400 });
     rec.subscription = body.subscription;
   }
+  rec.lastSeenAt = new Date().toISOString();
   await putRecord(rec);
 
   if (url.searchParams.get("scan") === "1") {

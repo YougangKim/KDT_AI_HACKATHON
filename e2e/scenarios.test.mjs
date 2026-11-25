@@ -305,7 +305,14 @@ for (const [name, pool] of DATASETS) {
       await page.getByRole("button", { name: /조건 고치기/ }).click();
       // 예·아니오·모름으로 바꾸는 조건만 대상으로(지역·소득처럼 고르는 조건은 별도 UI)
       const groups = page.getByRole("list", { name: "내 조건" }).getByRole("group").filter({ has: page.getByRole("button", { name: "아니오", exact: true }) });
-      const n = await groups.count();
+      // 조건이 많으면 목록이 여러 쪽으로 나뉜다: 첫 쪽이 고르는 조건뿐이면 다음 쪽에서 찾는다
+      let n = await groups.count();
+      for (let i = 0; i < 5 && n === 0; i++) {
+        const next = page.getByRole("button", { name: "다음", exact: true }).last();
+        if (!(await next.isEnabled().catch(() => false))) break;
+        await next.click();
+        n = await groups.count();
+      }
       assert.ok(n >= 1, "예·아니오로 고칠 조건이 1개 이상 보여야 합니다");
       // 수정 1·2: 서로 다른 조건 두 개를 바꿈(타협), 수정 3: 첫 조건은 원래 답으로 되돌림(타협 철회)
       const changes = [];

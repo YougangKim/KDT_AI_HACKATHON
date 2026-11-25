@@ -1,0 +1,198 @@
+[
+ {
+  "id": "U1",
+  "name": "25세 서울 상경 취준생(IT 사무직 희망)",
+  "region": "서울",
+  "age": 25,
+  "homeless": true,
+  "alone": true,
+  "employed": false,
+  "status": "구직 중",
+  "domains": [
+   "housing",
+   "job"
+  ],
+  "wants": "행복주택|청년|매입임대|전세|IT|개발|사무|정보",
+  "geo": [
+   37.5665,
+   126.978
+  ],
+  "distance": "10km",
+  "prefs": [
+   "임대",
+   "IT|정보통신|사무",
+   "1인|혼자"
+  ],
+  "edu": "대졸"
+ },
+ {
+  "id": "U2",
+  "name": "22세 부산 대학생(주말 알바·생활비)",
+  "region": "부산",
+  "age": 22,
+  "homeless": true,
+  "alone": false,
+  "employed": false,
+  "status": "학생",
+  "domains": [
+   "parttime",
+   "benefit"
+  ],
+  "wants": "알바|아르바이트|단기|장학|생활|교통",
+  "geo": [
+   35.1796,
+   129.0756
+  ],
+  "distance": "5km",
+  "prefs": [
+   "단기|주말|아르바이트",
+   "장학|생활",
+   "학생"
+  ],
+  "edu": "재학"
+ },
+ {
+  "id": "U3",
+  "name": "29세 경기 직장인(결혼 앞두고 내 집)",
+  "region": "경기",
+  "age": 29,
+  "homeless": true,
+  "alone": false,
+  "employed": true,
+  "status": "직장인",
+  "domains": [
+   "housing"
+  ],
+  "wants": "신혼|청약|분양|공공임대|전세|국민임대",
+  "geo": [
+   37.2636,
+   127.0286
+  ],
+  "distance": "거리 제한 없음",
+  "prefs": [
+   "분양|내 집",
+   "신혼|결혼",
+   "청약"
+  ],
+  "edu": "대졸"
+ },
+ {
+  "id": "U4",
+  "name": "31세 대전 이직 준비(데이터 분야 전향)",
+  "region": "대전",
+  "age": 31,
+  "homeless": false,
+  "alone": true,
+  "employed": true,
+  "status": "직장인",
+  "domains": [
+   "training",
+   "exam"
+  ],
+  "wants": "데이터|빅데이터|AI|인공지능|코딩|정보처리|SQL|파이썬",
+  "geo": [
+   36.3504,
+   127.3845
+  ],
+  "distance": "거리 제한 없음",
+  "prefs": [
+   "정보통신|IT|데이터",
+   "국비|훈련",
+   "재직"
+  ],
+  "edu": "대졸"
+ },
+ {
+  "id": "U5",
+  "name": "19세 광주 고졸 구직자(생산·기능직)",
+  "region": "광주",
+  "age": 19,
+  "homeless": true,
+  "alone": false,
+  "employed": false,
+  "status": "구직 중",
+  "domains": [
+   "job",
+   "training"
+  ],
+  "wants": "고졸|기능|생산|제조|용접|전기|기계|채용",
+  "geo": [
+   35.1595,
+   126.8526
+  ],
+  "distance": "10km",
+  "prefs": [
+   "기계|전기|생산|제조",
+   "고졸",
+   "구직"
+  ],
+  "edu": "고졸"
+ },
+ {
+  "id": "U6",
+  "name": "27세 강원 귀촌 창업 준비",
+  "region": "강원",
+  "age": 27,
+  "homeless": true,
+  "alone": true,
+  "employed": false,
+  "status": "구직 중",
+  "domains": [
+   "benefit"
+  ],
+  "wants": "창업|귀농|귀촌|정착|농업|사업화",
+  "geo": [
+   37.8813,
+   127.7298
+  ],
+  "distance": "거리 제한 없음",
+  "prefs": [
+   "창업|사업",
+   "귀농|귀촌|농림",
+   "정착"
+  ],
+  "edu": "전문대"
+ },
+ {
+  "id": "U7",
+  "name": "34세 인천 장기 구직(경력 공백 2년)",
+  "region": "인천",
+  "age": 34,
+  "homeless": true,
+  "alone": true,
+  "employed": false,
+  "status": "구직 중",
+  "domains": [
+   "job",
+   "benefit"
+  ],
+  "wants": "구직|취업|수당|일자리|경력|재취업|공공",
+  "geo": [
+   37.4563,
+   126.7052
+  ],
+  "distance": "10km",
+  "prefs": [
+   "경영|사무|공공",
+   "수당|구직",
+   "재취업|경력"
+  ],
+  "edu": "대졸"
+ },
+ {
+  "id": "U8",
+  "name": "24세 제주 휴학생(분야 미정, 일단 둘러보기)",
+  "region": "제주",
+  "age": 24,
+  "homeless": true,
+  "alone": false,
+  "employed": false,
+  "status": "학생",
+  "domains": [],
+  "wants": "청년|제주",
+  "geo": null,
+  "distance": null,
+  "prefs": [],
+  "edu": "재학"
+ }
+]

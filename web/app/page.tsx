@@ -36,7 +36,7 @@ export default function Home() {
   // 인터뷰를 마친 적이 있으면 그 결과 화면으로 바로 돌아가는 버튼을 보여 준다
   const [hasResult, setHasResult] = useState(false);
   useEffect(() => {
-    try { setHasResult(!!sessionStorage.getItem("lastResult")); } catch {}
+    try { setHasResult(!!localStorage.getItem("lastResult")); } catch {}
   }, []);
   const toggle = (d: Domain) => setPicked((p) => (p.includes(d) ? p.filter((x) => x !== d) : [...p, d]));
   const start = () => router.push(picked.length ? `/play?domains=${picked.join(",")}` : "/play");
@@ -103,7 +103,7 @@ export default function Home() {
           onClick={start}
           className="block min-h-14 w-full rounded-2xl bg-indigo-600 py-4 text-center text-lg font-bold text-white shadow-lg shadow-indigo-200 active:scale-[0.98]"
         >
-          {picked.length ? `${picked.length}개 분야로 시작하기` : "질문 몇 개로 시작하기"}
+          {picked.length ? `${picked.length}개 분야로 ${hasResult ? "다시하기" : "시작하기"}` : hasResult ? "다시하기" : "질문 몇 개로 시작하기"}
         </button>
         <Link href="/alerts" className="block py-3 text-center text-sm text-slate-500 underline">
           저장한 조건 → 알림함

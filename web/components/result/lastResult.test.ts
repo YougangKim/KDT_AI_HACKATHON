@@ -6,7 +6,7 @@ afterEach(() => vi.unstubAllGlobals());
 describe("실제 공고 결과만 복원", () => {
   it("demo 파라미터로 가상 결과를 생성하지 않는다", () => {
     vi.stubGlobal("location", { search: "?demo=1" });
-    vi.stubGlobal("sessionStorage", { getItem: () => null });
+    vi.stubGlobal("localStorage", { getItem: () => null });
     expect(readLastResult()).toBeNull();
   });
 
@@ -16,7 +16,7 @@ describe("실제 공고 결과만 복원", () => {
       { id: "old", isSample: true },
       { id: "old-origin", isSample: false, origin: "sample" },
     ];
-    vi.stubGlobal("sessionStorage", { getItem: () => JSON.stringify({
+    vi.stubGlobal("localStorage", { getItem: () => JSON.stringify({
       answers: [], pool, matches: pool.map((opportunity) => ({ opportunity })),
     }) });
     const result = readLastResult();
@@ -25,7 +25,7 @@ describe("실제 공고 결과만 복원", () => {
   });
   it("이전 지역 필터로 비어 있던 저장 결과를 원래 후보에서 복원합니다", () => {
     const pool = [{id:"remote-online",domain:"benefit",conditions:[],region:["부산"],isSample:false,apply:{how:"온라인 신청"}}];
-    vi.stubGlobal("sessionStorage", {getItem:()=>JSON.stringify({pool,matches:[],radiusExcluded:1,answers:[{question:{id:"region:eq:서울",attr:"region",op:"eq",value:"서울",text:"서울에 거주합니까?"},answer:"yes"}]})});
+    vi.stubGlobal("localStorage", {getItem:()=>JSON.stringify({pool,matches:[],radiusExcluded:1,answers:[{question:{id:"region:eq:서울",attr:"region",op:"eq",value:"서울",text:"서울에 거주합니까?"},answer:"yes"}]})});
     // 반경 필터 기록은 지우고 다시 판정한다: 서울 거주 답이면 부산 공고는 빠진다
     expect(readLastResult()).toMatchObject({radiusExcluded:0,matches:[]});
   });
@@ -57,7 +57,7 @@ describe("후보가 많아 저장 한도를 넘어도 결과가 남음", () => {
     const { saveLastResult, readLastResult } = await import("./lastResult");
     const store: Record<string, string> = {};
     const LIMIT = 20_000; // 저장 한도 흉내(문자 수)
-    vi.stubGlobal("sessionStorage", {
+    vi.stubGlobal("localStorage", {
       getItem: (k: string) => store[k] ?? null,
       setItem: (k: string, v: string) => { if (v.length > LIMIT) throw new Error("QuotaExceededError"); store[k] = v; },
     });
@@ -74,7 +74,7 @@ describe("후보가 많아 저장 한도를 넘어도 결과가 남음", () => {
 describe("채용 공고 범위", () => {
   it("직무 무관 일반 채용을 켜고 끄면 결과에 더해지고 빠집니다", async () => {
     const { setFieldScope } = await import("./lastResult");
-    vi.stubGlobal("sessionStorage", { getItem: () => null, setItem: () => {} });
+    vi.stubGlobal("localStorage", { getItem: () => null, setItem: () => {} });
     const job = (id: string, field: string) => ({ id, title: id, domain: "job", region: [], isSample: false, origin: "api", apply: {}, summary: "", conditions: [{ attr: "field", op: "in", value: [field], rawText: "직무", confidence: "high" }] });
     const pool = [job("it", "정보통신"), job("open", "직무 무관")];
     const q = (v: string) => ({ id: `field:eq:${v}`, attr: "field", op: "eq", value: v, text: "어떤 분야 일을 찾습니까?" });

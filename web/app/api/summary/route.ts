@@ -4,10 +4,11 @@ import { loadOpportunities } from "@/lib/sources";
 
 export const runtime = "nodejs";
 
+// 결과 화면은 한 페이지(6개) ID를 한 번에 보낸다(app/result/page.tsx FIRST). 상한은 여유를 둔 10개
 export async function POST(req: Request) {
   try {
     const body = (await req.json()) as { ids?: unknown };
-    if (!Array.isArray(body.ids) || body.ids.length > 5 || body.ids.some((id) => typeof id !== "string")) {
+    if (!Array.isArray(body.ids) || body.ids.length > 10 || body.ids.some((id) => typeof id !== "string")) {
       return Response.json({ ai: false }, { status: 400 });
     }
     const ids = [...new Set(body.ids as string[])];

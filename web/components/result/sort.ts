@@ -15,7 +15,25 @@ function farWorkplace(m: Match, region: string | null): boolean {
   return !!work && !work.includes(region);
 }
 
-/** 바로 신청 → 내 지역 근무(전국 공고) → 마감 임박 순 */
+// 기관·시설 이름 속 "장애인·보훈"(보훈병원, 장애인고용공단, 장애인 쉼터 등)은 대상 제한이 아니다
+const TARGET_ORG = /\S*(보훈병원|보훈요양원|보훈재활체육센터|보훈복지의료공단|장애인고용공단|직업능력개발원|장애인직업재활시설|장애인(사회적응)?지원센터|장애인쉼터|장애아동\S*쉼터|장애인치과병원|장애인단기거주시설|장애인보건의료센터)\S*/g;
+const TARGET = [
+  /(장애인|보훈|국가유공자|북한이탈주민)\s*(제한|전형|특별|전용|한정|대상)/, // 장애인 제한, 보훈특별고용, 보훈제한경쟁
+  /제한경쟁[_\s]*(장애인|보훈)|(보훈|장애인)\s*·\s*(장애인|보훈)\s*제한/, // 제한경쟁_장애인, 보훈·장애인 제한경쟁
+  /[,(\[_-]\s*(장애인|보훈)\s*(?=[)\]_(])/, // (장애인), 서비스지원직(보훈), 기간제, 장애인), 단시간근로자-장애인(물류팀)
+  /장애전형|장애인\s*(바리스타|근로자|고용원|단시간|체험형|미술작가|연주단)/,
+];
+
+/** 장애인·보훈 등 특정 대상만 지원할 수 있는 공고(제목 표시 기준). 대상 여부를 묻지 않으므로 빼지 않고 뒤로 보낸다. "(일반/보훈)" 같은 혼합 채용은 제외 */
+export function restrictedTarget(title: string | undefined, domain?: string): boolean {
+  if (!title) return false;
+  // 지원금은 제목에 대상이 드러나면 그 대상 전용(장애인 장학금, 독립유공자 수당, 북한이탈주민 정착 지원)
+  if (domain === "benefit" && /장애|유공자|북한이탈|탈북|보훈대상/.test(title)) return true;
+  const t = title.replace(TARGET_ORG, " ");
+  return TARGET.some((re) => re.test(t));
+}
+
+/** 바로 신청 → 특정 대상 제한 아님 → 내 지역 근무(전국 공고) → 마감 임박 순 */
 export function sortMatches(ms: Match[], region: string | null): Match[] {
   const rank = (m: Match) => {
     const d = daysLeft(m.opportunity.applyEnd);
@@ -24,6 +42,7 @@ export function sortMatches(ms: Match[], region: string | null): Match[] {
   return [...ms].sort(
     (a, b) =>
       Number(a.status !== "eligible") - Number(b.status !== "eligible") ||
+      Number(restrictedTarget(a.opportunity.title, a.opportunity.domain)) - Number(restrictedTarget(b.opportunity.title, b.opportunity.domain)) ||
       Number(farWorkplace(a, region)) - Number(farWorkplace(b, region)) ||
       rank(a) - rank(b),
   );

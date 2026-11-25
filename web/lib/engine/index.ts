@@ -241,7 +241,11 @@ function questionPool(cands: Opportunity[]): Question[] {
   return [...seen.values()];
 }
 
-const entropy = (p: number) => (p <= 0 || p >= 1 ? 0 : -(p * Math.log2(p) + (1 - p) * Math.log2(1 - p)));
+/** 예/아니오 질문의 기대 정보량(비트): log2(n) − 답별 남은 후보 수의 기대 log. 예·아니오 모두에 남는 후보는 줄지 않는다 */
+export function splitInfo(n: number, yes: number, no: number): number {
+  if (n <= 1 || yes <= 0 || no <= 0) return 0;
+  return Math.max(0, Math.log2(n) - (yes * Math.log2(yes) + no * Math.log2(no)) / (yes + no));
+}
 
 /**
  * 남은 후보를 가장 반반에 가깝게 나누는 질문을 고른다.
@@ -281,6 +285,10 @@ export function rankQuestions(s: GameState, limit = 5): RankedQuestion[] {
   for (const r of s.answers) attrCount.set(r.question.attr, (attrCount.get(r.question.attr) ?? 0) + 1);
   const lastAttr = s.answers.at(-1)?.question.attr;
 
+  const domainCount = new Map<string, number>();
+  for (const o of cands) domainCount.set(o.domain, (domainCount.get(o.domain) ?? 0) + 1);
+  const skewed = Math.max(...domainCount.values()) > n * 0.8;
+
   const pool = questionPool(cands);
   const candidateAttrs = new Set(pool.map((q) => q.attr));
   const out: RankedQuestion[] = [];
@@ -309,12 +317,14 @@ export function rankQuestions(s: GameState, limit = 5): RankedQuestion[] {
       if (pending(kb, o, q.attr) && (!pending(kbYes, o, q.attr) || !pending(kbNo, o, q.attr))) resolve++;
     }
     if (both === n && resolve === 0) continue; // 누구도 갈리지 않고 판정도 안 바뀜
-    let score = (1 - (yesAlive + noAlive) / (2 * n)) * (0.5 + 0.5 * entropy(yesAlive / (yesAlive + noAlive)));
-    if (yesAlive === 0 || noAlive === 0) score *= 0.3; // 한쪽 답이면 후보 전멸: 마지막 수단
+    // 정보량(비트): 답 하나로 남은 후보가 기대만큼 줄어드는 양. 후보가 많은 분야 안을 고르게 가를수록 크다
+    let score = yesAlive === 0 || noAlive === 0
+      ? 0.3 * (1 - (yesAlive + noAlive) / (2 * n)) // 한쪽 답이면 후보 전멸: 마지막 수단
+      : 0.5 * splitInfo(n, yesAlive, noAlive);
     score += 0.25 * (resolve / n);
     if (q.attr === lastAttr) score *= 0.5;
     score *= 0.85 ** (attrCount.get(q.attr) ?? 0);
-    if (s.answers.length === 0 && q.attr === "interest") score *= 2; // 첫 질문은 관심 분야부터
+    if (s.answers.length === 0 && q.attr === "interest" && !skewed) score *= 2; // 첫 질문은 관심 분야부터(한 분야가 대부분이면 그 안을 가르는 질문이 먼저)
     if (score > 0) out.push({ question: q, score, yes: yesAlive, no: noAlive, resolve });
   }
   return out.sort((a, b) => b.score - a.score || a.question.id.localeCompare(b.question.id)).slice(0, limit);

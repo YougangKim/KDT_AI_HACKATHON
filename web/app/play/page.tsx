@@ -362,9 +362,13 @@ export default function PlayPage() {
     let alive = true;
     if (view.refining) {
       const candidates = aliveOpps(state);
-      const buckets = Object.keys(DOMAIN_NAME).map((domain) => candidates.filter((o) => o.domain === domain));
-      const sample: Opportunity[] = [];
-      for (let i = 0; sample.length < 240 && buckets.some((b) => b[i]); i++) for (const b of buckets) if (b[i] && sample.length < 240) sample.push(b[i]);
+      // 표본은 분야별 후보 수 비율대로(작은 분야는 최소 1건), 분야 안에서는 고르게 간격을 둔다.
+      // 분야마다 같은 수를 뽑으면 후보가 적은 분야가 부풀려져, 후보가 몰린 분야를 나누는 질문이 뒤로 밀린다
+      const buckets = Object.keys(DOMAIN_NAME).map((domain) => candidates.filter((o) => o.domain === domain)).filter((b) => b.length);
+      const sample: Opportunity[] = buckets.flatMap((b) => {
+        const quota = Math.min(b.length, Math.max(1, Math.floor(240 * b.length / candidates.length)));
+        return Array.from({ length: quota }, (_, i) => b[Math.floor(i * b.length / quota)]);
+      }).slice(0, 240);
       fetch("/api/refine-question", { method: "POST", headers: { "content-type": "application/json" }, signal: AbortSignal.timeout(25000), body: JSON.stringify({ evidence: sample.map((o) => ({ id: o.id, domain: o.domain, title: o.title.slice(0, 160), summary: o.summary.slice(0, 240), tags: o.tags })), answered: state.answers.map((a) => ({ text: a.question.text, answer: a.answer })) }) })
         .then((r) => r.json()).catch(() => ({})).then((d: { question?: Refinement; feedbackKey?: string }) => {
           // AI가 질문을 못 만들면(한도·장애·근거 부족) 남은 공고 분포로 규칙 질문을 만든다

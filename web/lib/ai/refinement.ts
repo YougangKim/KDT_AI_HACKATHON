@@ -1,38 +1,47 @@
 import { checkQuestionQuality } from "./question-guide";
 import { hasCasualEnding } from "../copy";
 import type { Opportunity } from "../types";
-import { RULE_FACETS } from "./refinement-rules";
+import { MIN_INFO, RULE_FACETS, expectedInfo } from "./refinement-rules";
 
 export interface RefinementEvidence { id: string; title: string; summary: string; domain: string }
 /** facet: 공고 분류 칼럼으로 만든 질문이면 그 칼럼 id(표본 밖 공고도 칼럼 값으로 나눈다) */
 export interface Refinement { text: string; why: string; facet?: string; options: { label: string; ids: string[]; terms?: string[] }[] }
 
-/** 생성에는 분야별 대표 원문만 사용하고, 반환 구절은 전체 후보에 적용합니다. */
+const EXAMPLES = 16;
+
+/**
+ * 모델 입력을 구조적으로 만든다(원문을 통째로 덧붙이지 않음).
+ * - domains: 분야별 남은 후보 수(많은 순), focus: 후보가 가장 많은 분야 → 그 분야 안을 가르는 질문을 우선하게
+ * - evidence: 후보 수 비율로 뽑은 대표 공고(작은 분야는 1건), 분야 안에서는 고르게 간격을 둔다. 제목·설명 80자
+ * - axes: 검수한 세분화 축별 후보 분포(0건 선택지 제외), answered: 최근 답 5개
+ */
 export function refinementContext(evidence: RefinementEvidence[], answered: {text: string; answer: string}[]) {
-  const domains = [...new Set(evidence.map((e) => e.domain))];
-  const buckets = domains.map((d) => evidence.filter((e) => e.domain === d));
-  const sample: {title: string; summary: string; domain: string}[] = [];
+  const total = evidence.length;
+  const counts = new Map<string, RefinementEvidence[]>();
+  for (const e of evidence) counts.set(e.domain, [...(counts.get(e.domain) ?? []), e]);
+  const domains = [...counts.entries()].sort((a, b) => b[1].length - a[1].length).map(([domain, list]) => ({ domain, count: list.length }));
+  const sample: {domain: string; title: string; summary: string}[] = [];
   const seen = new Set<string>();
-  for (let round = 0; round < 24 && sample.length < 24; round++) {
-    for (const bucket of buckets) {
-      const e = bucket[Math.floor(round * bucket.length / 24)];
-      if (!e || seen.has(e.title)) continue;
+  for (const { domain, count } of domains) {
+    const list = counts.get(domain)!;
+    const quota = Math.max(1, Math.round(EXAMPLES * count / Math.max(1, total)));
+    // 같은 제목(반복 공고)은 건너뛰고 다음 후보로 채워 분야별 표본 수를 지킨다
+    // 고르게 간격을 둔 위치부터 보고, 그다음 나머지 순서로 채운다
+    const order = [...Array.from({ length: quota }, (_, i) => Math.floor(i * list.length / quota)), ...list.keys()];
+    let taken = 0;
+    for (const idx of order) {
+      if (taken >= quota) break;
+      const e = list[idx];
+      if (seen.has(e.title)) continue;
       seen.add(e.title);
-      const item = {title:e.title.slice(0,100),summary:e.summary.slice(0,100),domain:e.domain};
-      if (JSON.stringify([...sample,item]).length > 3600 || sample.length >= 24) continue;
-      sample.push(item);
+      sample.push({ domain, title: e.title.slice(0, 80), summary: e.summary.slice(0, 80) });
+      taken++;
     }
   }
-  const history: {text:string;answer:string}[] = [];
-  for (const a of [...answered].reverse()) {
-    const item = {text:a.text.slice(0,140),answer:a.answer};
-    if (JSON.stringify([...history,item]).length > 1600) break;
-    history.push(item);
-  }
-  // 검수로 정한 세분화 축별로 전체 후보 분포를 알려 준다(AI가 실제로 갈리는 축을 고르도록)
-  const axes = RULE_FACETS.map((f) => ({ question: f.text, options: f.options.map((o) => ({ label: o.label, count: evidence.filter((e) => o.terms.some((t) => `${e.title} ${e.summary}`.includes(t))).length })) }))
-    .filter((a) => a.options.filter((o) => o.count > 0).length >= 2);
-  return {evidence:sample,answered:history.reverse(),axes,total:evidence.length};
+  const axes = RULE_FACETS.map((f) => ({ question: f.text, options: f.options.map((o) => ({ label: o.label, count: evidence.filter((e) => o.terms.some((t) => `${e.title} ${e.summary}`.includes(t))).length })).filter((o) => o.count > 0) }))
+    .filter((a) => a.options.length >= 2);
+  const recent = answered.slice(-5).map((a) => ({ text: a.text.slice(0, 72), answer: a.answer.slice(0, 20) }));
+  return { total, domains, focus: domains[0]?.domain ?? null, axes, answered: recent, evidence: sample };
 }
 
 /** AI가 새로 만든 탐색 기준은 원문에 있는 검색 근거와 실제 후보 감소를 검증한다. */
@@ -53,6 +62,8 @@ export function validateRefinement(value: unknown, evidence: RefinementEvidence[
   const classified = new Set(options.flatMap((o) => o.ids));
   // 선택지마다 적어도 하나 이상의 다른 후보가 빠져야 한다. 미분류 후보는 유지한다.
   if (options.some((o) => o.ids.length >= classified.size)) return null;
+  // 정보량 기준: 후보가 적은 분야만 가르는(답해도 거의 안 줄어드는) 질문은 버린다
+  if (expectedInfo(evidence.length, options.map((o) => o.ids.length), evidence.length - classified.size) < MIN_INFO) return null;
   return { text: q.text, why: q.why, options };
 }
 

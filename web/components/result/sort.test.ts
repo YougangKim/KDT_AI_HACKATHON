@@ -32,3 +32,21 @@ describe("정렬 방식", () => {
     expect(ids.at(-1)).toBe("soon");
   });
 });
+
+import { restrictedTarget } from "./sort";
+describe("특정 대상 제한 공고", () => {
+  it("장애인·보훈 제한 채용은 표시, 장애인 기관의 일반 채용은 아님", () => {
+    expect(restrictedTarget("해양환경공단 체험형 청년인턴(장애인 제한) 채용 공고")).toBe(true);
+    expect(restrictedTarget("부산항만공사 기간제 직원(장애인 바리스타) 채용 공고")).toBe(true);
+    expect(restrictedTarget("[보훈특별채용] 2026년 하반기 채용형 청년인턴")).toBe(true);
+    expect(restrictedTarget("장애인복지관 사회복지사 채용")).toBe(false);
+    expect(restrictedTarget("국악방송 체험형 인턴(장애인) 채용 공고")).toBe(true);
+    expect(restrictedTarget("[한국전력국제원자력대학원대학교] 기간제근로자 채용 (휴직대체 및 제한경쟁_장애인)")).toBe(true);
+    expect(restrictedTarget("㈜강원랜드 2026년 2차 서비스지원직(보훈) 채용 공고")).toBe(true);
+    expect(restrictedTarget("[광주보훈병원] 응급실 전담의, 전문의(외과) 채용 공고")).toBe(false);
+    expect(restrictedTarget("[한국장애인고용공단 대전직업능력개발원] 특정업무직(운전원) 채용")).toBe(false);
+    expect(restrictedTarget("한국동서발전(주) 2027년 상반기 신입직원(대졸수준(일반/보훈) 및 고졸) 선발")).toBe(false);
+    expect(restrictedTarget("장애인 면학 장학금", "benefit")).toBe(true);
+    expect(restrictedTarget("청년 월세 지원", "benefit")).toBe(false);
+  });
+});

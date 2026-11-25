@@ -2,6 +2,7 @@ import { FAST_MODEL, ask, auxAiEnabled } from "../ai";
 import { getCached, setCached } from "../ai/cache";
 import type { Opportunity } from "../types";
 import { getEligibility } from "../sources/util";
+import { SHORT_ADDRESS_RE, workplaceValues } from "./workplace";
 
 export interface ExtractedPlace {
   address: string | null;
@@ -15,13 +16,11 @@ const CONCURRENCY = 2;
 const ADDRESS_RE =
   /[가-힣]+(?:특별시|광역시|특별자치시|특별자치도|도)\s+[가-힣0-9]+(?:시|군|구)(?:\s+[가-힣0-9]+구)?(?:\s+[가-힣0-9·.-]+(?:읍|면|동|가|로|길)(?:\s+\d+(?:-\d+)?)?)?/;
 const EXTRACT_PROMPT_VERSION = "place-v3";
-/** 채용 공고에서 근무지를 말하는 원문 표지 */
-const WORKPLACE_RE = /근무지|근무\s*장소|근무\s*지역|근무\s*예정지|근무처/;
 
 const isRecruit = (o: Opportunity) => o.domain === "job" || o.domain === "parttime";
-/** 채용 공고 원문 중 근무지를 말하는 문장만(기관명·본사·접수처 주소 제외) */
+/** 채용 공고 원문 중 근무지 라벨 값만(기관명·본사·접수처 주소 제외) */
 function workplaceText(o: Opportunity): string {
-  return [o.summary, getEligibility(o)].filter(Boolean).join("\n").split(/[\n/]|[.!?](?:\s|$)/).filter((part) => WORKPLACE_RE.test(part)).join(" ");
+  return workplaceValues([o.summary, getEligibility(o)].filter(Boolean).join("\n")).join(" / ");
 }
 
 export function _clearExtractCache() {
@@ -60,7 +59,7 @@ export function extractPlaceRules(opportunity: Opportunity): ExtractedPlace | nu
     if (m) return { address: m, place: null };
     if (first && /(?:시|군|구|읍|면|동|로|길)/.test(first)) return { address: first, place: null };
   }
-  const address = text.match(ADDRESS_RE)?.[0]?.trim();
+  const address = (text.match(ADDRESS_RE) ?? (isRecruit(opportunity) ? text.match(SHORT_ADDRESS_RE) : null))?.[0]?.trim();
   if (address) return { address, place: null };
   return null;
 }

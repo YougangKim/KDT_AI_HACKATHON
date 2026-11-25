@@ -16,9 +16,10 @@ export type LastResult = {
   fallbackNote?: string;
 };
 
+// 지난 인터뷰 결과는 이 기기 브라우저(localStorage)에 둔다: 창을 닫아도 다시 볼 수 있고, 14일 넘게 안 오면 지운다(lib/visit.ts)
 export function readLastResult(): LastResult | null {
   try {
-    const raw = sessionStorage.getItem("lastResult");
+    const raw = localStorage.getItem("lastResult");
     if (!raw) return null;
     const r = JSON.parse(raw) as LastResult;
     const answers = (r.answers ?? []).map((a) => ({ ...a, question: { ...a.question, text: formalQuestion(a.question.text) } }));
@@ -66,14 +67,14 @@ export function saveLastResult(r: LastResult): boolean {
   const tries: Opportunity[][] = r.pool ? [r.pool, r.matches.map((m) => m.opportunity), r.matches.slice(0, 300).map((m) => m.opportunity)] : [];
   for (const pool of tries) {
     try {
-      sessionStorage.setItem("lastResult", JSON.stringify({ ...r, matches: [], pool: slim(pool) }));
+      localStorage.setItem("lastResult", JSON.stringify({ ...r, matches: [], pool: slim(pool) }));
       return true;
     } catch {
       // 다음(더 작은) 후보로 재시도
     }
   }
   try {
-    sessionStorage.setItem("lastResult", JSON.stringify({ ...r, pool: undefined, matches: r.matches.slice(0, 300) }));
+    localStorage.setItem("lastResult", JSON.stringify({ ...r, pool: undefined, matches: r.matches.slice(0, 300) }));
     return true;
   } catch {
     return false;
